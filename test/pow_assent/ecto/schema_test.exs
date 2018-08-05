@@ -1,3 +1,17 @@
+module_raised_with = try do
+  defmodule Pow.Test.Extension.Ecto.Schema.IvalidIdentity do
+    use Ecto.Schema
+    use PowAssent.Ecto.UserIdentities.Schema
+
+    schema "user_identities" do
+      pow_user_identity_schema()
+
+      timestamps(updated_at: false)
+    end
+  end
+rescue
+  e in Pow.Config.ConfigError -> e.message
+end
 defmodule PowAssent.Ecto.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.Schema
@@ -8,6 +22,10 @@ defmodule PowAssent.Ecto.SchemaTest do
     user = %User{}
 
     assert Map.has_key?(user, :user_identities)
+  end
+
+  test "user_schema/1 requires :user" do
+    assert unquote(module_raised_with) == "No :user configuration option found for user identity schema module."
   end
 
   @user_identity %{

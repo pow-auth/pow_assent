@@ -28,10 +28,13 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @callback changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
 
   defmacro __using__(config) do
+    user_mod = Config.get(config, :user, nil) || raise_no_user_error()
+
     quote do
       @behaviour unquote(__MODULE__)
       import unquote(__MODULE__), only: [pow_user_identity_schema: 0]
 
+      @pow_user_mod unquote(user_mod)
       @pow_assent_config unquote(config)
 
       @spec changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
@@ -49,7 +52,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @spec pow_user_identity_schema :: Macro.t()
   defmacro pow_user_identity_schema() do
     quote do
-      belongs_to :user, Config.user_module(@pow_assent_config)
+      belongs_to :user, @pow_user_mod
 
       for {name, type, opts} <- unquote(__MODULE__).Fields.attrs(@pow_assent_config) do
         field(name, type, opts)
@@ -63,5 +66,10 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
     |> Changeset.validate_required([:provider, :uid])
     |> Changeset.assoc_constraint(:user)
     |> Changeset.unique_constraint(:uid_provider, name: :user_identities_uid_provider_index)
+  end
+
+  @spec raise_no_user_error :: no_return
+  defp raise_no_user_error do
+    Config.raise_error("No :user configuration option found for user identity schema module.")
   end
 end
