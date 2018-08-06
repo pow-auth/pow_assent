@@ -2,7 +2,7 @@ defmodule PowAssent.Strategy do
   @moduledoc false
   alias Plug.Conn
 
-  @callback authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{:conn => Conn.t(), :url => String.t(), optional(atom()) => any()}} | {:error, %{conn: Conn.t(), error: any()}}
+  @callback authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{:conn => Conn.t(), :url => binary(), optional(atom()) => any()}} | {:error, %{conn: Conn.t(), error: any()}}
   @callback callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{:conn => Conn.t(), :user => map(), optional(atom()) => any()}} | {:error, %{conn: Conn.t(), error: any()}}
 
   defmacro __using__(_opts) do

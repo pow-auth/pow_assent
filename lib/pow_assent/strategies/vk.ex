@@ -10,14 +10,14 @@ defmodule PowAssent.Strategy.VK do
   @profile_fields ["uid", "first_name", "last_name", "photo_200", "screen_name", "verified"]
   @url_params     %{"fields" => Enum.join(@profile_fields, ","), "v" => "5.69", "https" => "1"}
 
-  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), url: String.t(), state: String.t()}}
+  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
   def authorize_url(config, conn) do
     config
     |> set_config()
     |> OAuth2Helper.authorize_url(conn)
   end
 
-  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{conn: Conn.t(), user: map(), client: Client.t()}} | {:error, %{conn: Conn.t(), error: any()}}
+  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{client: Client.t(), conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
   def callback(config, conn, params) do
     config = set_config(config)
     client = Client.new(config)

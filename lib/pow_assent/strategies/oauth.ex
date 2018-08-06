@@ -5,7 +5,7 @@ defmodule PowAssent.Strategy.OAuth do
   use PowAssent.Strategy
 
   @doc false
-  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), url: String.t()}} | {:error, %{conn: Conn.t(), error: any()}}
+  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), url: binary()}} | {:error, %{conn: Conn.t(), error: any()}}
   def authorize_url(config, conn) do
     config
     |> get_request_token([{"oauth_callback", config[:redirect_uri]}])
@@ -49,7 +49,7 @@ defmodule PowAssent.Strategy.OAuth do
   defp build_authorize_url({:error, error}, _config), do: {:error, error}
 
   @doc false
-  @spec get_access_token(Keyword.t(), String.t(), String.t()) :: {:ok, map} | {:error, term}
+  @spec get_access_token(Keyword.t(), binary(), binary()) :: {:ok, map} | {:error, term}
   def get_access_token(config, oauth_token, oauth_verifier) do
     site             = config[:site]
     access_token_url = process_url(config, config[:access_token_url] || "/oauth/access_token")

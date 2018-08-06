@@ -3,7 +3,7 @@ defmodule PowAssent.Plug do
   alias Plug.Conn
   alias PowAssent.{Config, Operations}
 
-  @spec authenticate(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
+  @spec authenticate(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | no_return
   def authenticate(conn, provider, callback_url) do
     provider_config = get_provider_config(conn, provider)
     strategy        = provider_config[:strategy]
@@ -13,7 +13,7 @@ defmodule PowAssent.Plug do
     |> strategy.authorize_url(conn)
     |> case do
       {:ok, %{url: url, conn: conn}} -> {:ok, url, conn}
-      {:error, error} -> {:error, error, conn}
+      {:error, error}                -> raise error
     end
   end
 

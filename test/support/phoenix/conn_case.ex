@@ -17,7 +17,10 @@ defmodule PowAssent.Test.Phoenix.ConnCase do
   setup _tags do
     conn = ConnTest.build_conn()
     opts = Plug.Session.init(store: :cookie, key: "_binaryid_key", signing_salt: "secret")
-    conn = conn |> Plug.Session.call(opts) |> Plug.Conn.fetch_session()
+    conn =
+      conn
+      |> Plug.Session.call(opts)
+      |> Plug.Conn.fetch_session()
 
     {:ok, conn: conn}
   end

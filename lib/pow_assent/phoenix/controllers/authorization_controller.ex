@@ -12,12 +12,12 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   plug :load_state_from_session when action in [:callback]
   plug :assign_callback_url when action in [:new, :callback]
 
-  @spec process_new(Conn.t(), map()) :: {:ok, binary(), Conn.t()}
+  @spec process_new(Conn.t(), map()) :: {:ok, binary(), Conn.t()} | no_return
   def process_new(conn, %{"provider" => provider}) do
     Plug.authenticate(conn, provider, conn.assigns.callback_url)
   end
 
-  @spec respond_new({:ok, map(), Conn.t()}) :: Conn.t()
+  @spec respond_new({:ok, binary(), Conn.t()}) :: Conn.t()
   def respond_new({:ok, url, conn}) do
     conn
     |> maybe_set_state()

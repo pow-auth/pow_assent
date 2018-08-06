@@ -7,7 +7,7 @@ defmodule PowAssent.Strategy.Twitter do
   alias PowAssent.Strategy.OAuth, as: OAuthHelper
 
   @doc false
-  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), url: String.t()}}
+  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), url: binary()}}
   def authorize_url(config, conn) do
     config
     |> set_config()

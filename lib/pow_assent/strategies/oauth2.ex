@@ -3,11 +3,12 @@ defmodule PowAssent.Strategy.OAuth2 do
   OAuth 2.0 strategy.
   """
   use PowAssent.Strategy
+
   alias OAuth2.{Client, Response}
   alias PowAssent.{CallbackCSRFError, CallbackError, ConfigurationError, RequestError}
 
   @doc false
-  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), url: String.t(), state: String.t()}}
+  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
   def authorize_url(config, conn) do
     state        = gen_state()
     conn         = Conn.put_private(conn, :pow_assent_state, state)
@@ -28,7 +29,7 @@ defmodule PowAssent.Strategy.OAuth2 do
   end
 
   @doc false
-  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{conn: Conn.t(), user: map(), client: Client.t()}} | {:error, %{conn: Conn.t(), error: any()}}
+  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{client: Client.t(), conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
   def callback(config, conn, params) do
     client = Client.new(config)
     state  = conn.private[:pow_assent_state]
@@ -41,7 +42,7 @@ defmodule PowAssent.Strategy.OAuth2 do
   end
 
   @doc false
-  @spec check_state(String.t(), Client.t, map) :: {:ok, %{client: Client.t}} | {:error, any()}
+  @spec check_state(binary(), Client.t(), map) :: {:ok, %{client: Client.t()}} | {:error, any()}
   def check_state(_state, _client, %{"error" => _} = params) do
     message   = params["error_description"] || params["error_reason"] || params["error"]
     error     = params["error"]
@@ -57,7 +58,7 @@ defmodule PowAssent.Strategy.OAuth2 do
   end
 
   @doc false
-  @spec get_access_token({:ok, %{client: Client.t}} | {:error, map}, Keyword.t(), map) :: {:ok, Client.t} | {:error, term}
+  @spec get_access_token({:ok, %{client: Client.t()}} | {:error, map()}, Keyword.t(), map()) :: {:ok, Client.t()} | {:error, term()}
   def get_access_token({:ok, %{client: client}}, config, %{"code" => code, "redirect_uri" => redirect_uri}) do
     params = authorization_params(config, code: code, client_secret: client.client_secret, redirect_uri: redirect_uri)
 
@@ -76,7 +77,7 @@ defmodule PowAssent.Strategy.OAuth2 do
   defp process_access_token_response({:error, error}),
     do: {:error, error}
 
-  @spec get_user({:ok, Client.t()} | {:error, term}, String.t() | nil) :: {:ok, map} | {:error, term}
+  @spec get_user({:ok, Client.t()} | {:error, term()}, binary() | nil) :: {:ok, map()} | {:error, term()}
   def get_user({:ok, _client}, nil),
     do: {:error, %ConfigurationError{message: "No user URL set"}}
   def get_user({:ok, client}, user_url) do
