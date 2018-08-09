@@ -5,18 +5,25 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Migration do
   alias PowAssent.Ecto.UserIdentities.Schema.Fields
   alias Pow.Ecto.Schema.Migration
 
-  @spec gen(atom(), Config.t()) :: binary()
-  def gen(context_base, config \\ []) do
-    table   = "user_identities"
+  @doc """
+  Generates migration schema map.
+  """
+  @spec new(atom(), binary(), Config.t()) :: map()
+  def new(context_base, schema_plural, config \\ []) do
     attrs   = Fields.attrs(config)
     indexes = Fields.indexes(config)
-    config  = Keyword.merge(config, [
-      table: table,
-      attrs: attrs,
-      indexes: indexes])
+    config  = Keyword.merge(config, [attrs: attrs, indexes: indexes])
 
-    context_base
-    |> Migration.gen(config)
+    Migration.new(context_base, schema_plural, config)
+  end
+
+  @doc """
+  Generates migration file content.
+  """
+  @spec gen(map()) :: binary()
+  def gen(schema) do
+    schema
+    |> Migration.gen()
     |> String.replace("timestamps()", "timestamps(updated_at: false)")
   end
 end

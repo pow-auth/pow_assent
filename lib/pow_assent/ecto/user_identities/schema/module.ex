@@ -1,10 +1,6 @@
 defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
   @moduledoc """
   Generates schema module content.
-
-  ## Configuration options
-
-    * `:table` the ecto table name
   """
   alias Pow.Config
 
@@ -24,26 +20,21 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
     end
     """
 
-  @spec gen(atom(), Config.t()) :: binary()
-  def gen(context_base, config \\ []) do
-    context_base
-    |> parse_options(config)
-    |> schema_module()
-  end
-
-  defp parse_options(base, config) do
-    module        = Module.concat([base, "UserIdentities", "UserIdentity"])
-    table         = Config.get(config, :table, "user_identities")
+  @spec new(atom(), binary(), binary(), Config.t()) :: map()
+  def new(context_base, schema_name, schema_plural, config \\ []) do
+    module        = Module.concat([context_base, schema_name])
     binary_id     = config[:binary_id]
 
     %{
+      schema_name: schema_name,
       module: module,
-      table: table,
+      table: schema_plural,
       binary_id: binary_id,
     }
   end
 
-  defp schema_module(schema) do
+  @spec gen(map()) :: binary()
+  def gen(schema) do
     EEx.eval_string(unquote(@template), schema: schema)
   end
 end
