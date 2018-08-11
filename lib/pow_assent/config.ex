@@ -29,7 +29,7 @@ defmodule PowAssent.Config do
 
     case otp_app do
       nil     -> Application.get_all_env(:pow_assent)
-      otp_app -> Application.get_env(otp_app, :pow_assent)
+      otp_app -> Application.get_env(otp_app, :pow_assent, [])
     end
   end
 end

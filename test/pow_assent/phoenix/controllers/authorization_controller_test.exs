@@ -79,23 +79,12 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   end
 
   describe "GET /auth/:provider/callback as authentication with email confirmation" do
-    setup %{conn: conn} do
-      config = Application.get_env(:pow_assent_web, :pow)
-      new_config = Keyword.merge(config, [
-        user: PowAssent.Test.Ecto.Users.EmailConfirmUser,
-        mailer_backend: PowAssent.Test.Phoenix.MailerMock])
-
-      Application.put_env(:pow_assent_web, :pow, new_config)
-
-      on_exit(fn -> Application.put_env(:pow_assent_web, :pow, config) end)
-
-      {:ok, conn: conn}
-    end
-
     test "with missing e-mail confirmation", %{conn: conn, server: server} do
+      Application.put_env(:pow_assent_mailer_web, :pow_assent, Application.get_env(:pow_assent_web, :pow_assent))
+
       bypass_oauth(server, %{}, %{uid: "user-missing-email-confirmation"})
 
-      conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+      conn = Phoenix.ConnTest.dispatch conn, PowAssent.Test.Phoenix.MailerEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
       refute Pow.Plug.current_user(conn)
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)

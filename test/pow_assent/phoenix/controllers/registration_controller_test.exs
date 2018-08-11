@@ -70,20 +70,8 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   end
 
   describe "GET /auth/:provider/create with PowEmailConfirmation" do
-    setup %{conn: conn} do
-      config     = Application.get_env(:pow_assent_web, :pow)
-      new_config = Keyword.merge(config, [
-        user: PowAssent.Test.Ecto.Users.EmailConfirmUser,
-        mailer_backend: PowAssent.Test.Phoenix.MailerMock])
-      Application.put_env(:pow_assent_web, :pow, new_config)
-
-      on_exit(fn -> Application.put_env(:pow_assent_web, :pow, config) end)
-
-      {:ok, conn: conn}
-    end
-
     test "with valid", %{conn: conn} do
-      conn = post conn, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}}
+      conn = Phoenix.ConnTest.dispatch conn, PowAssent.Test.Phoenix.MailerEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}}
 
       assert redirected_to(conn) == "/registration_created"
       assert get_flash(conn, :info) == "user_created_test_provider"
@@ -99,7 +87,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       conn =
         conn
         |> Plug.Conn.put_session(:pow_assent_params, %{"uid" => "1", "name" => "John Doe", "email" => "foo@example.com"})
-        |> post(Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{}})
+        |> Phoenix.ConnTest.dispatch(PowAssent.Test.Phoenix.MailerEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{}})
 
       assert redirected_to(conn) == "/registration_created"
 
