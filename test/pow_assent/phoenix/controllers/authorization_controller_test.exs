@@ -51,7 +51,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/session_created"
-      assert get_flash(conn, :info) == "Welcome! You've signed in with Test provider."
+      assert get_flash(conn, :info) == "signed_in_test_provider"
       assert Pow.Plug.current_user(conn) == user
     end
 
@@ -122,7 +122,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
-      assert get_flash(conn, :error) == "Could not sign in. Please try again."
+      assert get_flash(conn, :error) == "Something went wrong, and you couldn't be singed in. Please try again."
     end
 
     test "with missing required user id", %{conn: conn, server: server} do
@@ -202,7 +202,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)
-      assert get_flash(conn, :info) == "Authentication with test_provider has been removed"
+      assert get_flash(conn, :info) == "Authentication with Test provider has been removed"
     end
 
     test "with user password", %{conn: conn} do
@@ -212,7 +212,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)
-      assert get_flash(conn, :info) == "Authentication with test_provider has been removed"
+      assert get_flash(conn, :info) == "Authentication with Test provider has been removed"
     end
 
     test "with current_user session without provider", %{conn: conn, user: user} do

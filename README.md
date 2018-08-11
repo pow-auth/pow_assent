@@ -175,6 +175,24 @@ defmodule TestProvider do
 end
 ```
 
+## I18n
+
+The template can be generated and modified to use your Gettext module with `mix pow.extension.phoenix.gen.templates --extension PowAssent`
+
+For flash messages, you can add it to your Pow mesages module:
+
+```elixir
+defmodule MyAppWeb.Pow.Messages do
+  use Pow.Phoenix.Messages
+  use Pow.Extension.Phoenix.Messages,
+    extensions: [PowAssent]
+
+  import MyAppWeb.Gettext
+
+  def pow_assent_signed_in(_conn, provider), do: gettext("You've been signed in with %{provider}.", provider: provider)
+end
+```
+
 ## Security concerns
 
 All sessions created through `PowAssent` provider authentication are temporary, and doesn't use have long term sessions. However, it's a good idea to do some housekeeping in your app and making sure that you have the level of security as warranted by the scope of your app. This may include requiring users to reauthenticate before viewing or editing their user details.

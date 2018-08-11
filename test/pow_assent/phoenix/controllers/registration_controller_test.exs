@@ -43,7 +43,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert redirected_to(conn) == "/registration_created"
       assert user = Pow.Plug.current_user(conn)
       assert user.email == "foo@example.com"
-      assert get_flash(conn, :info) == "Welcome! Your account has been created."
+      assert get_flash(conn, :info) == "user_created_test_provider"
     end
 
     test "with already taken user id field", %{conn: conn} do
@@ -84,7 +84,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       conn = post conn, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}}
 
       assert redirected_to(conn) == "/registration_created"
-      assert get_flash(conn, :info) == "Welcome! Your account has been created."
+      assert get_flash(conn, :info) == "user_created_test_provider"
 
       assert user = Pow.Plug.current_user(conn)
       assert user.email == "foo@example.com"

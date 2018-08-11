@@ -6,7 +6,6 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   alias Plug.Conn
   alias PowAssent.Plug
   alias PowEmailConfirmation.Phoenix.{ConfirmationController, ControllerCallbacks}
-  import Phoenix.Naming, only: [humanize: 1]
 
   plug :require_authenticated when action in [:delete]
   plug :load_state_from_session when action in [:callback]
@@ -52,13 +51,13 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   end
   def respond_callback({:ok, _user, conn}) do
     conn
-    |> put_flash(:info, messages(conn).signed_in(conn, humanize(conn.params["provider"])))
+    |> put_flash(:info, messages(conn).signed_in(conn))
     |> redirect(to: routes(conn).after_sign_in_path(conn))
   end
   @spec respond_callback({:error, {atom(), map()} | map(), Conn.t()}) :: Conn.t()
   def respond_callback({:error, {:bound_to_different_user, _changeset}, conn}) do
     conn
-    |> put_flash(:error, messages(conn).account_already_bound_to_other_user(conn, humanize(conn.params["provider"])))
+    |> put_flash(:error, messages(conn).account_already_bound_to_other_user(conn))
     |> redirect(to: router_helpers(conn).pow_registration_path(conn, :new))
   end
   def respond_callback({:error, {:missing_user_id_field, _changeset}, conn}) do
@@ -80,7 +79,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   @spec respond_delete({:ok, map(), Conn.t()}) :: Conn.t()
   def respond_delete({:ok, _deleted, conn}) do
     conn
-    |> put_flash(:info, messages(conn).authentication_has_been_removed(conn, conn.params["provider"]))
+    |> put_flash(:info, messages(conn).authentication_has_been_removed(conn))
     |> redirect(to: router_helpers(conn).pow_registration_path(conn, :edit))
   end
   def respond_delete({:error, {:no_password, _changeset}, conn}) do
