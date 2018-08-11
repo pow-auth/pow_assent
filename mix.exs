@@ -1,7 +1,7 @@
 defmodule PowAssent.MixProject do
   use Mix.Project
 
-  @version "0.1.0-alpha.1"
+  @version "0.1.0-alpha.3"
 
   def project do
     [
@@ -31,7 +31,7 @@ defmodule PowAssent.MixProject do
 
   defp deps do
     [
-      {:pow, "~> 0.1.0-alpha.5"},
+      {:pow, "~> 0.1.0-alpha.8"},
 
       {:oauth2, "~> 0.9"},
       {:oauther, "~> 1.1"},
