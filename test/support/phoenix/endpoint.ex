@@ -1,6 +1,6 @@
 defmodule PowAssent.Test.Phoenix.Endpoint do
   @moduledoc false
-  use Phoenix.Endpoint, otp_app: :pow_assent
+  use Phoenix.Endpoint, otp_app: :pow_assent_web
 
   plug Plug.RequestId
   plug Plug.Logger
@@ -18,7 +18,7 @@ defmodule PowAssent.Test.Phoenix.Endpoint do
     key: "_binaryid_key",
     signing_salt: "secret"
 
-  plug PowAssent.Test.Phoenix.Plug.Session
+  plug Pow.Plug.Session, otp_app: :pow_assent_web
 
   plug PowAssent.Test.Phoenix.Router
 end

@@ -1,4 +1,4 @@
-defmodule PowAssent.Test.Phoenix.Pow.Routes do
+defmodule PowAssent.Test.Phoenix.Routes do
   @moduledoc false
   use Pow.Phoenix.Routes
 

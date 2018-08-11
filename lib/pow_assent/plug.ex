@@ -19,7 +19,7 @@ defmodule PowAssent.Plug do
 
   @spec callback(Conn.t(), binary(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :missing_user_id_field, map()}, Conn.t()} | {:error, map(), Conn.t()}
   def callback(conn, provider, params) do
-    config          = Keyword.merge(fetch_pow_config(conn), fetch_config(conn))
+    config          = fetch_pow_config(conn)
     provider_config = get_provider_config(conn, provider)
     user            = Pow.Plug.current_user(conn)
     strategy        = provider_config[:strategy]

@@ -10,7 +10,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   setup %{conn: conn} do
     server = Bypass.open()
 
-    Application.put_env(:pow_assent, :pow_assent,
+    Application.put_env(:pow_assent_web, :pow_assent,
       providers: [
         test_provider: [
           client_id: "client_id",
@@ -80,11 +80,14 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback as authentication with email confirmation" do
     setup %{conn: conn} do
-      Application.put_env(:pow_assent_test, :config,
+      config = Application.get_env(:pow_assent_web, :pow)
+      new_config = Keyword.merge(config, [
         user: PowAssent.Test.Ecto.Users.EmailConfirmUser,
-        mailer_backend: PowAssent.Test.Phoenix.MailerMock)
+        mailer_backend: PowAssent.Test.Phoenix.MailerMock])
 
-      on_exit(fn -> Application.put_env(:pow_assent_test, :config, []) end)
+      Application.put_env(:pow_assent_web, :pow, new_config)
+
+      on_exit(fn -> Application.put_env(:pow_assent_web, :pow, config) end)
 
       {:ok, conn: conn}
     end

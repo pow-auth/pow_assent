@@ -71,11 +71,13 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
 
   describe "GET /auth/:provider/create with PowEmailConfirmation" do
     setup %{conn: conn} do
-      Application.put_env(:pow_assent_test, :config,
+      config     = Application.get_env(:pow_assent_web, :pow)
+      new_config = Keyword.merge(config, [
         user: PowAssent.Test.Ecto.Users.EmailConfirmUser,
-        mailer_backend: PowAssent.Test.Phoenix.MailerMock)
+        mailer_backend: PowAssent.Test.Phoenix.MailerMock])
+      Application.put_env(:pow_assent_web, :pow, new_config)
 
-      on_exit(fn -> Application.put_env(:pow_assent_test, :config, []) end)
+      on_exit(fn -> Application.put_env(:pow_assent_web, :pow, config) end)
 
       {:ok, conn: conn}
     end

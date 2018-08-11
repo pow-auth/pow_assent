@@ -2,9 +2,11 @@ defmodule PowAssent.Test.Phoenix.Router do
   @moduledoc false
   use Phoenix.Router
   use Pow.Phoenix.Router
+  use PowAssent.Phoenix.Router
+
+  # For testing email confirmation delivery
   use Pow.Extension.Phoenix.Router,
     extensions: [PowEmailConfirmation]
-  use PowAssent.Phoenix.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -18,7 +20,8 @@ defmodule PowAssent.Test.Phoenix.Router do
     pipe_through :browser
 
     pow_routes()
-    pow_extension_routes()
     pow_assent_routes()
+
+    pow_extension_routes()
   end
 end
