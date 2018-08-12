@@ -31,7 +31,7 @@ defmodule PowAssent.MixProject do
 
   defp deps do
     [
-      {:pow, "~> 0.1.0-alpha.8"},
+      {:pow, "~> 1.0.0-rc.0"},
 
       {:oauth2, "~> 0.9"},
       {:oauther, "~> 1.1"},
@@ -39,8 +39,8 @@ defmodule PowAssent.MixProject do
       {:phoenix_html, "~> 2.11"},
       {:phoenix_ecto, "~> 3.3"},
 
-      {:ecto, "~> 2.2", optional: true},
-      {:phoenix, "~> 1.3", optional: true},
+      {:ecto, "~> 2.2"},
+      {:phoenix, "~> 1.3"},
       {:plug, ">= 1.5.0 and < 1.7.0", optional: true},
 
       {:credo, "~> 0.9.3", only: [:dev, :test]},
