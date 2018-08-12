@@ -29,36 +29,37 @@ defmodule PowAssent.Strategy.OAuth2Test do
     end
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once bypass, "POST", "/oauth/token", fn conn ->
+      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
         send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
-      end
+      end)
 
-      Bypass.expect_once bypass, "GET", "/api/user", fn conn ->
-        assert_access_token_in_header conn, @access_token
+      Bypass.expect_once(bypass, "GET", "/api/user", fn conn ->
+        assert_access_token_in_header(conn, @access_token)
 
         user = %{name: "Dan Schultzer", email: "foo@example.com", uid: "1"}
         Plug.Conn.resp(conn, 200, Poison.encode!(user))
-      end
+      end)
 
       assert {:ok, %{conn: _conn, user: user}} = OAuth2Strategy.callback(config, conn, params)
       assert user == %{"email" => "foo@example.com", "name" => "Dan Schultzer", "uid" => "1"}
     end
 
     test "access token error with 200 response", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once bypass, "POST", "/oauth/token", fn conn ->
+      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
         send_resp(conn, 200, Poison.encode!(%{"error" => "error", "error_description" => "Error description"}))
-      end
+      end)
 
       expected = %PowAssent.RequestError{error: "error", message: "Error description"}
 
       assert {:error, %{conn: _conn, error: error}} = OAuth2Strategy.callback(config, conn, params)
+
       assert error == expected
     end
 
     test "access token error with no 2XX response", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once bypass, "POST", "/oauth/token", fn conn ->
+      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
         send_resp(conn, 500, Poison.encode!(%{error: "Error"}))
-      end
+      end)
 
       expected = %PowAssent.RequestError{error: nil, message: "Error"}
 
@@ -69,9 +70,9 @@ defmodule PowAssent.Strategy.OAuth2Test do
     test "configuration error", %{conn: conn, config: config, params: params, bypass: bypass} do
       config = Keyword.put(config, :user_url, nil)
 
-      Bypass.expect_once bypass, "POST", "/oauth/token", fn conn ->
+      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
         send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
-      end
+      end)
 
       expected = %PowAssent.ConfigurationError{message: "No user URL set"}
 
@@ -82,9 +83,9 @@ defmodule PowAssent.Strategy.OAuth2Test do
     test "user url connection error", %{conn: conn, config: config, params: params, bypass: bypass} do
       config = Keyword.put(config, :user_url, "http://localhost:8888/api/user")
 
-      Bypass.expect_once bypass, "POST", "/oauth/token", fn conn ->
+      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
         send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
-      end
+      end)
 
       expected = %OAuth2.Error{reason: :econnrefused}
 
@@ -93,14 +94,14 @@ defmodule PowAssent.Strategy.OAuth2Test do
     end
 
     test "user url unauthorized access token", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once bypass, "POST", "/oauth/token", fn conn ->
+      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
         send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
-      end
+      end)
 
-      Bypass.expect_once bypass, "GET", "/api/user", fn conn ->
-        assert_access_token_in_header conn, @access_token
+      Bypass.expect_once(bypass, "GET", "/api/user", fn conn ->
+        assert_access_token_in_header(conn, @access_token)
         Plug.Conn.resp(conn, 401, Poison.encode!(%{"error" => "Unauthorized"}))
-      end
+      end)
 
       expected = %PowAssent.RequestError{message: "Unauthorized token"}
 

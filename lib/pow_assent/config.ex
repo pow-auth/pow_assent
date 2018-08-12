@@ -8,7 +8,6 @@ defmodule PowAssent.Config do
     defexception [:message]
   end
 
-
   @spec get_providers(Config.t()) :: Config.t()
   def get_providers(config) do
     Config.get(config, :providers, [])

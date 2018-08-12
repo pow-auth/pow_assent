@@ -54,6 +54,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> put_flash(:info, messages(conn).signed_in(conn))
     |> redirect(to: routes(conn).after_sign_in_path(conn))
   end
+
   @spec respond_callback({:error, {atom(), map()} | map(), Conn.t()}) :: Conn.t()
   def respond_callback({:error, {:bound_to_different_user, _changeset}, conn}) do
     conn

@@ -8,9 +8,9 @@ defmodule PowAssent.MixProject do
       app: :pow_assent,
       version: @version,
       elixir: "~> 1.6",
-      elixirc_paths: elixirc_paths(Mix.env),
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      compilers: [:phoenix] ++ Mix.compilers,
+      compilers: [:phoenix] ++ Mix.compilers(),
       deps: deps(),
 
       # Hex
@@ -48,7 +48,7 @@ defmodule PowAssent.MixProject do
       {:ex_doc, "~> 0.19.0", only: :dev},
 
       {:postgrex, ">= 0.0.0", only: :test},
-      {:bypass, "~> 0.8", only: :test},
+      {:bypass, "~> 0.8", only: :test}
     ]
   end
 
@@ -74,9 +74,9 @@ defmodule PowAssent.MixProject do
         "README.md": [filename: "PowAssent", title: "PowAssent"]
       ],
       groups_for_modules: [
-        "Ecto": ~r/^PowAssent.Ecto/,
-        "Phoenix": ~r/^PowAssent.Phoenix/,
-        "Strategies": ~r/^PowAssent.Strategy/,
+        Ecto: ~r/^PowAssent.Ecto/,
+        Phoenix: ~r/^PowAssent.Phoenix/,
+        Strategies: ~r/^PowAssent.Strategy/
       ]
     ]
   end

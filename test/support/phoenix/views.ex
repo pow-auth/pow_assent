@@ -4,6 +4,7 @@ defmodule PowAssent.Test.Phoenix.LayoutView do
     root: "test/support/phoenix/templates",
     namespace: PowAssent.Test.Phoenix
 end
+
 defmodule PowAssent.Test.Phoenix.ErrorView do
   @moduledoc false
   def render("500.html", _assigns), do: "500.html"

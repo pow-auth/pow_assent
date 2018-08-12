@@ -7,9 +7,8 @@ defmodule PowAssent.Strategy.GithubTest do
   @access_token "access_token"
 
   setup %{conn: conn} do
-    bypass = Bypass.open
-    config = [site: bypass_server(bypass),
-              token_url: "/login/oauth/access_token"]
+    bypass = Bypass.open()
+    config = [site: bypass_server(bypass), token_url: "/login/oauth/access_token"]
 
     {:ok, conn: conn, config: config, bypass: bypass}
   end
@@ -27,12 +26,12 @@ defmodule PowAssent.Strategy.GithubTest do
     end
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once bypass, "POST", "/login/oauth/access_token", fn conn ->
+      Bypass.expect_once(bypass, "POST", "/login/oauth/access_token", fn conn ->
         send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
-      end
+      end)
 
-      Bypass.expect_once bypass, "GET", "/user", fn conn ->
-        assert_access_token_in_header conn, @access_token
+      Bypass.expect_once(bypass, "GET", "/user", fn conn ->
+        assert_access_token_in_header(conn, @access_token)
 
         user = %{
           login: "octocat",
@@ -66,30 +65,33 @@ defmodule PowAssent.Strategy.GithubTest do
           created_at: "2008-01-14T04:33:35Z",
           updated_at: "2008-01-14T04:33:35Z"
         }
-        Plug.Conn.resp(conn, 200, Poison.encode!(user))
-      end
 
-      Bypass.expect_once bypass, "GET", "/user/emails", fn conn ->
-        assert_access_token_in_header conn, @access_token
+        Plug.Conn.resp(conn, 200, Poison.encode!(user))
+      end)
+
+      Bypass.expect_once(bypass, "GET", "/user/emails", fn conn ->
+        assert_access_token_in_header(conn, @access_token)
 
         emails = [
-                    %{
-                      email: "octocat@github.com",
-                      verified: true,
-                      primary: true,
-                      visibility: "public"
-                    }
-                  ]
-        Plug.Conn.resp(conn, 200, Poison.encode!(emails))
-      end
+          %{
+            email: "octocat@github.com",
+            verified: true,
+            primary: true,
+            visibility: "public"
+          }
+        ]
 
-      expected = %{"email" => "octocat@github.com",
-                   "image" => "https://github.com/images/error/octocat_happy.gif",
-                   "name" => "monalisa octocat",
-                   "nickname" => "octocat",
-                   "uid" => "1",
-                   "urls" => %{"Blog" => "https://github.com/blog",
-                               "GitHub" => "https://github.com/octocat"}}
+        Plug.Conn.resp(conn, 200, Poison.encode!(emails))
+      end)
+
+      expected = %{
+        "email" => "octocat@github.com",
+        "image" => "https://github.com/images/error/octocat_happy.gif",
+        "name" => "monalisa octocat",
+        "nickname" => "octocat",
+        "uid" => "1",
+        "urls" => %{"Blog" => "https://github.com/blog", "GitHub" => "https://github.com/octocat"}
+      }
 
       {:ok, %{user: user}} = Github.callback(config, conn, params)
       assert expected == user

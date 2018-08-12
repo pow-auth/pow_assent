@@ -29,7 +29,7 @@ defmodule PowAssent.Strategy.Basecamp do
       authorize_url: "/authorization/new",
       token_url: "/authorization/token",
       user_url: "/authorization.json",
-      authorization_params: [type: "web_server"],
+      authorization_params: [type: "web_server"]
     ]
     |> Keyword.merge(config)
     |> Keyword.put(:strategy, AuthCode)

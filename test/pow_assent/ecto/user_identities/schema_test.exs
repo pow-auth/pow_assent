@@ -2,9 +2,7 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.UserIdentities.Schema
 
-  alias PowAssent.Test.Ecto.{UserIdentities.UserIdentity,
-                             Users.User,
-                             Repo}
+  alias PowAssent.Test.Ecto.{UserIdentities.UserIdentity, Users.User, Repo}
 
   test "pow_user_identity_schema/1" do
     user = %UserIdentity{}
@@ -34,6 +32,7 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
         %UserIdentity{}
         |> UserIdentity.changeset(Map.put(@valid_params, :user_id, 2))
         |> Repo.insert()
+
       assert changeset.errors[:user] == {"does not exist", []}
     end
 
@@ -47,6 +46,7 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
         %UserIdentity{}
         |> UserIdentity.changeset(@valid_params)
         |> Repo.insert()
+
       assert changeset.errors[:uid_provider] == {"has already been taken", []}
     end
   end

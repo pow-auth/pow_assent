@@ -12,7 +12,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Migration do
   def new(context_base, schema_plural, config \\ []) do
     attrs   = Fields.attrs(config)
     indexes = Fields.indexes(config)
-    config  = Keyword.merge(config, [attrs: attrs, indexes: indexes])
+    config  = Keyword.merge(config, attrs: attrs, indexes: indexes)
 
     Migration.new(context_base, schema_plural, config)
   end

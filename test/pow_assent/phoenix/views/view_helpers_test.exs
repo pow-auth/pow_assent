@@ -10,7 +10,9 @@ defmodule PowAssent.ViewHelpersTest do
       providers: [
         test_provider: [
           strategy: TestProvider
-        ]])
+        ]
+      ]
+    )
 
     conn = get(conn, Routes.pow_assent_authorization_path(conn, :new, "test_provider"))
 

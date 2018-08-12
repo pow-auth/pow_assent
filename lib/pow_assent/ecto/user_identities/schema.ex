@@ -38,7 +38,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
       @pow_assent_config unquote(config)
 
       @spec changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
-      def changeset(user_identity_or_changeset, attrs), do: pow_assent_changeset(user_identity_or_changeset, attrs)
+      def changeset(user_identity_or_changeset, attrs),
+        do: pow_assent_changeset(user_identity_or_changeset, attrs)
 
       @spec pow_assent_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
       def pow_assent_changeset(user_identity_or_changeset, attrs) do

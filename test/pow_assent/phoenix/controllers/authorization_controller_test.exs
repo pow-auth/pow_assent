@@ -18,19 +18,20 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
           site: bypass_server(server),
           strategy: TestProvider
         ]
-      ])
+      ]
+    )
 
     {:ok, conn: conn, user: %User{id: 1}, server: server}
   end
 
   defp bypass_oauth(server, token_params \\ %{}, user_params \\ %{}) do
-    Bypass.expect_once server, "POST", "/oauth/token", fn conn ->
+    Bypass.expect_once(server, "POST", "/oauth/token", fn conn ->
       send_resp(conn, 200, Poison.encode!(Map.merge(%{access_token: "access_token"}, token_params)))
-    end
+    end)
 
-    Bypass.expect_once server, "GET", "/api/user", fn conn ->
+    Bypass.expect_once(server, "GET", "/api/user", fn conn ->
       send_resp(conn, 200, Poison.encode!(Map.merge(%{uid: "1", name: "Dan Schultzer"}, user_params)))
-    end
+    end)
   end
 
   describe "GET /auth/:provider/new" do
@@ -85,6 +86,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       bypass_oauth(server, %{}, %{uid: "user-missing-email-confirmation"})
 
       conn = Phoenix.ConnTest.dispatch conn, PowAssent.Test.Phoenix.MailerEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+
       refute Pow.Plug.current_user(conn)
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
@@ -138,9 +140,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback" do
     test "with failed token generation", %{conn: conn, server: server} do
-      Bypass.expect_once server, "POST",  "/oauth/token", fn conn ->
+      Bypass.expect_once(server, "POST", "/oauth/token", fn conn ->
         send_resp(conn, 401, Poison.encode!(%{error: "invalid_client"}))
-      end
+      end)
 
       assert_raise PowAssent.RequestError, "invalid_client", fn ->
         get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
@@ -208,7 +210,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
 
     test "with current_user session without provider", %{conn: conn, user: user} do
-      conn = conn
+      conn =
+        conn
         |> Pow.Plug.assign_current_user(user, [])
         |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
 

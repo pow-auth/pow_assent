@@ -1,17 +1,19 @@
-module_raised_with = try do
-  defmodule Pow.Test.Extension.Ecto.Schema.IvalidIdentity do
-    use Ecto.Schema
-    use PowAssent.Ecto.UserIdentities.Schema
+module_raised_with =
+  try do
+    defmodule Pow.Test.Extension.Ecto.Schema.IvalidIdentity do
+      use Ecto.Schema
+      use PowAssent.Ecto.UserIdentities.Schema
 
-    schema "user_identities" do
-      pow_user_identity_schema()
+      schema "user_identities" do
+        pow_user_identity_schema()
 
-      timestamps(updated_at: false)
+        timestamps(updated_at: false)
+      end
     end
+  rescue
+    e in Pow.Config.ConfigError -> e.message
   end
-rescue
-  e in Pow.Config.ConfigError -> e.message
-end
+
 defmodule PowAssent.Ecto.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.Schema
@@ -63,9 +65,11 @@ defmodule PowAssent.Ecto.SchemaTest do
       refute changeset.changes[:email_confirmed_at]
 
       changeset = EmailConfirmUser.user_identity_changeset(%EmailConfirmUser{}, @user_identity, %{email: "test@example.com"}, %{})
+
       assert changeset.changes[:email_confirmed_at]
 
       changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com"}, %{})
+
       refute changeset.changes[:email_confirmed_at]
     end
   end

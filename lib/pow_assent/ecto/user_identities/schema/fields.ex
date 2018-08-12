@@ -8,9 +8,11 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Fields do
   def attrs(config) do
     users_table = Config.get(config, :users_table, "users")
 
-    [{:user_id, {:references, users_table}},
-     {:provider, :string, null: false},
-     {:uid, :string, null: false}]
+    [
+      {:user_id, {:references, users_table}},
+      {:provider, :string, null: false},
+      {:uid, :string, null: false}
+    ]
   end
 
   @spec indexes(Config.t()) :: [tuple()]

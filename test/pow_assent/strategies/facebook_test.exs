@@ -7,7 +7,7 @@ defmodule PowAssent.Strategy.FacebookTest do
   @access_token "access_token"
 
   setup %{conn: conn} do
-    bypass = Bypass.open
+    bypass = Bypass.open()
     config = [site: bypass_server(bypass)]
 
     {:ok, conn: conn, config: config, bypass: bypass}
@@ -27,35 +27,37 @@ defmodule PowAssent.Strategy.FacebookTest do
     end
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once bypass, "POST", "/oauth/access_token", fn conn ->
+      Bypass.expect_once(bypass, "POST", "/oauth/access_token", fn conn ->
         assert {:ok, body, _conn} = Plug.Conn.read_body(conn)
         assert body =~ "scope=email"
         assert body =~ "redirect_uri=test"
 
         send_resp(conn, 200, Poison.encode!(%{"access_token" => @access_token}))
-      end
+      end)
 
-      Bypass.expect_once bypass, "GET", "/me", fn conn ->
-        assert_access_token_in_header conn, @access_token
+      Bypass.expect_once(bypass, "GET", "/me", fn conn ->
+        assert_access_token_in_header(conn, @access_token)
 
         conn = Plug.Conn.fetch_query_params(conn)
 
         assert conn.params["fields"] == "name,email"
-        assert conn.params["appsecret_proof"] == Base.encode16(:crypto.hmac(:sha256, "", @access_token), case: :lower)
 
-        user = %{name: "Dan Schultzer",
-                 email: "foo@example.com",
-                 id: "1"}
+        assert conn.params["appsecret_proof"] ==
+                 Base.encode16(:crypto.hmac(:sha256, "", @access_token), case: :lower)
+
+        user = %{name: "Dan Schultzer", email: "foo@example.com", id: "1"}
         Plug.Conn.resp(conn, 200, Poison.encode!(user))
-      end
+      end)
 
-      expected = %{"email" => "foo@example.com",
-                   "image" => "http://localhost:#{bypass.port}/1/picture",
-                   "name" => "Dan Schultzer",
-                   "uid" => "1",
-                   "urls" => %{}}
+      expected = %{
+        "email" => "foo@example.com",
+        "image" => "http://localhost:#{bypass.port}/1/picture",
+        "name" => "Dan Schultzer",
+        "uid" => "1",
+        "urls" => %{}
+      }
 
-     {:ok, %{user: user}} = Facebook.callback(config, conn, params)
+      {:ok, %{user: user}} = Facebook.callback(config, conn, params)
       assert expected == user
     end
   end

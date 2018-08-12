@@ -7,9 +7,16 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   require Ecto.Query
 
   @callback get_user_by_provider_id(Config.t(), binary(), binary()) :: user() | nil
-  @callback create(Config.t(), binary(), binary(), map(), user()) :: {:ok, user()} | {:error, {:bound_to_different_user, map()}} | {:error, Changeset.t()}
-  @callback create_user(Config.t(), binary(), binary(), map(), map()) :: {:ok, map()} | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
-  @callback delete(Config.t(), user(), binary()) :: {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
+  @callback create(Config.t(), binary(), binary(), map(), user()) ::
+              {:ok, user()}
+              | {:error, {:bound_to_different_user, map()}}
+              | {:error, Changeset.t()}
+  @callback create_user(Config.t(), binary(), binary(), map(), map()) ::
+              {:ok, map()}
+              | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}}
+              | {:error, Changeset.t()}
+  @callback delete(Config.t(), user(), binary()) ::
+              {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
   @callback all(Config.t(), user()) :: [map()]
 
   @type user :: map()
@@ -72,7 +79,8 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     end
   end
 
-  @spec delete(Config.t(), user(), binary()) :: {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
+  @spec delete(Config.t(), user(), binary()) ::
+          {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
   def delete(config, user, provider) do
     repo = repo(config)
     user = repo.preload(user, :user_identities, force: true)
