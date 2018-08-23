@@ -10,35 +10,16 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   setup %{conn: conn} do
     server = Bypass.open()
 
-    Application.put_env(:pow_assent_web, :pow_assent,
-      providers: [
-        test_provider: [
-          client_id: "client_id",
-          client_secret: "abc123",
-          site: bypass_server(server),
-          strategy: TestProvider
-        ]
-      ]
-    )
+    setup_strategy_env(server)
 
     {:ok, conn: conn, user: %User{id: 1}, server: server}
-  end
-
-  defp bypass_oauth(server, token_params \\ %{}, user_params \\ %{}) do
-    Bypass.expect_once(server, "POST", "/oauth/token", fn conn ->
-      send_resp(conn, 200, Poison.encode!(Map.merge(%{access_token: "access_token"}, token_params)))
-    end)
-
-    Bypass.expect_once(server, "GET", "/api/user", fn conn ->
-      send_resp(conn, 200, Poison.encode!(Map.merge(%{uid: "1", name: "Dan Schultzer"}, user_params)))
-    end)
   end
 
   describe "GET /auth/:provider/new" do
     test "redirects to authorization url", %{conn: conn, server: server} do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider)
 
-      assert redirected_to(conn) =~ "http://localhost:#{server.port}/oauth/authorize?client_id=client_id&redirect_uri=http%3A%2F%2Flocalhost%2Fauth%2Ftest_provider%2Fcallback&response_type=code&state="
+      assert redirected_to(conn) =~ "#{bypass_server(server)}/oauth/authorize?client_id=client_id&redirect_uri=http%3A%2F%2Flocalhost%2Fauth%2Ftest_provider%2Fcallback&response_type=code&state="
     end
   end
 
@@ -81,7 +62,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback as authentication with email confirmation" do
     test "with missing e-mail confirmation", %{conn: conn, server: server} do
-      Application.put_env(:pow_assent_mailer_web, :pow_assent, Application.get_env(:pow_assent_web, :pow_assent))
+      Application.put_env(:pow_assent_mailer, :pow_assent, Application.get_env(:pow_assent, :pow_assent))
 
       bypass_oauth(server, %{}, %{uid: "user-missing-email-confirmation"})
 

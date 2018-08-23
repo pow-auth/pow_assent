@@ -1,18 +1,17 @@
 defmodule PowAssent.Phoenix.ViewHelpers do
   @moduledoc """
   View helpers to render authorization links.
-
-  ## Usage
-
-      ViewHelpers.provider_links(conn)
   """
-
   alias PowAssent.Plug
 
+  alias Phoenix.{HTML, HTML.Link}
   alias Pow.Phoenix.Controller
   alias PowAssent.Phoenix.RegistrationController
-  alias Phoenix.{HTML, HTML.Link}
 
+  @doc """
+  Generates list of provider links.
+  """
+  @spec provider_links(Conn.t()) :: [HTML.safe()]
   def provider_links(conn) do
     providers_for_user = Plug.providers_for_current_user(conn)
 
@@ -21,6 +20,12 @@ defmodule PowAssent.Phoenix.ViewHelpers do
     |> Enum.map(&provider_link(conn, &1, providers_for_user))
   end
 
+  @doc """
+  Generates a provider link.
+
+  If the user is signed in, and has a provider, it'll link to removal of the
+  provider authorization.
+  """
   @spec provider_link(Conn.t(), atom(), [atom()]) :: HTML.safe()
   def provider_link(conn, provider, providers_for_user) do
     case Enum.member?(providers_for_user, provider) do

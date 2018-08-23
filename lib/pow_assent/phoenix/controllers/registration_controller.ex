@@ -3,9 +3,9 @@ defmodule PowAssent.Phoenix.RegistrationController do
   use Pow.Extension.Phoenix.Controller.Base,
     messages_backend_fallback: PowAssent.Phoenix.Messages
 
-  alias PowEmailConfirmation.Phoenix.ControllerCallbacks
   alias Plug.Conn
   alias PowAssent.Plug
+  alias PowEmailConfirmation.Phoenix.ControllerCallbacks
 
   plug :load_params_from_session
   plug :assign_create_path

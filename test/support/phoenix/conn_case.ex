@@ -1,8 +1,8 @@
 defmodule PowAssent.Test.Phoenix.ConnCase do
   @moduledoc false
   use ExUnit.CaseTemplate
-  alias PowAssent.Test.Phoenix.{Endpoint, Router}
   alias Phoenix.ConnTest
+  alias PowAssent.Test.Phoenix.{Endpoint, Router}
 
   using do
     quote do

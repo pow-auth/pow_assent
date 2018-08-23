@@ -2,6 +2,9 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @moduledoc """
   Handles the Ecto schema for user identity.
 
+  A default `changeset/2` method is created, but can be overridden with a
+  custom `changeset/2` method.
+
   ## Usage
 
   Configure `lib/my_project/user_identities/user_identity.ex` the following way:
@@ -21,12 +24,17 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
           pow_assent_changeset(user_identity_or_changeset, attrs)
         end
       end
+
+  ## Configuration options
+
+    * `:user` - the user schema module to use in the `belongs_to` association.
   """
   alias Ecto.Changeset
   alias Pow.Config
 
   @callback changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
 
+  @doc false
   defmacro __using__(config) do
     user_mod = Config.get(config, :user, nil) || raise_no_user_error()
 
@@ -50,8 +58,11 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
     end
   end
 
+  @doc """
+  Macro for adding user identity schema fields.
+  """
   @spec pow_user_identity_schema :: Macro.t()
-  defmacro pow_user_identity_schema() do
+  defmacro pow_user_identity_schema do
     quote do
       belongs_to :user, @pow_user_mod
 
@@ -61,6 +72,9 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
     end
   end
 
+  @doc """
+  Validates a user identity.
+  """
   def changeset(_config, user_identity_or_changeset, params) do
     user_identity_or_changeset
     |> Changeset.cast(params, [:provider, :uid, :user_id])

@@ -18,7 +18,7 @@ defmodule PowAssent.Ecto.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.Schema
 
-  alias PowAssent.Test.Ecto.{Users.EmailConfirmUser, Users.User, Repo}
+  alias PowAssent.Test.Ecto.{Repo, Users.EmailConfirmUser, Users.User}
 
   test "user_schema/1" do
     user = %User{}

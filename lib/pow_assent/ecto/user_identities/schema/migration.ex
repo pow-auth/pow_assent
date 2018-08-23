@@ -2,8 +2,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Migration do
   @moduledoc """
   Generates schema migration content.
   """
-  alias PowAssent.Ecto.UserIdentities.Schema.Fields
   alias Pow.Ecto.Schema.Migration
+  alias PowAssent.Ecto.UserIdentities.Schema.Fields
 
   @doc """
   Generates migration schema map.

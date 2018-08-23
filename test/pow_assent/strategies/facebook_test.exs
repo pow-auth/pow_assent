@@ -51,7 +51,7 @@ defmodule PowAssent.Strategy.FacebookTest do
 
       expected = %{
         "email" => "foo@example.com",
-        "image" => "http://localhost:#{bypass.port}/1/picture",
+        "image" => "#{bypass_server(bypass)}/1/picture",
         "name" => "Dan Schultzer",
         "uid" => "1",
         "urls" => %{}

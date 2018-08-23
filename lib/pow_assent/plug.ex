@@ -1,8 +1,15 @@
 defmodule PowAssent.Plug do
-  @moduledoc false
+  @moduledoc """
+  Authorization methods for Plug.
+  """
   alias Plug.Conn
   alias PowAssent.{Config, Operations}
 
+  @doc """
+  Calls the authentication method for the strategy provider.
+
+  A generated redirection URL will be returned.
+  """
   @spec authenticate(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | no_return
   def authenticate(conn, provider, callback_url) do
     provider_config = get_provider_config(conn, provider)
@@ -17,6 +24,14 @@ defmodule PowAssent.Plug do
     end
   end
 
+  @doc """
+  Calls the callback method for the strategy provider.
+
+  A user will be created if a user doesn't already exists in connection or for
+  the associated user identity. If a matching user identity association doesn't
+  exist for the current user, a new user identity is created. Otherwise user is
+  authenticated.
+  """
   @spec callback(Conn.t(), binary(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :missing_user_id_field, map()}, Conn.t()} | {:error, map(), Conn.t()}
   def callback(conn, provider, params) do
     config          = fetch_pow_config(conn)
@@ -74,6 +89,9 @@ defmodule PowAssent.Plug do
     end
   end
 
+  @doc """
+  Create a user with user identity.
+  """
   @spec create_user(Conn.t(), binary(), map(), map()) :: {:ok, map(), Conn.t()} | {:error, map(), Conn.t()}
   def create_user(conn, provider, params, user_id_params) do
     config = fetch_pow_config(conn)
@@ -87,6 +105,9 @@ defmodule PowAssent.Plug do
     end
   end
 
+  @doc """
+  Deletes the associated user identity for the current user and strategy.
+  """
   @spec delete_identity(Conn.t(), binary()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
   def delete_identity(conn, provider) do
     config = fetch_pow_config(conn)
@@ -103,6 +124,9 @@ defmodule PowAssent.Plug do
     end
   end
 
+  @doc """
+  Lists associated strategy providers for the user.
+  """
   @spec providers_for_current_user(Conn.t()) :: [atom()]
   def providers_for_current_user(conn) do
     config = fetch_pow_config(conn)
@@ -116,6 +140,9 @@ defmodule PowAssent.Plug do
     |> Enum.map(&String.to_atom(&1.provider))
   end
 
+  @doc """
+  Lists available strategy providers for connection.
+  """
   @spec available_providers(Conn.t()) :: [atom()]
   def available_providers(conn) do
     conn

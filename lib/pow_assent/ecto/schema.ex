@@ -42,6 +42,7 @@ defmodule PowAssent.Ecto.Schema do
 
   @callback user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map()) :: Changeset.t()
 
+  @doc false
   defmacro __using__(_config) do
     quote do
       @behaviour unquote(__MODULE__)
@@ -58,6 +59,12 @@ defmodule PowAssent.Ecto.Schema do
     end
   end
 
+  @doc """
+  Changeset for creating or updating users with a user identity.
+
+  Only `Pow.Ecto.Schema.Changeset.user_id_field_changeset/3` is used for
+  validation as password is not required.
+  """
   @spec changeset(Config.t(), Schema.t() | Changeset.t(), Schema.t(), map(), map()) :: Changeset.t()
   def changeset(_config, user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset

@@ -1,9 +1,9 @@
 defmodule PowAssent.Phoenix.Messages do
   @moduledoc false
 
-  alias PowAssent.Phoenix.Messages
-  alias Plug.Conn
   alias Phoenix.Naming
+  alias Plug.Conn
+  alias PowAssent.Phoenix.Messages
 
   @type message :: Messages.message()
 

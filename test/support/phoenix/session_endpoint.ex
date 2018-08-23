@@ -2,7 +2,7 @@ defmodule PowAssent.Test.Phoenix.SessionEndpoint do
   defmacro __using__(session_config) do
     quote do
       @moduledoc false
-      use Phoenix.Endpoint, otp_app: :pow_assent_web
+      use Phoenix.Endpoint, otp_app: :pow_assent
 
       plug Plug.RequestId
       plug Plug.Logger

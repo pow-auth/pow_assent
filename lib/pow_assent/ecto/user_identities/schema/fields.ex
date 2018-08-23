@@ -4,6 +4,13 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Fields do
   """
   alias Pow.Config
 
+  @doc """
+  List of attributes for the ecto schema.
+
+  ## Configuration options
+
+    * `:users_table` - users table, defaults to "users".
+  """
   @spec attrs(Config.t()) :: [tuple()]
   def attrs(config) do
     users_table = Config.get(config, :users_table, "users")
@@ -15,6 +22,9 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Fields do
     ]
   end
 
+  @doc """
+  List of indexes for the ecto schema.
+  """
   @spec indexes(Config.t()) :: [tuple()]
   def indexes(_config) do
     [{[:uid, :provider], true}]

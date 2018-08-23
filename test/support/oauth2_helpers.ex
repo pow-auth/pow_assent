@@ -21,4 +21,29 @@ defmodule OAuth2.TestHelpers do
         ExUnit.Assertions.flunk("No bearer token found in headers")
     end
   end
+
+  @spec setup_strategy_env(%Bypass{}) :: :ok
+  def setup_strategy_env(server) do
+    Application.put_env(:pow_assent, :pow_assent,
+      providers: [
+        test_provider: [
+          client_id: "client_id",
+          client_secret: "abc123",
+          site: bypass_server(server),
+          strategy: TestProvider
+        ]
+      ]
+    )
+  end
+
+  @spec bypass_oauth(%Bypass{}, map(), map()) :: :ok
+  def bypass_oauth(server, token_params \\ %{}, user_params \\ %{}) do
+    Bypass.expect_once(server, "POST", "/oauth/token", fn conn ->
+      Plug.Conn.send_resp(conn, 200, Poison.encode!(Map.merge(%{access_token: "access_token"}, token_params)))
+    end)
+
+    Bypass.expect_once(server, "GET", "/api/user", fn conn ->
+      Plug.Conn.send_resp(conn, 200, Poison.encode!(Map.merge(%{uid: "1", name: "Dan Schultzer"}, user_params)))
+    end)
+  end
 end

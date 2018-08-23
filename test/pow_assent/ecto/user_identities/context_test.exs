@@ -3,8 +3,8 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
   doctest PowAssent.Ecto.UserIdentities.Context
 
   alias Ecto.Changeset
-  alias PowAssent.Test.Ecto.{Users.User, Repo}
   alias PowAssent.Ecto.UserIdentities.Context
+  alias PowAssent.Test.Ecto.{Repo, Users.User}
 
   @config [repo: Repo, user: User]
 

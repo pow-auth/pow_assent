@@ -1,27 +1,102 @@
 defmodule PowAssent.Ecto.UserIdentities.Context do
   @moduledoc """
-  Handles pow user identity context for user identities.
+  Handles pow assent user identity context for user identities.
+
+  ## Usage
+
+  This module will be used by PowAssent by default. If you wish to have control
+  over context methods, you can do configure
+  `lib/my_project/user_identities/user_identities.ex` the following way:
+
+      defmodule MyApp.UserIdentities do
+        use PowAssent.Ecto.UserIdentities.Context,
+          repo: MyApp.Repo,
+          user: MyApp.Users.User
+
+        def all(user) do
+          pow_assent_all(user)
+        end
+      end
+
+  Remember to update configuration with `users_context: MyApp.Users`.
+
+  The following Pow methods can be accessed:
+
+    * `pow_assent_get_user_by_provider_id/3`
+    * `pow_assent_create/4`
+    * `pow_assent_create_user/4`
+    * `pow_assent_delete/2`
+    * `pow_assent_all/1`
+
+  ## Configuration options
+
+    * `:repo` - the ecto repo module (required)
+    * `:user` - the user schema module (required)
   """
   alias Ecto.Changeset
   alias Pow.Config
   require Ecto.Query
 
-  @callback get_user_by_provider_id(Config.t(), binary(), binary()) :: user() | nil
-  @callback create(Config.t(), binary(), binary(), map(), user()) ::
-              {:ok, user()}
-              | {:error, {:bound_to_different_user, map()}}
-              | {:error, Changeset.t()}
-  @callback create_user(Config.t(), binary(), binary(), map(), map()) ::
-              {:ok, map()}
-              | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}}
-              | {:error, Changeset.t()}
-  @callback delete(Config.t(), user(), binary()) ::
-              {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
-  @callback all(Config.t(), user()) :: [map()]
-
   @type user :: map()
   @type user_identity :: map()
 
+  @callback get_user_by_provider_uid(binary(), binary()) :: user() | nil
+  @callback create(user(), binary(), binary()) ::
+              {:ok, user()}
+              | {:error, {:bound_to_different_user, map()}}
+              | {:error, Changeset.t()}
+  @callback create_user(binary(), binary(), map(), map()) ::
+              {:ok, map()}
+              | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}}
+              | {:error, Changeset.t()}
+  @callback delete(user(), binary()) ::
+              {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
+  @callback all(user()) :: [map()]
+
+  @doc false
+  defmacro __using__(config) do
+    quote do
+      @behaviour unquote(__MODULE__)
+
+      @pow_config unquote(config)
+
+      def get_user_by_provider_uid(provider, uid),
+        do: pow_assent_get_user_by_provider_uid(provider, uid)
+      def create(user, provider, uid), do: pow_assent_create(user, provider, uid)
+      def create_user(provider, uid, params, user_id_params),
+        do: pow_assent_create_user(provider, uid, params, user_id_params)
+      def delete(user, provider), do: pow_assent_delete(user, provider)
+      def all(user), do: pow_assent_all(user)
+
+      def pow_assent_get_user_by_provider_uid(provider, uid) do
+        unquote(__MODULE__).get_user_by_provider_uid(@pow_config, provider, uid)
+      end
+
+      def pow_assent_create(user, provider, uid) do
+        unquote(__MODULE__).create(@pow_config, user, provider, uid)
+      end
+
+      def pow_assent_create_user(provider, uid, params, user_id_params) do
+        unquote(__MODULE__).create_user(@pow_config, provider, uid, params, user_id_params)
+      end
+
+      def pow_assent_delete(user, provider) do
+        unquote(__MODULE__).delete(@pow_config, user, provider)
+      end
+
+      def pow_assent_all(user) do
+        unquote(__MODULE__).all(@pow_config, user)
+      end
+
+      defoverridable unquote(__MODULE__)
+    end
+  end
+
+  @doc """
+  Finds a user based on the provider and uid.
+
+  User schema module and repo module will be fetched from the config.
+  """
   @spec get_user_by_provider_uid(Config.t(), binary(), binary()) :: user() | nil
   def get_user_by_provider_uid(config, provider, uid) do
     repo   = repo(config)
@@ -36,6 +111,11 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     end
   end
 
+  @doc """
+  Creates a user identity.
+
+  User schema module and repo module will be fetched from config.
+  """
   @spec create(Config.t(), user(), binary(), binary()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, map()}} | {:error, Changeset.t()}
   def create(config, user, provider, uid) do
     repo            = repo(config)
@@ -53,6 +133,11 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     end
   end
 
+  @doc """
+  Creates a user with user identity.
+
+  User schema module and repo module will be fetched from config.
+  """
   @spec create_user(Config.t(), binary(), binary(), map(), map()) :: {:ok, map()} | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
   def create_user(config, provider, uid, params, user_id_params \\ %{}) do
     repo          = repo(config)
@@ -79,6 +164,11 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     end
   end
 
+  @doc """
+  Deletes a user identity for the provider and user.
+
+  User schema module and repo module will be fetched from config.
+  """
   @spec delete(Config.t(), user(), binary()) ::
           {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
   def delete(config, user, provider) do
@@ -108,6 +198,11 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     {:error, {:no_password, changeset}}
   end
 
+  @doc """
+  Fetches all user identities for user.
+
+  User schema module and repo module will be fetched from config.
+  """
   @spec all(Config.t(), user()) :: [map()]
   def all(config, user) do
     repo   = repo(config)

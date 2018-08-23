@@ -1,22 +1,48 @@
 defmodule PowAssent.Phoenix.Router do
+  @moduledoc """
+  Handles Phoenix routing for PowAssent.
+
+  ## Usage
+
+  Configure `lib/my_project_web/router.ex` the following way:
+
+      defmodule MyAppWeb.Router do
+        use MyAppWeb, :router
+        use Pow.Phoenix.Router
+        use PowAssent.Phoenix.Router
+
+        # ...
+
+        scope "/" do
+          pipe_through :browser
+
+          pow_routes()
+          pow_assent_routes()
+        end
+
+        # ...
+      end
+  """
   defmacro __using__(_opts \\ []) do
     quote do
       import unquote(__MODULE__), only: [pow_assent_routes: 0]
     end
   end
 
+  @doc """
+  PowAssent router macro.
+
+  Use this macro to define the PowAssent routes.
+
+  ## Example
+
+      scope "/" do
+        pow_assent_routes()
+      end
+  """
   defmacro pow_assent_routes do
     quote location: :keep do
-      scope "/", PowAssent.Phoenix, as: "pow_assent" do
-        unquote(__MODULE__.routes())
-      end
-    end
-  end
-
-  @moduledoc false
-  def routes(_config \\ []) do
-    quote location: :keep do
-      scope "/auth" do
+      scope "/auth", PowAssent.Phoenix, as: "pow_assent" do
         resources "/:provider", AuthorizationController, singleton: true, only: [:new, :delete]
         get "/:provider/callback", AuthorizationController, :callback
 

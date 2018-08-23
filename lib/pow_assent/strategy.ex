@@ -1,5 +1,23 @@
 defmodule PowAssent.Strategy do
-  @moduledoc false
+  @moduledoc """
+  Used for creating strategies.
+
+  ## Usage
+
+  Set up `my_strategy.ex` the following way:
+
+      defmodule MyStrategy do
+        use PowAssent.Strategy
+
+        def authorize_url(config, conn) do
+          # generate authorization url
+        end
+
+        def callback(config, conn, params) do
+          # return normalized user params map
+        end
+      end
+  """
   alias Plug.Conn
 
   @callback authorize_url(Keyword.t(), Conn.t()) ::
@@ -9,6 +27,7 @@ defmodule PowAssent.Strategy do
               {:ok, %{:conn => Conn.t(), :user => map(), optional(atom()) => any()}}
               | {:error, %{conn: Conn.t(), error: any()}}
 
+  @doc false
   defmacro __using__(_opts) do
     quote do
       @behaviour unquote(__MODULE__)
@@ -18,6 +37,9 @@ defmodule PowAssent.Strategy do
     end
   end
 
+  @doc """
+  Recursively prunes map for nil values.
+  """
   @spec prune(map) :: map
   def prune(map) do
     map

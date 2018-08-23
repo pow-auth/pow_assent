@@ -102,7 +102,7 @@ Strategies for Twitter, Facebook, Google, Github and Basecamp are included. We'l
 First, register [a new app on Github](https://github.com/settings/applications/new) and add `http://localhost:4000/auth/github/callback` as callback URL. Then add the following to `config/config.exs` and add the client id and client secret:
 
 ```elixir
-config :my_app_web, :pow_assent,
+config :my_app, :pow_assent,
   providers:
        [
          github: [
