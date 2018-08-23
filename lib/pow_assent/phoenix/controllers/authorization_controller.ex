@@ -11,7 +11,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   plug :load_state_from_session when action in [:callback]
   plug :assign_callback_url when action in [:new, :callback]
 
-  @spec process_new(Conn.t(), map()) :: {:ok, binary(), Conn.t()} | no_return
+  @spec process_new(Conn.t(), map()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
   def process_new(conn, %{"provider" => provider}) do
     Plug.authenticate(conn, provider, conn.assigns.callback_url)
   end
@@ -22,6 +22,8 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> maybe_set_state()
     |> redirect(external: url)
   end
+  @spec respond_new({:error, any(), Conn.t()}) :: Conn.t()
+  def respond_new({:error, error, _conn}), do: handle_strategy_error(error)
 
   defp maybe_set_state(%{private: %{pow_assent_state: state}} = conn) do
     Conn.put_session(conn, "pow_assent_state", state)
@@ -66,6 +68,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> put_session("pow_assent_params", conn.private[:pow_assent_params])
     |> redirect(to: router_helpers(conn).pow_assent_registration_path(conn, :add_user_id, conn.params["provider"]))
   end
+  def respond_callback({:error, {:strategy, error}, _conn}), do: handle_strategy_error(error)
   def respond_callback({:error, _error, conn}) do
     conn
     |> put_flash(:error, messages(conn).could_not_sign_in(conn))
@@ -106,4 +109,6 @@ defmodule PowAssent.Phoenix.AuthorizationController do
 
     assign(conn, :callback_url, url)
   end
+
+  defp handle_strategy_error(error), do: raise error
 end

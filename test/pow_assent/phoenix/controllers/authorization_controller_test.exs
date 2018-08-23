@@ -21,6 +21,14 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) =~ "#{bypass_server(server)}/oauth/authorize?client_id=client_id&redirect_uri=http%3A%2F%2Flocalhost%2Fauth%2Ftest_provider%2Fcallback&response_type=code&state="
     end
+
+    test "wtth error", %{conn: conn} do
+      assert_raise RuntimeError, "fail", fn ->
+        conn
+        |> Plug.Conn.put_private(:fail_authorize_url, true)
+        |> get(Routes.pow_assent_authorization_path(conn, :new, @provider))
+      end
+    end
   end
 
   describe "GET /auth/:provider/callback with current user session" do

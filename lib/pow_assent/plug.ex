@@ -10,7 +10,7 @@ defmodule PowAssent.Plug do
 
   A generated redirection URL will be returned.
   """
-  @spec authenticate(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | no_return
+  @spec authenticate(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error. any(), Conn.t()}
   def authenticate(conn, provider, callback_url) do
     provider_config = get_provider_config(conn, provider)
     strategy        = provider_config[:strategy]
@@ -19,8 +19,8 @@ defmodule PowAssent.Plug do
     |> Pow.Config.put(:redirect_uri, callback_url)
     |> strategy.authorize_url(conn)
     |> case do
-      {:ok, %{url: url, conn: conn}} -> {:ok, url, conn}
-      {:error, error}                -> raise error
+      {:ok, %{url: url, conn: conn}}        -> {:ok, url, conn}
+      {:error, %{conn: conn, error: error}} -> {:error, error, conn}
     end
   end
 
@@ -32,7 +32,10 @@ defmodule PowAssent.Plug do
   exist for the current user, a new user identity is created. Otherwise user is
   authenticated.
   """
-  @spec callback(Conn.t(), binary(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :missing_user_id_field, map()}, Conn.t()} | {:error, map(), Conn.t()}
+  @spec callback(Conn.t(), binary(), map()) :: {:ok, map(), Conn.t()} |
+                                               {:error, {:bound_to_different_user | :missing_user_id_field, map()}, Conn.t()} |
+                                               {:error, {:strategy, any()}, Conn.t()} |
+                                               {:error, map(), Conn.t()}
   def callback(conn, provider, params) do
     config          = fetch_pow_config(conn)
     provider_config = get_provider_config(conn, provider)
@@ -50,8 +53,8 @@ defmodule PowAssent.Plug do
 
     {:ok, conn}
   end
-  defp parse_callback_response({:error, %{error: error}}) do
-    {:error, error}
+  defp parse_callback_response({:error, %{error: error, conn: conn}}) do
+    {:error, {:strategy, error}, conn}
   end
 
   defp get_or_create_by_identity({:ok, conn}, provider, config, nil) do
@@ -73,11 +76,11 @@ defmodule PowAssent.Plug do
     |> Operations.create(user, provider, uid)
     |> case do
       {:ok, _user_identy} -> {:ok, user, conn}
-      {:error, error}     -> {:error, error, conn}
+      {:error, changeset} -> {:error, changeset, conn}
     end
   end
-  defp get_or_create_by_identity({:error, error}, _provider, _config, _user) do
-    raise error
+  defp get_or_create_by_identity({:error, error, conn}, _provider, _config, _user) do
+    {:error, error, conn}
   end
 
   defp create_identity(conn, provider, uid, user, config) do
@@ -116,11 +119,8 @@ defmodule PowAssent.Plug do
     config
     |> Operations.delete(user, provider)
     |> case do
-      {:ok, user} ->
-        {:ok, user, conn}
-
-      {:error, error} ->
-        {:error, error, conn}
+      {:ok, results}  -> {:ok, results, conn}
+      {:error, error} -> {:error, error, conn}
     end
   end
 
@@ -133,12 +133,12 @@ defmodule PowAssent.Plug do
 
     conn
     |> Pow.Plug.current_user()
-    |> case do
-      nil  -> []
-      user -> Operations.all(config, user)
-    end
+    |> get_all_providers_for_user(config)
     |> Enum.map(&String.to_atom(&1.provider))
   end
+
+  defp get_all_providers_for_user(nil, _config), do: []
+  defp get_all_providers_for_user(user, config), do: Operations.all(config, user)
 
   @doc """
   Lists available strategy providers for connection.

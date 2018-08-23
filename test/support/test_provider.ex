@@ -5,9 +5,15 @@ defmodule TestProvider do
   alias PowAssent.Strategy.OAuth2, as: OAuth2Helper
 
   def authorize_url(config, conn) do
-    config
-    |> set_config()
-    |> OAuth2Helper.authorize_url(conn)
+    case conn.private[:fail_authorize_url] do
+      true ->
+        {:error, %{error: "fail", conn: conn}}
+
+      _ ->
+        config
+        |> set_config()
+        |> OAuth2Helper.authorize_url(conn)
+    end
   end
 
   def callback(config, conn, params) do
