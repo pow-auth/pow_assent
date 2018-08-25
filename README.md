@@ -2,11 +2,11 @@
 
 [![Build Status](https://travis-ci.org/danschultzer/pow_assent.svg?branch=master)](https://travis-ci.org/danschultzer/pow_assent) [![hex.pm](http://img.shields.io/hexpm/v/pow_assent.svg?style=flat)](https://hex.pm/packages/pow_assent)
 
-Use Google, Github, Twitter, Facebook, Basecamp, VK or add your own strategy for authorization to your Pow Phoenix app.
+Use Google, Github, Twitter, Facebook, Basecamp, VK or add your custom strategy for authorization to your Pow enabled Phoenix app.
 
 ## Features
 
-* Collects required user id field if missing user id from provider
+* Collects required user id field from the user if the user id is missing from the provider
 * Multiple providers can be used for accounts
   * When removing auth: Validates user has password or another provider authentication
 * Github, Google, Twitter, Facebook, Basecamp and VK strategies included
@@ -33,7 +33,7 @@ Run `mix deps.get` to install it.
 Install the necessary files:
 
 ```bash
-mix pow.install
+mix pow_assent.install
 ```
 
 This will add the following files to your app:
@@ -46,7 +46,7 @@ PRIV_PATH/repo/migrations/TIMESTAMP_create_user_identities.ex
 Update `LIB_PATH/users/user.ex`:
 
 ```elixir
-  @moduledoc false
+defmodule MyApp.Users.User
   use Ecto.Schema
   use Pow.Ecto.Schema
   use PowAssent.Ecto.Schema
@@ -86,20 +86,37 @@ end
 The following routes will now be available in your app:
 
 ```text
-pow_assent_authorization_path  GET     /auth/:provider/new                       PowAssent.Phoenix.AuthorizationController :new
-pow_assent_authorization_path  DELETE  /auth/:provider                           PowAssent.Phoenix.AuthorizationController :delete
-pow_assent_authorization_path  GET     /auth/:provider/callback                  PowAssent.Phoenix.AuthorizationController :callback
-pow_assent_registration_path  GET     /auth/:provider/add-user-id               PowAssent.Phoenix.RegistrationController :add_user_id
-pow_assent_registration_path  POST    /auth/:provider/create                    PowAssent.Phoenix.RegistrationController :create
+pow_assent_authorization_path  GET     /auth/:provider/new          PowAssent.Phoenix.AuthorizationController :new
+pow_assent_authorization_path  DELETE  /auth/:provider              PowAssent.Phoenix.AuthorizationController :delete
+pow_assent_authorization_path  GET     /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
+pow_assent_registration_path   GET     /auth/:provider/add-user-id  PowAssent.Phoenix.RegistrationController :add_user_id
+pow_assent_registration_path   POST    /auth/:provider/create       PowAssent.Phoenix.RegistrationController :create
 ```
 
-Remember to run the new migrations: `mix ecto.setup`.
+Remember to run the new migrations with:
+
+```bash
+mix ecto.setup
+```
+
+## Provider links
+
+You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider links to your `registration` and `session` template files:
+
+```elixir
+<h1>Registration</h1>
+
+<%= for link <- PowAssent.Phoenix.ViewHelpers.provider_links(@conn),
+  do: content_tag(:span, link) %>
+```
+
+It'll automatically link with "Sign in with PROVIDER" or "Remove PROVIDER authentication" depending on if there's an authenticated user in the connection.
 
 ## Setting up a provider
 
-Strategies for Twitter, Facebook, Google, Github and Basecamp are included. We'll go through how to set up the Github strategy.
+PowAssent includes strategies for Twitter, Facebook, Google, Github, Basecamp, and VK. Let's go through how to set up the Github strategy.
 
-First, register [a new app on Github](https://github.com/settings/applications/new) and add `http://localhost:4000/auth/github/callback` as callback URL. Then add the following to `config/config.exs` and add the client id and client secret:
+First, register [a new app on Github](https://github.com/settings/applications/new) and add `http://localhost:4000/auth/github/callback` as the callback URL. Then add the following to `config/config.exs` and add the client id and client secret:
 
 ```elixir
 config :my_app, :pow_assent,
@@ -113,24 +130,11 @@ config :my_app, :pow_assent,
       ]
 ```
 
-Now start (or restart) your Phoenix app, and visit `http://localhost:4000/registrations/new`. You'll see a "Sign in with Github" link.
-
-## Provider links
-
-You can use `PowAssent.Phoeinx.ViewHelpers.provider_links/1` to add provider links to your `registration` and `session` template files:
-
-```elixir
-<h1>Registration</h1>
-
-<%= for link <- PowAssent.Phoenix.ViewHelpers.provider_links(@conn),
-  do: content_tag(:span, link) %>
-```
-
-It'll automatically check if a user has been authenticated, and if said user has a user identity for the provider, linking respectively to "Sign in with PROVIDER" and "Remove PROVIDER authentication".
+Now start (or restart) your Phoenix app, and visit `http://localhost:4000/registrations/new`. You'll see a "Sign in with Github" link if you have added the ``PowAssent.Phoenix.ViewHelpers.provider_links/1`` to your template.
 
 ## Custom provider
 
-You can add your own strategy. Here's an example of an OAuth 2.0 implementation:
+You can add your own custom strategy. Here's an example of an OAuth 2.0 implementation:
 
 ```elixir
 defmodule TestProvider do
@@ -179,7 +183,7 @@ end
 
 The template can be generated and modified to use your Gettext module with `mix pow.extension.phoenix.gen.templates --extension PowAssent`
 
-For flash messages, you can add it to your Pow mesages module:
+For flash messages, you can add it to your Pow messages module:
 
 ```elixir
 defmodule MyAppWeb.Pow.Messages do
@@ -195,7 +199,7 @@ end
 
 ## Security concerns
 
-All sessions created through `PowAssent` provider authentication are temporary, and doesn't use have long term sessions. However, it's a good idea to do some housekeeping in your app and making sure that you have the level of security as warranted by the scope of your app. This may include requiring users to reauthenticate before viewing or editing their user details.
+All sessions created through `PowAssent` provider authentication are temporary. However, it's a good idea to do some housekeeping in your app and making sure that you have the level of security as warranted by the scope of your app. That may include requiring users to re-authenticate before viewing or editing their user details.
 
 ## LICENSE
 
