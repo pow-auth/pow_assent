@@ -11,7 +11,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
   @template """
   defmodule <%= inspect schema.module %> do
     use Ecto.Schema
-    use PowAssent.Ecto.UserIdentities.Schema
+    use PowAssent.Ecto.UserIdentities.Schema,
+      user: <%= inspect schema.user_module %>
 
   <%= if schema.binary_id do %>
     @primary_key {:id, :binary_id, autogenerate: true}
@@ -37,14 +38,16 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
   """
   @spec new(atom(), binary(), binary(), Config.t()) :: map()
   def new(context_base, schema_name, schema_plural, config \\ []) do
-    module    = Module.concat([context_base, schema_name])
-    binary_id = config[:binary_id]
+    module      = Module.concat([context_base, schema_name])
+    binary_id   = config[:binary_id]
+    user_module = Module.concat([context_base, "Users.User"])
 
     %{
       schema_name: schema_name,
       module: module,
       table: schema_plural,
-      binary_id: binary_id
+      binary_id: binary_id,
+      user_module: user_module
     }
   end
 end

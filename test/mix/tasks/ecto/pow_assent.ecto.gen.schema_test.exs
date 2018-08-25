@@ -22,6 +22,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
       content = File.read!(@expected_file)
 
       assert content =~ "defmodule PowAssent.UserIdentities.UserIdentity do"
+      assert content =~ "user: PowAssent.Users.User"
       assert content =~ "timestamps(updated_at: false)"
     end)
   end
