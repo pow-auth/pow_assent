@@ -36,8 +36,8 @@ defmodule PowAssent.MixProject do
       {:oauth2, "~> 0.9"},
       {:oauther, "~> 1.1"},
 
-      {:phoenix_html, "~> 2.11"},
-      {:phoenix_ecto, "~> 3.3"},
+      {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},
+      {:phoenix_ecto, ">= 3.0.0 and <= 4.0.0"},
 
       {:ecto, "~> 2.2"},
       {:phoenix, "~> 1.3"},
