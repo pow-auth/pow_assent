@@ -5,7 +5,7 @@ module_raised_with =
       use PowAssent.Ecto.UserIdentities.Schema
 
       schema "user_identities" do
-        pow_user_identity_schema()
+        pow_assent_user_identity_fields()
 
         timestamps(updated_at: false)
       end

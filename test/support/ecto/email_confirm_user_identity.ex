@@ -5,6 +5,6 @@ defmodule PowAssent.Test.Ecto.UserIdentities.EmailConfirmUserIdentity do
     user: PowAssent.Test.Ecto.Users.EmailConfirmUser
 
   schema "user_identities" do
-    pow_user_identity_schema()
+    pow_assent_user_identity_fields()
   end
 end

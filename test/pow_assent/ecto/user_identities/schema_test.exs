@@ -4,7 +4,7 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
 
   alias PowAssent.Test.Ecto.{Repo, UserIdentities.UserIdentity, Users.User}
 
-  test "pow_user_identity_schema/1" do
+  test "pow_assent_user_identity_fields/1" do
     user = %UserIdentity{}
 
     assert Map.has_key?(user, :user)

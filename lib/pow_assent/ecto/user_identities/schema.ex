@@ -15,7 +15,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
           user: MyApp.Users.User
 
         schema "user_identities" do
-          pow_user_identity_schema()
+          pow_assent_user_identity_fields()
 
           timestamps(updated_at: false)
         end
@@ -40,7 +40,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
 
     quote do
       @behaviour unquote(__MODULE__)
-      import unquote(__MODULE__), only: [pow_user_identity_schema: 0]
+      import unquote(__MODULE__), only: [pow_assent_user_identity_fields: 0]
 
       @pow_user_mod unquote(user_mod)
       @pow_assent_config unquote(config)
@@ -61,8 +61,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @doc """
   Macro for adding user identity schema fields.
   """
-  @spec pow_user_identity_schema :: Macro.t()
-  defmacro pow_user_identity_schema do
+  @spec pow_assent_user_identity_fields :: Macro.t()
+  defmacro pow_assent_user_identity_fields do
     quote do
       belongs_to :user, @pow_user_mod
 
