@@ -46,27 +46,48 @@ defmodule PowAssent.PlugTest do
       {:ok, conn: conn, server: server}
     end
 
-    test "creates user identity", %{conn: conn, server: server} do
-      bypass_oauth(server)
+    test "loads existing user", %{conn: conn, server: server} do
+      bypass_oauth(server, %{}, %{uid: "existing_user"})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
       assert {:ok, %{id: 1, email: "test@example.com"}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
-      assert conn.private[:plug_session]["pow_assent_auth"]
+    end
+
+    test "creates user identity", %{conn: conn, server: server} do
+      user = %{ContextMock.user() | id: :loaded}
+      conn = Pow.Plug.assign_current_user(conn, user, @default_config)
+
+      bypass_oauth(server, %{}, %{uid: "new_identity"})
+
+      assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
+      assert {:ok, ^user, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
+      refute conn.private[:plug_session]["pow_assent_auth"]
+    end
+
+    test "already taken user identity", %{conn: conn, server: server} do
+      conn = Pow.Plug.assign_current_user(conn, %{ContextMock.user() | id: :bound_to_different_user}, @default_config)
+
+      bypass_oauth(server, %{}, %{uid: "new_identity"})
+
+      assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
+      assert {:error, {:bound_to_different_user, %{}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
+      refute conn.private[:plug_session]["pow_assent_auth"]
     end
 
     test "creates user", %{conn: conn, server: server} do
-      bypass_oauth(server, %{}, %{"uid" => "new_user"})
+      bypass_oauth(server, %{}, %{uid: "new_user"})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
-      assert {:ok, {:new, %{id: 1, email: "test@example.com"}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
+      assert {:ok, {:new, %{id: :new_user, email: "test@example.com"}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
       assert conn.private[:plug_session]["pow_assent_auth"]
     end
 
-    test "with error", %{conn: conn, server: server} do
-      bypass_oauth(server, %{}, %{"uid" => nil})
+    test "missing user id", %{conn: conn, server: server} do
+      bypass_oauth(server, %{}, %{uid: "new_user", email: ""})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
-      assert {:error, _changeset, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
+      assert {:error, {:missing_user_id_field, %{}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
+      refute conn.private[:plug_session]["pow_assent_auth"]
     end
   end
 
@@ -79,12 +100,13 @@ defmodule PowAssent.PlugTest do
     end
 
     test "creates user", %{conn: conn} do
-      assert {:ok, {:new, %{id: 1, email: "test@example.com"}}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "1"}, %{})
+      assert {:ok, {:new, %{id: :new_user, email: "test@example.com"}}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "new_user"}, %{"email" => "test@example.com"})
       assert conn.private[:plug_session]["pow_assent_auth"]
     end
 
-    test "with error", %{conn: conn} do
-      assert {:error, _changeset, _conn} = Plug.create_user(conn, "test_provider", %{"uid" => nil}, %{})
+    test "already taken user identity", %{conn: conn} do
+      assert {:error, {:bound_to_different_user, %{}}, _conn} = Plug.create_user(conn, "test_provider", %{"uid" => "different_user"}, %{})
+      refute conn.private[:plug_session]["pow_assent_auth"]
     end
   end
 
@@ -92,8 +114,7 @@ defmodule PowAssent.PlugTest do
     setup do
       conn = setup_conn()
 
-      {:ok, user} = ContextMock.create_user("test_provider", "1", %{}, %{})
-      conn = Pow.Plug.assign_current_user(conn, user, @default_config)
+      conn = Pow.Plug.assign_current_user(conn, ContextMock.user(), @default_config)
 
       {:ok, conn: conn}
     end
@@ -112,8 +133,7 @@ defmodule PowAssent.PlugTest do
     setup do
       conn = setup_conn()
 
-      {:ok, user} = ContextMock.create_user("test_provider", "1", %{}, %{})
-      conn = Pow.Plug.assign_current_user(conn, user, @default_config)
+      conn = Pow.Plug.assign_current_user(conn, ContextMock.user(), @default_config)
 
       {:ok, conn: conn}
     end

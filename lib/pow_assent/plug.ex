@@ -65,7 +65,7 @@ defmodule PowAssent.Plug do
     |> Operations.get_user_by_provider_uid(provider, uid)
     |> case do
       nil  -> create_user(conn, provider, params, %{})
-      user -> create_identity(conn, provider, uid, user, config)
+      user -> {:ok, user, get_mod(config).do_create(conn, user)}
     end
   end
   defp get_or_create_by_identity({:ok, conn}, provider, config, user) do
@@ -75,21 +75,12 @@ defmodule PowAssent.Plug do
     config
     |> Operations.create(user, provider, uid)
     |> case do
-      {:ok, _user_identy} -> {:ok, user, conn}
-      {:error, changeset} -> {:error, changeset, conn}
+      {:ok, _user_identity} -> {:ok, user, conn}
+      {:error, changeset}   -> {:error, changeset, conn}
     end
   end
   defp get_or_create_by_identity({:error, error, conn}, _provider, _config, _user) do
     {:error, error, conn}
-  end
-
-  defp create_identity(conn, provider, uid, user, config) do
-    config
-    |> Operations.create(user, provider, uid)
-    |> case do
-      {:ok, _user_identity} -> {:ok, user, get_mod(config).do_create(conn, user)}
-      {:error, changeset}   -> {:error, changeset, conn}
-    end
   end
 
   @doc """
