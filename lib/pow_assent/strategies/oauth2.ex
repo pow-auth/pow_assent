@@ -12,7 +12,8 @@ defmodule PowAssent.Strategy.OAuth2 do
                 client_secret: "REPLACE_WITH_CLIENT_SECRET",
                 strategy: PowAssent.Strategy.OAuth2,
                 site: "https://auth.example.com",
-                authorization_params: [scope: "user:read user:write"]
+                authorization_params: [scope: "user:read user:write"],
+                user_url: "https://example.com/api/user"
               ]
             ]
   """
