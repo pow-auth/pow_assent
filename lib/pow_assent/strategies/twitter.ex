@@ -1,6 +1,18 @@
 defmodule PowAssent.Strategy.Twitter do
   @moduledoc """
   Twitter OAuth 1.0 strategy.
+
+  ## Usage
+
+      config :my_app, :pow_assent,
+        providers:
+            [
+              vk: [
+                consumer_key: "REPLACE_WITH_CONSUMER_KEY",
+                consumer_secret: "REPLACE_WITH_CONSUMER_SECRET",
+                strategy: PowAssent.Strategy.Twitter
+              ]
+            ]
   """
   use PowAssent.Strategy
 

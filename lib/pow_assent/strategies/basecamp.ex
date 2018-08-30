@@ -1,6 +1,18 @@
 defmodule PowAssent.Strategy.Basecamp do
   @moduledoc """
   Basecamp OAuth 2.0 strategy.
+
+  ## Usage
+
+      config :my_app, :pow_assent,
+        providers:
+            [
+              basecamp: [
+                client_id: "REPLACE_WITH_CLIENT_ID",
+                client_secret: "REPLACE_WITH_CLIENT_SECRET",
+                strategy: PowAssent.Strategy.Basecamp
+              ]
+            ]
   """
   use PowAssent.Strategy
 

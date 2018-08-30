@@ -1,6 +1,18 @@
 defmodule PowAssent.Strategy.Google do
   @moduledoc """
   Google OAuth 2.0 strategy.
+
+  ## Usage
+
+      config :my_app, :pow_assent,
+        providers:
+            [
+              google: [
+                client_id: "REPLACE_WITH_CLIENT_ID",
+                client_secret: "REPLACE_WITH_CLIENT_SECRET",
+                strategy: PowAssent.Strategy.Google
+              ]
+            ]
   """
   use PowAssent.Strategy
 

@@ -1,6 +1,18 @@
 defmodule PowAssent.Strategy.Facebook do
   @moduledoc """
   Facebook OAuth 2.0 strategy.
+
+  ## Usage
+
+      config :my_app, :pow_assent,
+        providers:
+            [
+              facebook: [
+                client_id: "REPLACE_WITH_CLIENT_ID",
+                client_secret: "REPLACE_WITH_CLIENT_SECRET",
+                strategy: PowAssent.Strategy.Facebook
+              ]
+            ]
   """
   use PowAssent.Strategy
 
