@@ -1,4 +1,4 @@
-defmodule PowAssent.TwitterTest do
+defmodule PowAssent.Strategy.TwitterTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   import OAuth2.TestHelpers

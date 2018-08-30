@@ -1,4 +1,4 @@
-defmodule PowAssent.BasecampTest do
+defmodule PowAssent.Strategy.BasecampTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   import OAuth2.TestHelpers

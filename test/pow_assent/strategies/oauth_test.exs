@@ -1,4 +1,4 @@
-defmodule PowAssent.OAuthTest do
+defmodule PowAssent.Strategy.OAuthTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   import OAuth2.TestHelpers

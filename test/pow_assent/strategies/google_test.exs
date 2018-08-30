@@ -1,4 +1,4 @@
-defmodule PowAssent.GoogleTest do
+defmodule PowAssent.Strategy.GoogleTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   import OAuth2.TestHelpers
