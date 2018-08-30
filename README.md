@@ -2,15 +2,23 @@
 
 [![Build Status](https://travis-ci.org/danschultzer/pow_assent.svg?branch=master)](https://travis-ci.org/danschultzer/pow_assent) [![hex.pm](http://img.shields.io/hexpm/v/pow_assent.svg?style=flat)](https://hex.pm/packages/pow_assent)
 
-Use Google, Github, Twitter, Facebook, Basecamp, VK or add your custom strategy for authorization to your Pow enabled Phoenix app.
+Use Google, Github, Twitter, Facebook, or add your custom strategy for authorization to your Pow enabled Phoenix app.
 
 ## Features
 
 * Collects required user id field from the user if the user id is missing from the provider
 * Multiple providers can be used for accounts
-  * When removing auth: Validates user has password or another provider authentication
-* Github, Google, Twitter, Facebook, Basecamp and VK strategies included
+  * When removing authentication, user is validated for password or alternative provider
 * You can add your custom strategy with ease
+* Includes the following strategies:
+  * [Basecamp](lib/pow_assent/strategies/basecamp.ex)
+  * [Facebook](lib/pow_assent/strategies/facebook.ex)
+  * [Github](lib/pow_assent/strategies/github.ex)
+  * [Google](lib/pow_assent/strategies/google.ex)
+  * [OAuth 1.0](lib/pow_assent/strategies/oauth.ex)
+  * [OAuth 2.0](lib/pow_assent/strategies/oauth2.ex)
+  * [Twitter](lib/pow_assent/strategies/twitter.ex)
+  * [VK](lib/pow_assent/strategies/vk.ex)
 
 ## Installation
 
@@ -99,6 +107,16 @@ Remember to run the new migrations with:
 mix ecto.setup
 ```
 
+## Modified Pow templates
+
+If you're modifying the Pow templates, then you have to generate the PowAssent template too:
+
+```elixir
+mix pow_assent.phoenix.gen.templates
+```
+
+Otherwise, Pow will raise an error about missing template when the user id field template is shown.
+
 ## Provider links
 
 You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider links to your `registration` and `session` template files:
@@ -114,7 +132,7 @@ It'll automatically link with "Sign in with PROVIDER" or "Remove PROVIDER authen
 
 ## Setting up a provider
 
-PowAssent includes strategies for Twitter, Facebook, Google, Github, Basecamp, and VK. Let's go through how to set up the Github strategy.
+PowAssent has [multiple strategies](lib/pow_assent/strategies) that you can use. Let's go through how to set up the Github strategy.
 
 First, register [a new app on Github](https://github.com/settings/applications/new) and add `http://localhost:4000/auth/github/callback` as the callback URL. Then add the following to `config/config.exs` and add the client id and client secret:
 
