@@ -17,6 +17,7 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
   * [Google](lib/pow_assent/strategies/google.ex)
   * [OAuth 1.0](lib/pow_assent/strategies/oauth.ex)
   * [OAuth 2.0](lib/pow_assent/strategies/oauth2.ex)
+  * [Slack](lib/pow_assent/strategies/slack.ex)
   * [Twitter](lib/pow_assent/strategies/twitter.ex)
   * [VK](lib/pow_assent/strategies/vk.ex)
 
