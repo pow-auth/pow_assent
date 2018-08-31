@@ -10,15 +10,16 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
 * Multiple providers can be used for accounts
   * When removing authentication, user is validated for password or alternative provider
 * You can add your custom strategy with ease
-* Includes the following strategies:
+* Includes the following base strategies:
+  * [OAuth 1.0](lib/pow_assent/strategies/oauth.ex)
+  * [OAuth 2.0](lib/pow_assent/strategies/oauth2.ex)
+* Includes the following provider strategies:
   * [Basecamp](lib/pow_assent/strategies/basecamp.ex)
   * [Discord](lib/pow_assent/strategies/discord.ex)
   * [Facebook](lib/pow_assent/strategies/facebook.ex)
   * [Github](lib/pow_assent/strategies/github.ex)
   * [Google](lib/pow_assent/strategies/google.ex)
   * [Instagram](lib/pow_assent/strategies/instagram.ex)
-  * [OAuth 1.0](lib/pow_assent/strategies/oauth.ex)
-  * [OAuth 2.0](lib/pow_assent/strategies/oauth2.ex)
   * [Slack](lib/pow_assent/strategies/slack.ex)
   * [Twitter](lib/pow_assent/strategies/twitter.ex)
   * [VK](lib/pow_assent/strategies/vk.ex)
