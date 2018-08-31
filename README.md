@@ -96,12 +96,12 @@ end
 
 The following routes will now be available in your app:
 
-```text
+```elixir
 pow_assent_authorization_path  GET     /auth/:provider/new          PowAssent.Phoenix.AuthorizationController :new
 pow_assent_authorization_path  DELETE  /auth/:provider              PowAssent.Phoenix.AuthorizationController :delete
 pow_assent_authorization_path  GET     /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
-pow_assent_registration_path   GET     /auth/:provider/add-user-id  PowAssent.Phoenix.RegistrationController :add_user_id
-pow_assent_registration_path   POST    /auth/:provider/create       PowAssent.Phoenix.RegistrationController :create
+pow_assent_registration_path   GET     /auth/:provider/add-user-id  PowAssent.Phoenix.RegistrationController  :add_user_id
+pow_assent_registration_path   POST    /auth/:provider/create       PowAssent.Phoenix.RegistrationController  :create
 ```
 
 Remember to run the new migrations with:
@@ -110,7 +110,7 @@ Remember to run the new migrations with:
 mix ecto.setup
 ```
 
-## Modified Pow templates
+### Modified Pow templates
 
 If you're modifying the Pow templates, then you have to generate the PowAssent template too:
 
@@ -120,7 +120,7 @@ mix pow_assent.phoenix.gen.templates
 
 Otherwise, Pow will raise an error about missing template when the user id field template is shown.
 
-## Provider links
+### Provider links
 
 You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider links to your `registration` and `session` template files:
 
@@ -133,7 +133,7 @@ You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider lin
 
 It'll automatically link with "Sign in with PROVIDER" or "Remove PROVIDER authentication" depending on if there's an authenticated user in the connection.
 
-## Setting up a provider
+### Setting up a provider
 
 PowAssent has [multiple strategies](lib/pow_assent/strategies) that you can use. Let's go through how to set up the Github strategy.
 
@@ -151,7 +151,7 @@ config :my_app, :pow_assent,
       ]
 ```
 
-Now start (or restart) your Phoenix app, and visit `http://localhost:4000/registrations/new`. You'll see a "Sign in with Github" link if you have added the ``PowAssent.Phoenix.ViewHelpers.provider_links/1`` to your template.
+Now start (or restart) your Phoenix app, and visit `http://localhost:4000/registrations/new`. You'll see a "Sign in with Github" link if you have added the `PowAssent.Phoenix.ViewHelpers.provider_links/1` to your template.
 
 ## Custom provider
 
@@ -204,7 +204,7 @@ end
 
 The template can be generated and modified to use your Gettext module with `mix pow.extension.phoenix.gen.templates --extension PowAssent`
 
-For flash messages, you can add it to your Pow messages module:
+For flash messages, you should add them to your `Pow.Phoenix.Messages` module the same way as all Pow extension flash messages:
 
 ```elixir
 defmodule MyAppWeb.Pow.Messages do
@@ -214,13 +214,35 @@ defmodule MyAppWeb.Pow.Messages do
 
   import MyAppWeb.Gettext
 
+  # ...
+
   def pow_assent_signed_in(_conn, provider), do: gettext("You've been signed in with %{provider}.", provider: provider)
 end
 ```
 
+You can find all messages in `PowAssent.Phoenix.Messages`.
+
+## Populate fields
+
+To populate fields in your user struct that are fetched from the provider, you only need to cast them in `user_identity_changeset/4` method like so:
+
+```elixir
+defmodule MyApp.Users.User do
+  # ...
+
+  def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
+    user_or_changeset
+    |> Ecto.Changeset.cast(attrs, [:custom_field_1, :customer_field_2])
+    |> pow_user_identity_changeset(user, user_identity, attrs, user_id_attrs)
+  end
+end
+```
+
+The fields available can be found in the `normalize/1` method of [the strategy](lib/pow_assent/strategies/).
+
 ## Security concerns
 
-All sessions created through `PowAssent` provider authentication are temporary. However, it's a good idea to do some housekeeping in your app and making sure that you have the level of security as warranted by the scope of your app. That may include requiring users to re-authenticate before viewing or editing their user details.
+All sessions created through PowAssent provider authentication are temporary. However, it's a good idea to do some housekeeping in your app and make sure that you have the level of security as warranted by the scope of your app. That may include requiring users to re-authenticate before viewing or editing their user details.
 
 ## LICENSE
 
