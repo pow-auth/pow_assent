@@ -14,62 +14,28 @@ defmodule PowAssent.Strategy.Facebook do
               ]
             ]
   """
-  use PowAssent.Strategy
+  use PowAssent.Strategy.OAuth2.Base
 
-  alias PowAssent.Strategy.OAuth2, as: OAuth2Helper
-  alias OAuth2.{Client, Strategy.AuthCode}
+  alias PowAssent.Strategy.OAuth2
 
   @api_version "2.12"
 
-  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
-  def authorize_url(config, conn) do
-    config
-    |> set_config()
-    |> OAuth2Helper.authorize_url(conn)
-  end
-
-  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{client: Client.t(), conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
-  def callback(config, conn, params) do
-    config = set_config(config)
-    client = Client.new(config)
-    state  = conn.private[:pow_assent_state]
-
-    state
-    |> OAuth2Helper.check_state(client, params)
-    |> OAuth2Helper.get_access_token(config, params)
-    |> get_user(config)
-    |> normalize(client)
-    |> case do
-      {:ok, user}     -> {:ok, %{conn: conn, user: user, client: client}}
-      {:error, error} -> {:error, %{conn: conn, error: error}}
-    end
-  end
-
-  defp set_config(config) do
+  @spec default_config(Keyword.t()) :: Keyword.t()
+  def default_config(_config) do
     [
       site: "https://graph.facebook.com/v#{@api_version}",
       authorize_url: "https://www.facebook.com/v#{@api_version}/dialog/oauth",
       token_url: "/oauth/access_token",
       user_url: "/me",
       authorization_params: [scope: "email"],
-      user_url_request_fields: "name,email"
+      user_url_request_fields: "name,email",
+      get_user_fn: &get_user/2
     ]
-    |> Keyword.merge(config)
-    |> Keyword.put(:strategy, AuthCode)
   end
 
-  defp get_user({:ok, client}, config) do
-    params = %{
-      "appsecret_proof" => appsecret_proof(client),
-      "fields" => config[:user_url_request_fields]}
-    user_url = config[:user_url] <> "?" <> URI.encode_query(params)
-
-    OAuth2Helper.get_user({:ok, client}, user_url)
-  end
-  defp get_user({:error, error}, _config), do: {:error, error}
-
-  defp normalize({:ok, user}, client) do
-    user = %{
+  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
+  def normalize(client, _config, user) do
+    {:ok, %{
       "uid"         => user["id"],
       "nickname"    => user["username"],
       "email"       => user["email"],
@@ -82,14 +48,22 @@ defmodule PowAssent.Strategy.Facebook do
       "urls"        => %{
         "Facebook" => user["link"],
         "Website"  => user["website"]},
-      "verified"    => user["verified"]}
-
-    {:ok, Helpers.prune(user)}
+      "verified"    => user["verified"]
+    }}
   end
-  defp normalize({:error, error}, _client), do: {:error, error}
 
   defp image_url(client, user) do
     "#{client.site}/#{user["id"]}/picture"
+  end
+
+  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}
+  def get_user(config, client) do
+    params = %{
+      "appsecret_proof" => appsecret_proof(client),
+      "fields" => config[:user_url_request_fields]}
+    config = Keyword.put(config, :user_url, user_url(config, params))
+
+    OAuth2.get_user(config, client)
   end
 
   defp appsecret_proof(client) do
@@ -97,4 +71,6 @@ defmodule PowAssent.Strategy.Facebook do
     |> :crypto.hmac(client.client_secret, client.token.access_token)
     |> Base.encode16(case: :lower)
   end
+
+  defp user_url(config, params), do: config[:user_url] <> "?" <> URI.encode_query(params)
 end

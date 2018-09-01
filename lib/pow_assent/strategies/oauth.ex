@@ -17,6 +17,8 @@ defmodule PowAssent.Strategy.OAuth do
   """
   use PowAssent.Strategy
 
+  alias Plug.Conn
+
   @doc false
   @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), url: binary()}} | {:error, %{conn: Conn.t(), error: any()}}
   def authorize_url(config, conn) do
@@ -30,11 +32,11 @@ defmodule PowAssent.Strategy.OAuth do
   end
 
   @doc false
-  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{conn: Conn.t(), user: map}} | {:error, %{conn: Conn.t(), error: any()}}
+  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
   def callback(config, conn, %{"oauth_token" => oauth_token, "oauth_verifier" => oauth_verifier}) do
     config
     |> get_access_token(oauth_token, oauth_verifier)
-    |> get_user(config)
+    |> fetch_user(config)
     |> case do
       {:ok, user}    -> {:ok, %{conn: conn, user: user}}
       {:error, error} -> {:error, %{conn: conn, error: error}}
@@ -95,9 +97,15 @@ defmodule PowAssent.Strategy.OAuth do
   end
   defp process_request_token_response({:error, error}), do: {:error, error}
 
+  defp fetch_user({:ok, token}, config) do
+    fun = Keyword.get(config, :get_user, &get_user/2)
+    fun.(token, config)
+  end
+  defp fetch_user({:error, error}, _config), do: {:error, error}
+
   @doc false
-  @spec get_user({:ok, map} | {:error, term}, Keyword.t()) :: {:ok, map} | {:error, term}
-  def get_user({:ok, token}, config) do
+  @spec get_user(map, Keyword.t()) :: {:ok, map} | {:error, term}
+  def get_user(token, config) do
     site        = config[:site]
     url         = process_url(config, config[:user_url])
     credentials = OAuther.credentials([
@@ -108,7 +116,6 @@ defmodule PowAssent.Strategy.OAuth do
 
     request(:get, site, url, credentials)
   end
-  def get_user({:error, error}, _config), do: {:error, error}
 
   defp process_url(config, url) do
     case String.downcase(url) do

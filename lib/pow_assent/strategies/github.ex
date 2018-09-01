@@ -14,29 +14,12 @@ defmodule PowAssent.Strategy.Github do
               ]
             ]
   """
-  use PowAssent.Strategy
+  use PowAssent.Strategy.OAuth2.Base
 
-  alias PowAssent.Strategy.OAuth2, as: OAuth2Helper
-  alias OAuth2.{Client, Response, Strategy.AuthCode}
+  alias OAuth2.{Client, Response}
 
-  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
-  def authorize_url(config, conn) do
-    config
-    |> set_config()
-    |> OAuth2Helper.authorize_url(conn)
-  end
-
-  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{client: Client.t(), conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
-  def callback(config, conn, params) do
-    config = set_config(config)
-
-    config
-    |> OAuth2Helper.callback(conn, params)
-    |> get_email(config)
-    |> normalize()
-  end
-
-  defp set_config(config) do
+  @spec default_config(Keyword.t()) :: Keyword.t()
+  def default_config(_config) do
     [
       site: "https://api.github.com",
       authorize_url: "https://github.com/login/oauth/authorize",
@@ -45,21 +28,33 @@ defmodule PowAssent.Strategy.Github do
       user_emails_url: "/user/emails",
       authorization_params: [scope: "read:user,user:email"]
     ]
-    |> Keyword.merge(config)
-    |> Keyword.put(:strategy, AuthCode)
   end
 
-  defp get_email({:ok, %{conn: conn, user: user, client: client}}, config) do
-    case Client.get(client, config[:user_emails_url]) do
-      {:ok, %Response{body: emails}} ->
-        user = Map.put(user, "email", get_primary_email(emails))
-        {:ok, %{conn: conn, user: user, client: client}}
+  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  def normalize(client, config, user) do
+    case get_email(client, config) do
+      {:ok, email} ->
+        {:ok, %{
+          "uid"      => Integer.to_string(user["id"]),
+          "nickname" => user["login"],
+          "email"    => email,
+          "name"     => user["name"],
+          "image"    => user["avatar_url"],
+          "urls"     => %{
+            "GitHub" => user["html_url"],
+            "Blog"   => user["blog"]}}}
 
       {:error, error} ->
-        {:error, %{conn: conn, error: error}}
+        {:error, error}
     end
   end
-  defp get_email(response, _config), do: response
+
+  defp get_email(client, config) do
+    case Client.get(client, config[:user_emails_url]) do
+      {:ok, %Response{body: emails}} -> {:ok, get_primary_email(emails)}
+      {:error, error}                -> {:error, error}
+    end
+  end
 
   defp get_primary_email(emails) do
     emails
@@ -70,19 +65,4 @@ defmodule PowAssent.Strategy.Github do
       :error       -> nil
     end
   end
-
-  defp normalize({:ok, %{conn: conn, user: user, client: client}}) do
-    user = %{
-      "uid"      => Integer.to_string(user["id"]),
-      "nickname" => user["login"],
-      "email"    => user["email"],
-      "name"     => user["name"],
-      "image"    => user["avatar_url"],
-      "urls"     => %{
-        "GitHub" => user["html_url"],
-        "Blog"   => user["blog"]}}
-
-    {:ok, %{conn: conn, user: Helpers.prune(user), client: client}}
-  end
-  defp normalize({:error, error}), do: {:error, error}
 end

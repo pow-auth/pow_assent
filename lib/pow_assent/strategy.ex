@@ -31,9 +31,6 @@ defmodule PowAssent.Strategy do
   defmacro __using__(_opts) do
     quote do
       @behaviour unquote(__MODULE__)
-
-      alias Plug.Conn
-      alias unquote(__MODULE__), as: Helpers
     end
   end
 

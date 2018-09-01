@@ -3,6 +3,7 @@ defmodule TestProvider do
   use PowAssent.Strategy
 
   alias PowAssent.Strategy.OAuth2, as: OAuth2Helper
+  alias PowAssent.Strategy, as: Helpers
 
   def authorize_url(config, conn) do
     case conn.private[:fail_authorize_url] do

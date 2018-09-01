@@ -19,6 +19,7 @@ defmodule PowAssent.Strategy.OAuth2 do
   """
   use PowAssent.Strategy
 
+  alias Plug.Conn
   alias OAuth2.{Client, Response}
   alias PowAssent.{CallbackCSRFError, CallbackError, ConfigurationError, RequestError}
 
@@ -48,12 +49,11 @@ defmodule PowAssent.Strategy.OAuth2 do
   def callback(config, conn, params) do
     client = Client.new(config)
     state  = conn.private[:pow_assent_state]
-    url    = config[:user_url]
 
     state
     |> check_state(client, params)
     |> get_access_token(config, params)
-    |> get_user_with_client(url, conn)
+    |> fetch_user(config, conn)
   end
 
   @doc false
@@ -92,26 +92,31 @@ defmodule PowAssent.Strategy.OAuth2 do
   defp process_access_token_response({:error, error}),
     do: {:error, error}
 
-  @spec get_user({:ok, Client.t()} | {:error, term()}, binary() | nil) :: {:ok, map()} | {:error, term()}
-  def get_user({:ok, _client}, nil),
-    do: {:error, %ConfigurationError{message: "No user URL set"}}
-  def get_user({:ok, client}, user_url) do
-    client
-    |> Client.get(user_url)
-    |> process_user_response()
-  end
-  def get_user({:error, error}, _user_url), do: {:error, error}
+  defp fetch_user({:ok, client}, config, conn) do
+    get_user_fn = Keyword.get(config, :get_user_fn, &get_user/2)
 
-  defp get_user_with_client({:ok, client}, user_url, conn) do
-    {:ok, client}
-    |> get_user(user_url)
+    config
+    |> get_user_fn.(client)
     |> case do
       {:ok, user} -> {:ok, %{conn: conn, client: client, user: user}}
       {:error, error} -> {:error, %{conn: conn, error: error}}
     end
   end
-  defp get_user_with_client({:error, error}, _user_url, conn),
+  defp fetch_user({:error, error}, _user_url, conn),
     do: {:error, %{conn: conn, error: error}}
+
+  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, term()}
+  def get_user(config, client) do
+    case config[:user_url] do
+      nil ->
+        {:error, %ConfigurationError{message: "No user URL set"}}
+
+      url ->
+        client
+        |> Client.get(url)
+        |> process_user_response()
+    end
+  end
 
   defp process_user_response({:ok, %Response{body: user}}), do: {:ok, user}
   defp process_user_response({:error, %Response{status_code: 401}}),
