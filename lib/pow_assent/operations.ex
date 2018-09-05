@@ -15,10 +15,10 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.get_user_by_provider_uid/3` or
   `get_user_by_provider_uid/2` on a custom context module.
   """
-  @spec get_user_by_provider_uid(Config.t(), binary(), binary()) :: map() | nil | no_return
-  def get_user_by_provider_uid(config, provider, uid) do
+  @spec get_user_by_provider_uid(binary(), binary(), Config.t()) :: map() | nil | no_return
+  def get_user_by_provider_uid(provider, uid, config) do
     case context_module(config) do
-      Context -> Context.get_user_by_provider_uid(config, provider, uid)
+      Context -> Context.get_user_by_provider_uid(provider, uid, config)
       module  -> module.get_user_by_provider_uid(provider, uid)
     end
   end
@@ -29,10 +29,10 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.create/4` or
   `create/3` on a custom context module.
   """
-  @spec create(Config.t(), map(), binary(), binary()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
-  def create(config, user, provider, uid) do
+  @spec create(map(), binary(), binary(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
+  def create(user, provider, uid, config) do
     case context_module(config) do
-      Context -> Context.create(config, user, provider, uid)
+      Context -> Context.create(user, provider, uid, config)
       module  -> module.create(user, provider, uid)
     end
   end
@@ -43,10 +43,10 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.create_user/5` or
   `create_user/4` on a custom context module.
   """
-  @spec create_user(Config.t(), binary(), binary(), map(), map()) :: {:ok, map()} | {:error, {:bound_to_different_user | :missing_user_id_field, map()}} | {:error, map()} | no_return
-  def create_user(config, provider, uid, params, user_id_params) do
+  @spec create_user(binary(), binary(), map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :missing_user_id_field, map()}} | {:error, map()} | no_return
+  def create_user(provider, uid, params, user_id_params, config) do
     case context_module(config) do
-      Context -> Context.create_user(config, provider, uid, params, user_id_params)
+      Context -> Context.create_user(provider, uid, params, user_id_params, config)
       module  -> module.create_user(provider, uid, params, user_id_params)
     end
   end
@@ -57,10 +57,10 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.delete/3` or
   `delete/2` on a custom context module.
   """
-  @spec delete(Config.t(), map(), binary()) :: {:ok, {number(), nil}} | {:error, {:no_password, map()}} | no_return
-  def delete(config, user, provider) do
+  @spec delete(map(), binary(), Config.t()) :: {:ok, {number(), nil}} | {:error, {:no_password, map()}} | no_return
+  def delete(user, provider, config) do
     case context_module(config) do
-      Context -> Context.delete(config, user, provider)
+      Context -> Context.delete(user, provider, config)
       module  -> module.delete(user, provider)
     end
   end
@@ -71,10 +71,10 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.all/2` or
   `all/1` on a custom context module.
   """
-  @spec all(Config.t(), map()) :: [map()] | no_return
-  def all(config, user) do
+  @spec all(map(), Config.t()) :: [map()] | no_return
+  def all(user, config) do
     case context_module(config) do
-      Context -> Context.all(config, user)
+      Context -> Context.all(user, config)
       module  -> module.all(user)
     end
   end

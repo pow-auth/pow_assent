@@ -51,7 +51,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
 
       @spec pow_assent_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
       def pow_assent_changeset(user_identity_or_changeset, attrs) do
-        unquote(__MODULE__).changeset(unquote(config), user_identity_or_changeset, attrs)
+        unquote(__MODULE__).changeset(user_identity_or_changeset, attrs, unquote(config))
       end
 
       defoverridable unquote(__MODULE__)
@@ -75,7 +75,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @doc """
   Validates a user identity.
   """
-  def changeset(_config, user_identity_or_changeset, params) do
+  def changeset(user_identity_or_changeset, params, _config) do
     user_identity_or_changeset
     |> Changeset.cast(params, [:provider, :uid, :user_id])
     |> Changeset.validate_required([:provider, :uid])

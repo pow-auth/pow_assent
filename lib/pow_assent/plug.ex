@@ -1,6 +1,6 @@
 defmodule PowAssent.Plug do
   @moduledoc """
-  Authorization methods for Plug.
+  Plug helper methods.
   """
   alias Plug.Conn
   alias PowAssent.{Config, Operations}
@@ -45,7 +45,7 @@ defmodule PowAssent.Plug do
     provider_config
     |> strategy.callback(conn, params)
     |> parse_callback_response()
-    |> get_or_create_by_identity(provider, config, user)
+    |> get_or_create_by_identity(provider, user, config)
   end
 
   defp parse_callback_response({:ok, %{user: params, conn: conn}}) do
@@ -57,23 +57,23 @@ defmodule PowAssent.Plug do
     {:error, {:strategy, error}, conn}
   end
 
-  defp get_or_create_by_identity({:ok, conn}, provider, config, nil) do
+  defp get_or_create_by_identity({:ok, conn}, provider, nil, config) do
     params = conn.private[:pow_assent_params]
     uid    = params["uid"]
 
-    config
-    |> Operations.get_user_by_provider_uid(provider, uid)
+    provider
+    |> Operations.get_user_by_provider_uid(uid, config)
     |> case do
       nil  -> create_user(conn, provider, params, %{})
       user -> {:ok, user, get_mod(config).do_create(conn, user)}
     end
   end
-  defp get_or_create_by_identity({:ok, conn}, provider, config, user) do
+  defp get_or_create_by_identity({:ok, conn}, provider, user, config) do
     params = conn.private[:pow_assent_params]
     uid    = params["uid"]
 
-    config
-    |> Operations.create(user, provider, uid)
+    user
+    |> Operations.create(provider, uid, config)
     |> case do
       {:ok, _user_identity} -> {:ok, user, conn}
       {:error, changeset}   -> {:error, changeset, conn}
@@ -91,8 +91,8 @@ defmodule PowAssent.Plug do
     config = fetch_pow_config(conn)
     uid    = params["uid"]
 
-    config
-    |> Operations.create_user(provider, uid, params, user_id_params)
+    provider
+    |> Operations.create_user(uid, params, user_id_params, config)
     |> case do
       {:ok, user}         -> {:ok, {:new, user}, get_mod(config).do_create(conn, user)}
       {:error, changeset} -> {:error, changeset, conn}
@@ -105,10 +105,10 @@ defmodule PowAssent.Plug do
   @spec delete_identity(Conn.t(), binary()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
   def delete_identity(conn, provider) do
     config = fetch_pow_config(conn)
-    user   = Pow.Plug.current_user(conn)
 
-    config
-    |> Operations.delete(user, provider)
+    conn
+    |> Pow.Plug.current_user()
+    |> Operations.delete(provider, config)
     |> case do
       {:ok, results}  -> {:ok, results, conn}
       {:error, error} -> {:error, error, conn}
@@ -129,7 +129,7 @@ defmodule PowAssent.Plug do
   end
 
   defp get_all_providers_for_user(nil, _config), do: []
-  defp get_all_providers_for_user(user, config), do: Operations.all(config, user)
+  defp get_all_providers_for_user(user, config), do: Operations.all(user, config)
 
   @doc """
   Lists available strategy providers for connection.

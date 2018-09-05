@@ -69,23 +69,23 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
       def all(user), do: pow_assent_all(user)
 
       def pow_assent_get_user_by_provider_uid(provider, uid) do
-        unquote(__MODULE__).get_user_by_provider_uid(@pow_config, provider, uid)
+        unquote(__MODULE__).get_user_by_provider_uid(provider, uid, @pow_config)
       end
 
       def pow_assent_create(user, provider, uid) do
-        unquote(__MODULE__).create(@pow_config, user, provider, uid)
+        unquote(__MODULE__).create(user, provider, uid, @pow_config)
       end
 
       def pow_assent_create_user(provider, uid, params, user_id_params) do
-        unquote(__MODULE__).create_user(@pow_config, provider, uid, params, user_id_params)
+        unquote(__MODULE__).create_user(provider, uid, params, user_id_params, @pow_config)
       end
 
       def pow_assent_delete(user, provider) do
-        unquote(__MODULE__).delete(@pow_config, user, provider)
+        unquote(__MODULE__).delete(user, provider, @pow_config)
       end
 
       def pow_assent_all(user) do
-        unquote(__MODULE__).all(@pow_config, user)
+        unquote(__MODULE__).all(user, @pow_config)
       end
 
       defoverridable unquote(__MODULE__)
@@ -97,8 +97,8 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from the config.
   """
-  @spec get_user_by_provider_uid(Config.t(), binary(), binary()) :: user() | nil
-  def get_user_by_provider_uid(config, provider, uid) do
+  @spec get_user_by_provider_uid(binary(), binary(), Config.t()) :: user() | nil
+  def get_user_by_provider_uid(provider, uid, config) do
     repo   = repo(config)
     struct = user_identity_struct(config)
 
@@ -116,10 +116,10 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec create(Config.t(), user(), binary(), binary()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, map()}} | {:error, Changeset.t()}
-  def create(config, user, provider, uid) do
-    repo            = repo(config)
-    user_identity   = Ecto.build_assoc(user, :user_identities)
+  @spec create(user(), binary(), binary(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, map()}} | {:error, Changeset.t()}
+  def create(user, provider, uid, config) do
+    repo          = repo(config)
+    user_identity = Ecto.build_assoc(user, :user_identities)
 
     user_identity
     |> user_identity.__struct__.changeset(%{provider: provider, uid: uid})
@@ -138,8 +138,8 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec create_user(Config.t(), binary(), binary(), map(), map()) :: {:ok, map()} | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
-  def create_user(config, provider, uid, params, user_id_params \\ %{}) do
+  @spec create_user(binary(), binary(), map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
+  def create_user(provider, uid, params, user_id_params, config) do
     repo          = repo(config)
     user_struct   = user_struct(config)
     user_identity = %{provider: provider, uid: uid}
@@ -169,9 +169,9 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec delete(Config.t(), user(), binary()) ::
+  @spec delete(user(), binary(), Config.t()) ::
           {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
-  def delete(config, user, provider) do
+  def delete(user, provider, config) do
     repo = repo(config)
     user = repo.preload(user, :user_identities, force: true)
 
@@ -203,9 +203,9 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec all(Config.t(), user()) :: [map()]
-  def all(config, user) do
-    repo   = repo(config)
+  @spec all(user(), Config.t()) :: [map()]
+  def all(user, config) do
+    repo = repo(config)
 
     user
     |> Ecto.assoc(:user_identities)

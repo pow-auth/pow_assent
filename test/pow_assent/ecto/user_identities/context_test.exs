@@ -19,14 +19,14 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "retrieves", %{user: user} do
-      get_user = Context.get_user_by_provider_uid(@config, "test_provider", "1")
+      get_user = Context.get_user_by_provider_uid("test_provider", "1", @config)
 
       assert get_user.id == user.id
 
-      refute Context.get_user_by_provider_uid(@config, "test_provider", "2")
+      refute Context.get_user_by_provider_uid("test_provider", "2", @config)
 
       {:ok, _user} = Repo.delete(user)
-      refute Context.get_user_by_provider_uid(@config, "test_provider", "1")
+      refute Context.get_user_by_provider_uid("test_provider", "1", @config)
     end
   end
 
@@ -41,7 +41,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "with valid params", %{user: user} do
-      assert {:ok, user_identity} = Context.create(@config, user, "test_provider", "1")
+      assert {:ok, user_identity} = Context.create(user, "test_provider", "1", @config)
       assert user_identity.provider == "test_provider"
       assert user_identity.uid == "1"
     end
@@ -52,7 +52,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
         |> Changeset.change(email: "test-2@example.com", user_identities: [%{provider: "test_provider", uid: "1"}])
         |> Repo.insert!()
 
-      assert {:error, {:bound_to_different_user, _changeset}} = Context.create(@config, user, "test_provider", "1")
+      assert {:error, {:bound_to_different_user, _changeset}} = Context.create(user, "test_provider", "1", @config)
     end
   end
 
@@ -60,7 +60,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     @valid_params %{name: "John Doe", email: "test@example.com"}
 
     test "with valid params" do
-      assert {:ok, user} = Context.create_user(@config, "test_provider", "1", @valid_params)
+      assert {:ok, user} = Context.create_user("test_provider", "1", @valid_params, %{}, @config)
       assert user.name == "John Doe"
       assert user.email == "test@example.com"
       assert [user_identity] = user.user_identities
@@ -74,11 +74,11 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
         |> Changeset.change(email: "test-2@example.com", user_identities: [%{provider: "test_provider", uid: "1"}])
         |> Repo.insert!()
 
-      assert {:error, {:bound_to_different_user, _changeset}} =  Context.create_user(@config, "test_provider", "1", @valid_params)
+      assert {:error, {:bound_to_different_user, _changeset}} =  Context.create_user("test_provider", "1", @valid_params, %{}, @config)
     end
 
     test "when user id field is missing" do
-      assert {:error, {:missing_user_id_field, _changeset}} =  Context.create_user(@config, "test_provider", "1", Map.delete(@valid_params, :email))
+      assert {:error, {:missing_user_id_field, _changeset}} =  Context.create_user("test_provider", "1", Map.delete(@valid_params, :email), %{}, @config)
     end
   end
 
@@ -93,13 +93,13 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "requires password hash or other identity", %{user: user} do
-      assert {:error, {:no_password, _changeset}} = Context.delete(@config, user, "test_provider")
+      assert {:error, {:no_password, _changeset}} = Context.delete(user, "test_provider", @config)
 
       Repo.insert!(Ecto.build_assoc(user, :user_identities, %{provider: "another_provider", uid: "1"}))
-      assert {:ok, {2, nil}} = Context.delete(@config, user, "test_provider")
+      assert {:ok, {2, nil}} = Context.delete(user, "test_provider", @config)
 
       user = %{user | password_hash: "password"}
-      assert {:ok, {1, nil}} = Context.delete(@config, user, "another_provider")
+      assert {:ok, {1, nil}} = Context.delete(user, "another_provider", @config)
     end
   end
 
@@ -114,7 +114,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
       |> Changeset.change(email: "test-2@example.com", user_identities: [%{provider: "test_provider", uid: "2"}])
       |> Repo.insert!()
 
-    assert [%{provider: "test_provider", uid: "2"}] = Context.all(@config, second_user)
-    assert [%{provider: "test_provider", uid: "1"}, %{provider: "other_provider", uid: "1"}] = Context.all(@config, user)
+    assert [%{provider: "test_provider", uid: "2"}] = Context.all(second_user, @config)
+    assert [%{provider: "test_provider", uid: "1"}, %{provider: "other_provider", uid: "1"}] = Context.all(user, @config)
   end
 end
