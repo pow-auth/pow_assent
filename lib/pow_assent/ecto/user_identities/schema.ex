@@ -36,7 +36,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
 
   @doc false
   defmacro __using__(config) do
-    user_mod = Config.get(config, :user, nil) || raise_no_user_error()
+    user_mod = Config.get(config, :user) || raise_no_user_error()
 
     quote do
       @behaviour unquote(__MODULE__)

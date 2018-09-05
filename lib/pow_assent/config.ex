@@ -21,7 +21,7 @@ defmodule PowAssent.Config do
   """
   @spec get_provider_config(Config.t(), atom()) :: Config.t() | no_return
   def get_provider_config(config, provider) do
-    Config.get(get_providers(config), provider, nil) || raise_no_provider_configuration(provider)
+    Config.get(get_providers(config), provider) || raise_no_provider_configuration(provider)
   end
 
   defp raise_no_provider_configuration(provider) do
@@ -35,7 +35,7 @@ defmodule PowAssent.Config do
   """
   @spec env_config(Config.t()) :: Config.t()
   def env_config(config \\ []) do
-    otp_app = Pow.Config.get(config, :otp_app, nil)
+    otp_app = Pow.Config.get(config, :otp_app)
 
     case otp_app do
       nil     -> Application.get_all_env(:pow_assent)
