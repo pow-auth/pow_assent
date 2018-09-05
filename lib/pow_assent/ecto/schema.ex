@@ -52,7 +52,7 @@ defmodule PowAssent.Ecto.Schema do
 
       @spec pow_assent_user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map()) :: Changeset.t()
       def pow_assent_user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
-        unquote(__MODULE__).changeset(@pow_config, user_or_changeset, user_identity, attrs, user_id_attrs)
+        unquote(__MODULE__).changeset(user_or_changeset, user_identity, attrs, user_id_attrs, @pow_config)
       end
 
       defoverridable unquote(__MODULE__)
@@ -65,8 +65,8 @@ defmodule PowAssent.Ecto.Schema do
   Only `Pow.Ecto.Schema.Changeset.user_id_field_changeset/3` is used for
   validation as password is not required.
   """
-  @spec changeset(Config.t(), Schema.t() | Changeset.t(), Schema.t(), map(), map()) :: Changeset.t()
-  def changeset(_config, user_or_changeset, user_identity, attrs, user_id_attrs) do
+  @spec changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map(), Config.t()) :: Changeset.t()
+  def changeset(user_or_changeset, user_identity, attrs, user_id_attrs, _config) do
     user_or_changeset
     |> Changeset.change()
     |> user_id_field_changeset(attrs, user_id_attrs)
