@@ -42,6 +42,12 @@ Run `mix deps.get` to install it.
 
 ## Getting started
 
+### Pow
+
+It's required to set up [Pow](https://github.com/danschultzer/pow#getting-started-phoenix) first. You can [run these quick setup](guides/POW.md) instructions if Pow hasn't already been set up.
+
+### PowAssent
+
 Install the necessary files:
 
 ```bash
@@ -58,7 +64,7 @@ PRIV_PATH/repo/migrations/TIMESTAMP_create_user_identities.ex
 Update `LIB_PATH/users/user.ex`:
 
 ```elixir
-defmodule MyApp.Users.User
+defmodule MyApp.Users.User do
   use Ecto.Schema
   use Pow.Ecto.Schema
   use PowAssent.Ecto.Schema
@@ -123,7 +129,7 @@ Otherwise, Pow will raise an error about missing template when the user id field
 
 ### Provider links
 
-You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider links to your `registration` and `session` template files:
+You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider links to your template files:
 
 ```elixir
 <h1>Registration</h1>
@@ -152,7 +158,7 @@ config :my_app, :pow_assent,
       ]
 ```
 
-Now start (or restart) your Phoenix app, and visit `http://localhost:4000/registrations/new`. You'll see a "Sign in with Github" link if you have added the `PowAssent.Phoenix.ViewHelpers.provider_links/1` to your template.
+Now start (or restart) your Phoenix app, and visit `http://localhost:4000/auth/github/new`.
 
 ## Custom provider
 
