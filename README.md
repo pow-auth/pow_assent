@@ -32,7 +32,7 @@ Add PowAssent to your list of dependencies in `mix.exs`:
 def deps do
   [
     # ...
-    {:pow_assent, "~> 0.1"}
+    {:pow_assent, "~> 0.1.0-alpha.9"}
     # ...
   ]
 end
