@@ -74,7 +74,11 @@ defmodule MyApp.Users.User do
       MyApp.UserIdentities.UserIdentity,
       on_delete: :delete_all
 
+    pow_user_fields()
+
     # ...
+
+    timestamps()
   end
 
   # ..
