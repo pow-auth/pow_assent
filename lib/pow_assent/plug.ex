@@ -12,8 +12,7 @@ defmodule PowAssent.Plug do
   """
   @spec authenticate(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error. any(), Conn.t()}
   def authenticate(conn, provider, callback_url) do
-    provider_config = get_provider_config(conn, provider)
-    strategy        = provider_config[:strategy]
+    {strategy, provider_config} = get_provider_config(conn, provider)
 
     provider_config
     |> Pow.Config.put(:redirect_uri, callback_url)
@@ -37,15 +36,14 @@ defmodule PowAssent.Plug do
                                                {:error, {:strategy, any()}, Conn.t()} |
                                                {:error, map(), Conn.t()}
   def callback(conn, provider, params) do
-    config          = fetch_pow_config(conn)
-    provider_config = get_provider_config(conn, provider)
-    user            = Pow.Plug.current_user(conn)
-    strategy        = provider_config[:strategy]
+    pow_config                  = fetch_pow_config(conn)
+    user                        = Pow.Plug.current_user(conn)
+    {strategy, provider_config} = get_provider_config(conn, provider)
 
     provider_config
     |> strategy.callback(conn, params)
     |> parse_callback_response()
-    |> get_or_create_by_identity(provider, user, config)
+    |> get_or_create_by_identity(provider, user, pow_config)
   end
 
   defp parse_callback_response({:ok, %{user: params, conn: conn}}) do
@@ -144,10 +142,15 @@ defmodule PowAssent.Plug do
 
   defp get_provider_config(conn, provider) do
     provider = String.to_atom(provider)
+    config   =
+      conn
+      |> fetch_config()
+      |> Config.get_provider_config(provider)
 
-    conn
-    |> fetch_config()
-    |> Config.get_provider_config(provider)
+    strategy        = config[:strategy]
+    provider_config = Keyword.delete(config, :strategy)
+
+    {strategy, provider_config}
   end
 
   defp fetch_config(conn) do
