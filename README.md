@@ -42,11 +42,11 @@ Run `mix deps.get` to install it.
 
 ## Getting started
 
-### Pow
+### Set up Pow
 
 It's required to set up [Pow](https://github.com/danschultzer/pow#getting-started-phoenix) first. You can [run these quick setup](guides/POW.md) instructions if Pow hasn't already been set up.
 
-### PowAssent
+### Set up PowAssent
 
 Install the necessary files:
 
@@ -166,28 +166,15 @@ Now start (or restart) your Phoenix app, and visit `http://localhost:4000/auth/g
 
 ## Custom provider
 
-You can add your own custom strategy. Here's an example of an OAuth 2.0 implementation:
+You can add your own custom strategy.
+
+Here's an example of an OAuth 2.0 implementation using `PowAssent.Strategy.OAuth2.Base`:
 
 ```elixir
 defmodule TestProvider do
-  use PowAssent.Strategy
+  use PowAssent.Strategy.OAuth2.Base
 
-  alias PowAssent.Strategy.OAuth2, as: OAuth2Helper
-  alias OAuth2.Strategy.AuthCode
-
-  def authorize_url(config, conn) do
-    OAuth2Helper.authorize_url(conn, set_config(config))
-  end
-
-  def callback(config, conn, params) do
-    config = set_config(config)
-
-    config
-    |> OAuth2Helper.callback(conn, params)
-    |> normalize()
-  end
-
-  defp set_config(config) do
+  def default_config(_config) do
     [
       site: "http://localhost:4000/",
       authorize_url: "http://localhost:4000/oauth/authorize",
@@ -195,19 +182,33 @@ defmodule TestProvider do
       user_url: "/user",
       authorization_params: [scope: "email profile"]
     ]
-    |> Keyword.merge(config)
-    |> Keyword.put(:strategy, AuthCode)
   end
 
-  defp normalize({:ok, %{conn: conn, user: user, client: client}}) do
-    user = %{
-      "uid"        => user["sub"],
-      "name"       => user["name"],
-      "email"      => user["email"]}
-
-    {:ok, %{conn: conn, user: Helpers.prune(user), client: client}}
+  def normalize(_client, _config, user) do
+    %{
+      "uid"   => user["sub"],
+      "name"  => user["name"],
+      "email" => user["email"]
+    }
   end
-  defp normalize({:error, error}), do: {:error, error}
+end
+```
+
+You can also use `PowAssent.Strategy`:
+
+```elixir
+defmodule TestProvider do
+  use PowAssent.Strategy
+
+  @spec authorize_url(Keyword.t(), Plug.Conn.t()) :: {:ok, %{conn: Plug.Conn.t(), url: binary()}} | {:error, any()}
+  def authorize_url(config, conn) do
+    # Generate authorization url
+  end
+
+  @spec callback(Keyword.t(), Plug.Conn.t(), map()) :: {:ok, %{conn: Plug.Conn.t(), user: map()}} | {:error, any()}
+  def callback(config, conn, params) do
+    # Handle callback response
+  end
 end
 ```
 
