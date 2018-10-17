@@ -5,6 +5,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
 
   alias Plug.Conn
   alias PowAssent.Plug
+  alias Pow.Phoenix.Controller
   alias PowEmailConfirmation.Phoenix.ControllerCallbacks
 
   plug :load_params_from_session
@@ -63,7 +64,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
   end
 
   defp assign_create_path(conn, _opts) do
-    path = router_helpers(conn).pow_assent_registration_path(conn, :create, conn.params["provider"])
+    path = Controller.router_path(conn, __MODULE__, :create, [conn.params["provider"]])
     Conn.assign(conn, :action, path)
   end
 

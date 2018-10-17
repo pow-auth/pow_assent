@@ -6,7 +6,7 @@ defmodule PowAssent.Phoenix.ViewHelpers do
 
   alias Phoenix.{HTML, HTML.Link}
   alias Pow.Phoenix.Controller
-  alias PowAssent.Phoenix.RegistrationController
+  alias PowAssent.Phoenix.{AuthorizationController, RegistrationController}
 
   @doc """
   Generates list of provider links.
@@ -36,14 +36,14 @@ defmodule PowAssent.Phoenix.ViewHelpers do
 
   defp oauth_signin_link(conn, provider) do
     msg  = RegistrationController.messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
-    path = Controller.router_helpers(conn).pow_assent_authorization_path(conn, :new, provider)
+    path = Controller.router_path(conn, AuthorizationController, :new, [provider])
 
     Link.link(msg, to: path)
   end
 
   defp oauth_remove_link(conn, provider) do
     msg  = RegistrationController.messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
-    path = Controller.router_helpers(conn).pow_assent_authorization_path(conn, :delete, provider)
+    path = Controller.router_path(conn, AuthorizationController, :delete, [provider])
 
     Link.link(msg, to: path, method: :delete)
   end

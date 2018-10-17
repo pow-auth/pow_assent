@@ -5,6 +5,10 @@ defmodule PowAssent.Phoenix.AuthorizationController do
 
   alias Plug.Conn
   alias PowAssent.Plug
+  alias PowAssent.Phoenix.RegistrationController
+  alias Pow.Phoenix.Controller
+  alias Pow.Phoenix.RegistrationController, as: PowRegistrationController
+  alias Pow.Phoenix.SessionController, as: PowSessionController
   alias PowEmailConfirmation.Phoenix.{ConfirmationController, ControllerCallbacks}
 
   plug :require_authenticated when action in [:delete]
@@ -49,7 +53,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
 
     conn
     |> put_flash(:error, ConfirmationController.messages(conn).email_confirmation_required(conn))
-    |> redirect(to: router_helpers(conn).pow_session_path(conn, :new))
+    |> redirect(to: Controller.router_path(conn, PowSessionController, :new))
   end
   def respond_callback({:ok, _user, conn}) do
     conn
@@ -61,18 +65,18 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   def respond_callback({:error, {:bound_to_different_user, _changeset}, conn}) do
     conn
     |> put_flash(:error, messages(conn).account_already_bound_to_other_user(conn))
-    |> redirect(to: router_helpers(conn).pow_registration_path(conn, :new))
+    |> redirect(to: Controller.router_path(conn, PowRegistrationController, :new))
   end
   def respond_callback({:error, {:missing_user_id_field, _changeset}, conn}) do
     conn
     |> put_session("pow_assent_params", conn.private[:pow_assent_params])
-    |> redirect(to: router_helpers(conn).pow_assent_registration_path(conn, :add_user_id, conn.params["provider"]))
+    |> redirect(to: Controller.router_path(conn, RegistrationController, :add_user_id, [conn.params["provider"]]))
   end
   def respond_callback({:error, {:strategy, error}, _conn}), do: handle_strategy_error(error)
   def respond_callback({:error, _error, conn}) do
     conn
     |> put_flash(:error, messages(conn).could_not_sign_in(conn))
-    |> redirect(to: router_helpers(conn).pow_session_path(conn, :new))
+    |> redirect(to: Controller.router_path(conn, PowSessionController, :new))
   end
 
   @spec process_delete(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
@@ -84,13 +88,15 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   def respond_delete({:ok, _deleted, conn}) do
     conn
     |> put_flash(:info, messages(conn).authentication_has_been_removed(conn))
-    |> redirect(to: router_helpers(conn).pow_registration_path(conn, :edit))
+    |> redirect(to: after_delete_path(conn))
   end
   def respond_delete({:error, {:no_password, _changeset}, conn}) do
     conn
     |> put_flash(:error, messages(conn).identity_cannot_be_removed_missing_user_password(conn))
-    |> redirect(to: router_helpers(conn).pow_registration_path(conn, :edit))
+    |> redirect(to: after_delete_path(conn))
   end
+
+  defp after_delete_path(conn), do: Controller.router_path(conn, PowRegistrationController, :edit)
 
   defp load_state_from_session(%{private: %{plug_session: plug_session}} = conn, _opts) do
     case plug_session do
@@ -105,7 +111,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   end
 
   defp assign_callback_url(conn, _opts) do
-    url = router_helpers(conn).pow_assent_authorization_url(conn, :callback, conn.params["provider"])
+    url = Controller.router_url(conn, __MODULE__, :callback, [conn.params["provider"]])
 
     assign(conn, :callback_url, url)
   end
