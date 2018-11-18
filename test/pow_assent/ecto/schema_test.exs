@@ -57,7 +57,7 @@ defmodule PowAssent.Ecto.SchemaTest do
         |> Repo.insert()
 
       assert [user_identity] = changeset.changes.user_identities
-      assert user_identity.errors[:uid_provider] == {"has already been taken", []}
+      assert user_identity.errors[:uid_provider] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
     end
 
     test "sets :email_confirmed_at when provided as attrs" do

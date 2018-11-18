@@ -1,7 +1,6 @@
 use Mix.Config
 
 config :pow_assent, PowAssent.Test.Ecto.Repo,
-  adapter: Ecto.Adapters.Postgres,
   database: "pow_assent_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   priv: "test/support/ecto/priv"
