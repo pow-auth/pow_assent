@@ -43,8 +43,8 @@ defmodule PowAssent.MixProject do
       {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},
       {:phoenix_ecto, ">= 3.0.0 and <= 4.0.0"},
 
-      {:ecto, "~> 3.0 or ~> 2.2"},
-      {:phoenix, "~> 1.4 or ~> 1.3"},
+      {:ecto, "~> 2.2 or ~> 3.0"},
+      {:phoenix, "~> 1.3.0 or ~> 1.4.0"},
       {:plug, ">= 1.5.0 and < 1.8.0", optional: true},
 
       {:credo, "~> 0.9.3", only: [:dev, :test]},
