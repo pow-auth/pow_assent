@@ -33,7 +33,7 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
         |> UserIdentity.changeset(Map.put(@valid_params, :user_id, 2))
         |> Repo.insert()
 
-      assert changeset.errors[:user] == {"does not exist", []}
+      assert changeset.errors[:user] == {"does not exist", [constraint: :assoc, constraint_name: "user_identities_user_id_fkey"]}
     end
 
     test "requires unique uid and provider" do
@@ -47,7 +47,7 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
         |> UserIdentity.changeset(@valid_params)
         |> Repo.insert()
 
-      assert changeset.errors[:uid_provider] == {"has already been taken", []}
+      assert changeset.errors[:uid_provider] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
     end
   end
 end

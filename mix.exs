@@ -43,16 +43,17 @@ defmodule PowAssent.MixProject do
       {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},
       {:phoenix_ecto, ">= 3.0.0 and <= 4.0.0"},
 
-      {:ecto, "~> 2.2"},
-      {:phoenix, "~> 1.3"},
-      {:plug, ">= 1.5.0 and < 1.7.0", optional: true},
+      {:ecto, "~> 3.0 or ~> 2.2"},
+      {:phoenix, "~> 1.4 or ~> 1.3"},
+      {:plug, ">= 1.5.0 and < 1.8.0", optional: true},
 
       {:credo, "~> 0.9.3", only: [:dev, :test]},
 
       {:ex_doc, "~> 0.19.0", only: :dev},
 
-      {:postgrex, ">= 0.0.0", only: :test},
-      {:bypass, "~> 0.8", only: :test}
+      {:ecto_sql, "~> 3.0.0", only: :test},
+      {:postgrex, "~> 0.14.0", only: :test},
+      {:bypass, github: "oo6/bypass", branch: "use-plug-cowboy", only: :test}
     ]
   end
 
