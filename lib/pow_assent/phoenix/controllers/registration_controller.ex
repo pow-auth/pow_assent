@@ -63,7 +63,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
   end
 
   defp assign_create_path(conn, _opts) do
-    path = router_helpers(conn).pow_assent_registration_path(conn, :create, conn.params["provider"])
+    path = routes(conn).path_for(conn, __MODULE__, :create, [conn.params["provider"]])
     Conn.assign(conn, :action, path)
   end
 
