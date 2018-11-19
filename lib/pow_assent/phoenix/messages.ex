@@ -12,7 +12,7 @@ defmodule PowAssent.Phoenix.Messages do
 
   @spec could_not_sign_in(Conn.t()) :: message()
   def could_not_sign_in(_conn),
-    do: "Something went wrong, and you couldn't be singed in. Please try again."
+    do: "Something went wrong, and you couldn't be signed in. Please try again."
 
   @spec user_has_been_created(Conn.t()) :: message()
   def user_has_been_created(_conn), do: nil
