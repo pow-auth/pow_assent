@@ -105,7 +105,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
-      assert get_flash(conn, :error) == "Something went wrong, and you couldn't be singed in. Please try again."
+      assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
     end
 
     test "with missing required user id", %{conn: conn, server: server} do
