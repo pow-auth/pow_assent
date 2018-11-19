@@ -94,8 +94,12 @@ defmodule PowAssent.Ecto.Schema do
     confirmable?  = Map.has_key?(changeset.data, :email_confirmed_at)
 
     case confirmable? do
-      true  -> Changeset.change(changeset, email_confirmed_at: DateTime.utc_now())
-      false -> changeset
+      true  ->
+        now = Pow.Ecto.Schema.__timestamp_for__(changeset.data.__struct__, :email_confirmed_at)
+        Changeset.change(changeset, email_confirmed_at: now)
+
+      false ->
+        changeset
     end
   end
 end
