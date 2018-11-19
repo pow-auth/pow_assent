@@ -52,7 +52,7 @@ defmodule PowAssent.Strategy.BasecampTest do
       ]
 
       Bypass.expect_once(bypass, "POST", "/authorization/token", fn conn ->
-        send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
+        send_resp(conn, 200, Jason.encode!(%{access_token: @access_token}))
       end)
 
       Bypass.expect_once(bypass, "GET", "/authorization.json", fn conn ->
@@ -69,7 +69,7 @@ defmodule PowAssent.Strategy.BasecampTest do
           "accounts" => accounts
         }
 
-        Plug.Conn.resp(conn, 200, Poison.encode!(user))
+        Plug.Conn.resp(conn, 200, Jason.encode!(user))
       end)
 
       expected = %{

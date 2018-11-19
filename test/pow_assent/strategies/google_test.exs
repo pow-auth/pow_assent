@@ -27,7 +27,7 @@ defmodule PowAssent.Strategy.GoogleTest do
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
       Bypass.expect_once(bypass, "POST", "/oauth2/v4/token", fn conn ->
-        send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
+        send_resp(conn, 200, Jason.encode!(%{access_token: @access_token}))
       end)
 
       Bypass.expect_once(bypass, "GET", "/oauth2/v2/userinfo", fn conn ->
@@ -46,7 +46,7 @@ defmodule PowAssent.Strategy.GoogleTest do
           "hd" => "example.com"
         }
 
-        Plug.Conn.resp(conn, 200, Poison.encode!(user))
+        Plug.Conn.resp(conn, 200, Jason.encode!(user))
       end)
 
       expected = %{

@@ -27,7 +27,7 @@ defmodule PowAssent.Strategy.SlackTest do
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
       Bypass.expect_once(bypass, "POST", "/api/oauth.access", fn conn ->
-        send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
+        send_resp(conn, 200, Jason.encode!(%{access_token: @access_token}))
       end)
 
       Bypass.expect_once(bypass, "GET", "/api/users.identity", fn conn ->
@@ -52,7 +52,7 @@ defmodule PowAssent.Strategy.SlackTest do
           }
         }
 
-        Plug.Conn.resp(conn, 200, Poison.encode!(user))
+        Plug.Conn.resp(conn, 200, Jason.encode!(user))
       end)
 
       expected = %{

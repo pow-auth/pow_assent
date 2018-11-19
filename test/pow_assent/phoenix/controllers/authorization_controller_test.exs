@@ -130,7 +130,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   describe "GET /auth/:provider/callback" do
     test "with failed token generation", %{conn: conn, server: server} do
       Bypass.expect_once(server, "POST", "/oauth/token", fn conn ->
-        send_resp(conn, 401, Poison.encode!(%{error: "invalid_client"}))
+        send_resp(conn, 401, Jason.encode!(%{error: "invalid_client"}))
       end)
 
       assert_raise PowAssent.RequestError, "invalid_client", fn ->

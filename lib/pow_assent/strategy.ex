@@ -44,4 +44,18 @@ defmodule PowAssent.Strategy do
     |> Enum.filter(fn {_, v} -> not is_nil(v) end)
     |> Enum.into(%{})
   end
+
+  @doc """
+  Decode a JSON response to a map
+  """
+  @spec decode_json!(binary() | map(), Keyword.t()) :: map()
+  def decode_json!(map, _config) when is_map(map), do: map
+  def decode_json!(response, config) do
+    json_library = Keyword.get(config, :json_library, default_json_library())
+    json_library.decode!(response)
+  end
+
+  defp default_json_library do
+    Application.get_env(:phoenix, :json_library, Poison)
+  end
 end

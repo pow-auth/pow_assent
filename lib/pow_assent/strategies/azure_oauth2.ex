@@ -88,13 +88,13 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
   end
 
   @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()}
-  def get_user(_config, client) do
+  def get_user(config, client) do
     user =
       client.token.other_params["id_token"]
       |> String.split(".")
       |> Enum.at(1)
       |> Base.decode64!(padding: false)
-      |> Poison.decode!()
+      |> Helpers.decode_json!(config)
 
       {:ok, user}
   end

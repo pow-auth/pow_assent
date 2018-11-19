@@ -36,7 +36,7 @@ defmodule PowAssent.Strategy.VKTest do
         assert {:ok, body, _conn} = Plug.Conn.read_body(conn)
         assert body =~ "scope=email"
 
-        send_resp(conn, 200, Poison.encode!(%{"access_token" => @access_token, "email" => "lindsay.stirling@example.com"}))
+        send_resp(conn, 200, Jason.encode!(%{"access_token" => @access_token, "email" => "lindsay.stirling@example.com"}))
       end)
 
       Bypass.expect_once(bypass, "GET", "/method/users.get", fn conn ->
@@ -59,7 +59,7 @@ defmodule PowAssent.Strategy.VKTest do
           }
         ]
 
-        Plug.Conn.resp(conn, 200, Poison.encode!(%{"response" => users}))
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{"response" => users}))
       end)
 
       expected = %{

@@ -24,3 +24,5 @@ config :pow_assent_mailer, :pow,
   Keyword.merge(default_opts,
     user: PowAssent.Test.Ecto.Users.EmailConfirmUser,
     mailer_backend: PowAssent.Test.Phoenix.MailerMock)
+
+config :phoenix, :json_library, Jason

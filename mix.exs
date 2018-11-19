@@ -47,7 +47,8 @@ defmodule PowAssent.MixProject do
       {:phoenix, "~> 1.3.0 or ~> 1.4.0"},
       {:plug, ">= 1.5.0 and < 1.8.0", optional: true},
 
-      {:credo, "~> 0.9.3", only: [:dev, :test]},
+      {:credo, "~> 0.10.2", only: [:dev, :test]},
+      {:jason, "~> 1.0", only: [:dev, :test]},
 
       {:ex_doc, "~> 0.19.0", only: :dev},
 

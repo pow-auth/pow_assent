@@ -136,7 +136,7 @@ defmodule PowAssent.Strategy.TwitterTest do
           verified: false
         }
 
-        Plug.Conn.resp(conn, 200, Poison.encode!(user))
+        Plug.Conn.resp(conn, 200, Jason.encode!(user))
       end)
 
       expected = %{
