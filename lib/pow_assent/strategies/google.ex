@@ -19,18 +19,18 @@ defmodule PowAssent.Strategy.Google do
   @spec default_config(Keyword.t()) :: Keyword.t()
   def default_config(_config) do
     [
-      site: "https://www.googleapis.com/plus/v1",
-      authorize_url: "https://accounts.google.com/o/oauth2/auth",
-      token_url: "https://accounts.google.com/o/oauth2/token",
-      user_url: "/people/me/openIdConnect",
-      authorization_params: [scope: "email profile"]
+      site: "https://www.googleapis.com",
+      authorize_url: "https://accounts.google.com/o/oauth2/v2/auth",
+      token_url: "/oauth2/v4/token",
+      user_url: "/oauth2/v2/userinfo",
+      authorization_params: [scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"]
     ]
   end
 
   @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
   def normalize(_client, _config, user) do
     {:ok, %{
-      "uid"        => user["sub"],
+      "uid"        => user["id"],
       "name"       => user["name"],
       "email"      => verified_email(user),
       "first_name" => user["given_name"],
@@ -38,9 +38,9 @@ defmodule PowAssent.Strategy.Google do
       "image"      => user["picture"],
       "domain"     => user["hd"],
       "urls"       => %{
-        "Google" => user["profile"]}}}
+        "Google" => user["link"]}}}
   end
 
-  defp verified_email(%{"email_verified" => "true"} = user), do: user["email"]
+  defp verified_email(%{"verified_email" => true} = user), do: user["email"]
   defp verified_email(_), do: nil
 end
