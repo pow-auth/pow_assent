@@ -27,7 +27,9 @@ defmodule PowAssent.Strategy.DiscordTest do
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
       Bypass.expect_once(bypass, "POST", "/oauth2/token", fn conn ->
-        send_resp(conn, 200, Jason.encode!(%{access_token: @access_token}))
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(%{access_token: @access_token}))
       end)
 
       Bypass.expect_once(bypass, "GET", "/users/@me", fn conn ->
@@ -42,7 +44,9 @@ defmodule PowAssent.Strategy.DiscordTest do
           "email" => "nelly@discordapp.com"
         }
 
-        Plug.Conn.resp(conn, 200, Jason.encode!(user))
+        conn
+        |> put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(user))
       end)
 
       expected = %{

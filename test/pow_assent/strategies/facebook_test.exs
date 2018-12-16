@@ -32,7 +32,9 @@ defmodule PowAssent.Strategy.FacebookTest do
         assert body =~ "scope=email"
         assert body =~ "redirect_uri=test"
 
-        send_resp(conn, 200, Jason.encode!(%{"access_token" => @access_token}))
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(%{"access_token" => @access_token}))
       end)
 
       Bypass.expect_once(bypass, "GET", "/me", fn conn ->
@@ -46,7 +48,10 @@ defmodule PowAssent.Strategy.FacebookTest do
                  Base.encode16(:crypto.hmac(:sha256, "", @access_token), case: :lower)
 
         user = %{name: "Dan Schultzer", email: "foo@example.com", id: "1"}
-        Plug.Conn.resp(conn, 200, Jason.encode!(user))
+
+        conn
+        |> put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(user))
       end)
 
       expected = %{

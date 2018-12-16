@@ -34,7 +34,9 @@ defmodule PowAssent.Strategy.InstagramTest do
           "profile_picture" => "..."
         }
 
-        send_resp(conn, 200, Jason.encode!(%{access_token: @access_token, user: user}))
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(%{access_token: @access_token, user: user}))
       end)
 
       expected = %{

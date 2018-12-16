@@ -51,7 +51,10 @@ defmodule PowAssent.Strategy.OAuthTest do
 
       Bypass.expect_once(bypass, "GET", "/api/user", fn conn ->
         user = %{email: nil}
-        Plug.Conn.resp(conn, 200, Jason.encode!(user))
+
+        conn
+        |> put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(user))
       end)
 
       expected = %{"email" => nil}
@@ -73,7 +76,9 @@ defmodule PowAssent.Strategy.OAuthTest do
       end)
 
       Bypass.expect_once(bypass, "GET", "/api/user", fn conn ->
-        Plug.Conn.resp(conn, 500, Jason.encode!(%{error: "Unknown error"}))
+        conn
+        |> put_resp_content_type("application/json")
+        |> Plug.Conn.resp(500, Jason.encode!(%{error: "Unknown error"}))
       end)
 
       {:error, %{conn: _conn, error: %OAuth2.Response{body: %{"error" => "Unknown error"}}}} = OAuth.callback(config, conn, params)

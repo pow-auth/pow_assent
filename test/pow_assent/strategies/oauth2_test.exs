@@ -84,7 +84,9 @@ defmodule PowAssent.Strategy.OAuth2Test do
       config = Keyword.put(config, :user_url, "http://localhost:8888/api/user")
 
       Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
-        send_resp(conn, 200, Jason.encode!(%{access_token: @access_token}))
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(%{access_token: @access_token}))
       end)
 
       expected = %OAuth2.Error{reason: :econnrefused}
@@ -95,12 +97,16 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
     test "user url unauthorized access token", %{conn: conn, config: config, params: params, bypass: bypass} do
       Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
-        send_resp(conn, 200, Jason.encode!(%{access_token: @access_token}))
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(%{access_token: @access_token}))
       end)
 
       Bypass.expect_once(bypass, "GET", "/api/user", fn conn ->
         assert_access_token_in_header(conn, @access_token)
-        Plug.Conn.resp(conn, 401, Jason.encode!(%{"error" => "Unauthorized"}))
+        conn
+        |> put_resp_content_type("application/json")
+        |> Plug.Conn.resp(401, Jason.encode!(%{"error" => "Unauthorized"}))
       end)
 
       expected = %PowAssent.RequestError{message: "Unauthorized token"}

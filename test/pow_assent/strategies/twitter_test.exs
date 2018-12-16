@@ -136,7 +136,9 @@ defmodule PowAssent.Strategy.TwitterTest do
           verified: false
         }
 
-        Plug.Conn.resp(conn, 200, Jason.encode!(user))
+        conn
+        |> put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(user))
       end)
 
       expected = %{

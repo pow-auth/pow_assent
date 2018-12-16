@@ -27,7 +27,10 @@ defmodule PowAssent.Strategy.GithubTest do
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
       Bypass.expect_once(bypass, "POST", "/login/oauth/access_token", fn conn ->
-        send_resp(conn, 200, Jason.encode!(%{access_token: @access_token}))
+
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(200, Jason.encode!(%{access_token: @access_token}))
       end)
 
       Bypass.expect_once(bypass, "GET", "/user", fn conn ->
@@ -66,7 +69,9 @@ defmodule PowAssent.Strategy.GithubTest do
           updated_at: "2008-01-14T04:33:35Z"
         }
 
-        Plug.Conn.resp(conn, 200, Jason.encode!(user))
+        conn
+        |> put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(user))
       end)
 
       Bypass.expect_once(bypass, "GET", "/user/emails", fn conn ->
@@ -81,7 +86,9 @@ defmodule PowAssent.Strategy.GithubTest do
           }
         ]
 
-        Plug.Conn.resp(conn, 200, Jason.encode!(emails))
+        conn
+        |> put_resp_content_type("application/json")
+        |> Plug.Conn.resp(200, Jason.encode!(emails))
       end)
 
       expected = %{
