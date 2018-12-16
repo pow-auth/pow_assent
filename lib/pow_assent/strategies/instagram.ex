@@ -20,8 +20,7 @@ defmodule PowAssent.Strategy.Instagram do
   def default_config(_config) do
     [
       site: "https://api.instagram.com",
-      authorization_params: [scope: "basic"],
-      get_user_fn: &get_user/2
+      authorization_params: [scope: "basic"]
     ]
   end
 

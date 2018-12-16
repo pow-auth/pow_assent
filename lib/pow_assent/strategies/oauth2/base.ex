@@ -29,6 +29,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
 
   @callback default_config(Keyword.t()) :: Keyword.t()
   @callback normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @callback get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}
 
   @doc false
   defmacro __using__(_opts) do
@@ -57,6 +58,9 @@ defmodule PowAssent.Strategy.OAuth2.Base do
         |> maybe_normalize(config)
       end
 
+      @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+      def get_user(config, token), do: OAuth2.get_user(config, token)
+
       defp maybe_normalize({:ok, %{client: client, user: user} = results}, config) do
         case normalize(config, user) do
           {:ok, user}     -> {:ok, %{results | user: Helpers.prune(user)}}
@@ -70,6 +74,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
         |> default_config()
         |> Keyword.merge(config)
         |> Keyword.put_new(:strategy, AuthCode)
+        |> Keyword.put_new(:get_user_fn, &get_user/2)
       end
 
       defoverridable unquote(__MODULE__)

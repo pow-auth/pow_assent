@@ -32,8 +32,7 @@ defmodule PowAssent.Strategy.VK do
       token_url: "https://oauth.vk.com/access_token",
       user_url: "/method/users.get",
       authorization_params: [scope: "email"],
-      user_url_params: user_url_params,
-      get_user_fn: &get_user/2
+      user_url_params: user_url_params
     ]
   end
 
@@ -51,7 +50,7 @@ defmodule PowAssent.Strategy.VK do
   end
 
   @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}
-  defp get_user(config, client) do
+  def get_user(config, client) do
     params = Keyword.get(config, :user_url_params, %{})
     config = Keyword.put(config, :user_url, user_url(config, client, params))
 

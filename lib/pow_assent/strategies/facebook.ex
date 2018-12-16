@@ -28,8 +28,7 @@ defmodule PowAssent.Strategy.Facebook do
       token_url: "/oauth/access_token",
       user_url: "/me",
       authorization_params: [scope: "email"],
-      user_url_request_fields: "name,email",
-      get_user_fn: &get_user/2
+      user_url_request_fields: "name,email"
     ]
   end
 

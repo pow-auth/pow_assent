@@ -27,8 +27,7 @@ defmodule PowAssent.Strategy.Github do
       token_url: "https://github.com/login/oauth/access_token",
       user_url: "/user",
       user_emails_url: "/user/emails",
-      authorization_params: [scope: "read:user,user:email"],
-      get_user_fn: &get_user/2
+      authorization_params: [scope: "read:user,user:email"]
     ]
   end
 

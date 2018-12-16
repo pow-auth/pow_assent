@@ -72,8 +72,7 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
       site: "https://login.microsoftonline.com",
       authorize_url: "/#{tenant_id}/oauth2/authorize",
       token_url: "/#{tenant_id}/oauth2/token",
-      authorization_params: [response_mode: "query", response_type: "code", resource: resource],
-      get_user_fn: &get_user/2
+      authorization_params: [response_mode: "query", response_type: "code", resource: resource]
     ]
   end
 
