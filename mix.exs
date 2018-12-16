@@ -53,7 +53,7 @@ defmodule PowAssent.MixProject do
 
       {:ecto_sql, "~> 3.0.0", only: :test},
       {:postgrex, "~> 0.14.0", only: :test},
-      {:bypass, github: "oo6/bypass", branch: "use-plug-cowboy", only: :test}
+      {:bypass, "~> 1.0.0", only: :test}
     ]
   end
 
