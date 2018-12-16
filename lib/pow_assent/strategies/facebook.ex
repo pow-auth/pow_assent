@@ -33,8 +33,8 @@ defmodule PowAssent.Strategy.Facebook do
     ]
   end
 
-  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
-  def normalize(client, _config, user) do
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()}
+  def normalize(config, user) do
     {:ok, %{
       "uid"         => user["id"],
       "nickname"    => user["username"],
@@ -43,7 +43,7 @@ defmodule PowAssent.Strategy.Facebook do
       "first_name"  => user["first_name"],
       "last_name"   => user["last_name"],
       "location"    => (user["location"] || %{})["name"],
-      "image"       => image_url(client, user),
+      "image"       => image_url(config, user),
       "description" => user["bio"],
       "urls"        => %{
         "Facebook" => user["link"],
@@ -52,8 +52,8 @@ defmodule PowAssent.Strategy.Facebook do
     }}
   end
 
-  defp image_url(client, user) do
-    "#{client.site}/#{user["id"]}/picture"
+  defp image_url(config, user) do
+    "#{config[:site]}/#{user["id"]}/picture"
   end
 
   @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}

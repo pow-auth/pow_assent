@@ -77,8 +77,8 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
     ]
   end
 
-  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
-  def normalize(_client, _config, user) do
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()}
+  def normalize(_config, user) do
     {:ok, %{
       "uid"        => user["sub"],
       "name"       => user["name"],

@@ -14,7 +14,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
           ]
         end
 
-        def normalize(_client, _config, user) do
+        def normalize(_config, user) do
           %{
             "uid"         => user["id"],
             "name"        => user["name"],
@@ -28,7 +28,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
   alias Plug.Conn
 
   @callback default_config(Keyword.t()) :: Keyword.t()
-  @callback normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @callback normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
 
   @doc false
   defmacro __using__(_opts) do
@@ -58,7 +58,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
       end
 
       defp maybe_normalize({:ok, %{client: client, user: user} = results}, config) do
-        case normalize(client, config, user) do
+        case normalize(config, user) do
           {:ok, user}     -> {:ok, %{results | user: Helpers.prune(user)}}
           {:error, error} -> maybe_normalize({:error, error}, config)
         end

@@ -185,7 +185,7 @@ defmodule TestProvider do
     ]
   end
 
-  def normalize(_client, _config, user) do
+  def normalize(_config, user) do
     %{
       "uid"   => user["sub"],
       "name"  => user["name"],

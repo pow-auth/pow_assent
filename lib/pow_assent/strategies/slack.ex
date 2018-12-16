@@ -46,8 +46,8 @@ defmodule PowAssent.Strategy.Slack do
     ]
   end
 
-  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
-  def normalize(_client, _config, identity) do
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()}
+  def normalize(_config, identity) do
     {:ok, %{
       "uid"       => uid(identity),
       "name"      => identity["user"]["name"],
