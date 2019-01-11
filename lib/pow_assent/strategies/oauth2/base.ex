@@ -23,13 +23,12 @@ defmodule PowAssent.Strategy.OAuth2.Base do
         end
       end
   """
-  alias OAuth2.{Client, Strategy.AuthCode}
   alias PowAssent.Strategy.OAuth2
   alias Plug.Conn
 
   @callback default_config(Keyword.t()) :: Keyword.t()
   @callback normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
-  @callback get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}
+  @callback get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
 
   @doc false
   defmacro __using__(_opts) do
@@ -40,7 +39,6 @@ defmodule PowAssent.Strategy.OAuth2.Base do
 
       alias PowAssent.Strategy, as: Helpers
       alias Plug.Conn
-      alias OAuth2.Client
 
       @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
       def authorize_url(config, conn) do
@@ -49,19 +47,19 @@ defmodule PowAssent.Strategy.OAuth2.Base do
         |> OAuth2.authorize_url(conn)
       end
 
-      @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{client: Client.t(), conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
+      @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
       def callback(config, conn, params) do
         config = set_config(config)
 
         config
-        |> OAuth2.callback(conn, params)
+        |> OAuth2.callback(conn, params, __MODULE__)
         |> maybe_normalize(config)
       end
 
       @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
       def get_user(config, token), do: OAuth2.get_user(config, token)
 
-      defp maybe_normalize({:ok, %{client: client, user: user} = results}, config) do
+      defp maybe_normalize({:ok, %{user: user} = results}, config) do
         case normalize(config, user) do
           {:ok, user}     -> {:ok, %{results | user: Helpers.prune(user)}}
           {:error, error} -> maybe_normalize({:error, error}, config)
@@ -73,8 +71,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
         config
         |> default_config()
         |> Keyword.merge(config)
-        |> Keyword.put_new(:strategy, AuthCode)
-        |> Keyword.put_new(:get_user_fn, &get_user/2)
+        |> Keyword.put(:strategy, __MODULE__)
       end
 
       defoverridable unquote(__MODULE__)

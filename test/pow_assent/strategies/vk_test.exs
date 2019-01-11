@@ -33,8 +33,7 @@ defmodule PowAssent.Strategy.VKTest do
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
       Bypass.expect_once(bypass, "POST", "/access_token", fn conn ->
-        assert {:ok, body, _conn} = Plug.Conn.read_body(conn)
-        assert body =~ "scope=email"
+        assert conn.query_string =~ "scope=email"
 
         conn
         |> put_resp_content_type("application/json")
@@ -83,10 +82,9 @@ defmodule PowAssent.Strategy.VKTest do
 
     test "handles error", %{config: config, conn: conn, params: params} do
       config = Keyword.put(config, :site, "http://localhost:8888")
-      expected = %OAuth2.Error{reason: :econnrefused}
 
       assert {:error, %{conn: %Plug.Conn{}, error: error}} = VK.callback(config, conn, params)
-      assert error == expected
+      assert error == :econnrefused
     end
   end
 end

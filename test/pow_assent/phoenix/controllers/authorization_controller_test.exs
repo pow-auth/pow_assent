@@ -22,7 +22,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert redirected_to(conn) =~ "#{bypass_server(server)}/oauth/authorize?client_id=client_id&redirect_uri=http%3A%2F%2Flocalhost%2Fauth%2Ftest_provider%2Fcallback&response_type=code&state="
     end
 
-    test "wtth error", %{conn: conn} do
+    test "with error", %{conn: conn} do
       assert_raise RuntimeError, "fail", fn ->
         conn
         |> Plug.Conn.put_private(:fail_authorize_url, true)
@@ -130,7 +130,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   describe "GET /auth/:provider/callback" do
     test "with failed token generation", %{conn: conn, server: server} do
       Bypass.expect_once(server, "POST", "/oauth/token", fn conn ->
-        send_resp(conn, 401, Jason.encode!(%{error: "invalid_client"}))
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, Jason.encode!(%{error: "invalid_client"}))
       end)
 
       assert_raise PowAssent.RequestError, "invalid_client", fn ->
@@ -161,7 +163,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     test "with timeout", %{conn: conn, server: server} do
       Bypass.down(server)
 
-      assert_raise OAuth2.Error, "Connection refused", fn ->
+      assert_raise RuntimeError, "Connection refused", fn ->
         get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
       end
     end

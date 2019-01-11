@@ -39,11 +39,15 @@ defmodule OAuth2.TestHelpers do
   @spec bypass_oauth(%Bypass{}, map(), map()) :: :ok
   def bypass_oauth(server, token_params \\ %{}, user_params \\ %{}) do
     Bypass.expect_once(server, "POST", "/oauth/token", fn conn ->
-      Plug.Conn.send_resp(conn, 200, Jason.encode!(Map.merge(%{access_token: "access_token"}, token_params)))
+      conn
+      |> Plug.Conn.put_resp_content_type("application/json")
+      |> Plug.Conn.send_resp(200, Jason.encode!(Map.merge(%{access_token: "access_token"}, token_params)))
     end)
 
     Bypass.expect_once(server, "GET", "/api/user", fn conn ->
-      Plug.Conn.send_resp(conn, 200, Jason.encode!(Map.merge(%{uid: "1", name: "Dan Schultzer"}, user_params)))
+      conn
+      |> Plug.Conn.put_resp_content_type("application/json")
+      |> Plug.Conn.send_resp(200, Jason.encode!(Map.merge(%{uid: "1", name: "Dan Schultzer"}, user_params)))
     end)
   end
 end

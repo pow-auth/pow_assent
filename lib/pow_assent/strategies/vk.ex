@@ -49,25 +49,24 @@ defmodule PowAssent.Strategy.VK do
       "verified"    => user["verified"] > 0}}
   end
 
-  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}
-  def get_user(config, client) do
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  def get_user(config, token) do
     params = Keyword.get(config, :user_url_params, %{})
-    config = Keyword.put(config, :user_url, user_url(config, client, params))
+    config = Keyword.put(config, :user_url, user_url(config, token, params))
 
     config
-    |> OAuth2.get_user(client)
-    |> handle_user_response(client)
+    |> OAuth2.get_user(token)
+    |> handle_user_response(token)
   end
 
-  defp user_url(config, client, params) do
-    user_url_params = Map.put(params, "access_token", client.token.access_token)
+  defp user_url(config, token, params) do
+    user_url_params = Map.put(params, "access_token", token["access_token"])
 
     config[:user_url] <> "?" <> URI.encode_query(user_url_params)
   end
 
-  defp handle_user_response({:ok, %{"response" => [user]}}, client) do
-    email = Map.get(client.token.other_params, "email")
-    user  = Map.put_new(user, "email", email)
+  defp handle_user_response({:ok, %{"response" => [user]}}, token) do
+    user  = Map.put_new(user, "email", get_email(token))
 
     {:ok, user}
   end
@@ -75,4 +74,7 @@ defmodule PowAssent.Strategy.VK do
     do: {:error, %PowAssent.RequestError{message: "Retrieved invalid response: #{inspect user}"}}
   defp handle_user_response({:error, error}, _client),
     do: {:error, error}
+
+  defp get_email(%{"email" => email}), do: email
+  defp get_email(_any), do: nil
 end

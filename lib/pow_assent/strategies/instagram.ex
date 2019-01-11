@@ -33,8 +33,8 @@ defmodule PowAssent.Strategy.Instagram do
       "nickname" => user["username"]}}
   end
 
-  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()}
-  def get_user(_config, client) do
-    {:ok, client.token.other_params["user"]}
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()}
+  def get_user(_config, token) do
+    {:ok, token["user"]}
   end
 end

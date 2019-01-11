@@ -31,6 +31,7 @@ defmodule PowAssent.Strategy.OAuth.Base do
 
   @callback default_config(Keyword.t()) :: Keyword.t()
   @callback normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @callback get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
 
   @doc false
   defmacro __using__(_opts) do
@@ -54,9 +55,12 @@ defmodule PowAssent.Strategy.OAuth.Base do
         config = set_config(config)
 
         config
-        |> OAuth.callback(conn, params)
+        |> OAuth.callback(conn, params, __MODULE__)
         |> maybe_normalize(config)
       end
+
+      @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+      def get_user(config, token), do: OAuth.get_user(config, token)
 
       defp maybe_normalize({:ok, %{user: user} = results}, config) do
         case normalize(config, user) do
@@ -70,6 +74,7 @@ defmodule PowAssent.Strategy.OAuth.Base do
         config
         |> default_config()
         |> Keyword.merge(config)
+        |> Keyword.put(:strategy, __MODULE__)
       end
 
       defoverridable unquote(__MODULE__)

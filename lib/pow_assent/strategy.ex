@@ -19,6 +19,7 @@ defmodule PowAssent.Strategy do
       end
   """
   alias Plug.Conn
+  alias PowAssent.HTTPResponse
 
   @callback authorize_url(Keyword.t(), Conn.t()) ::
               {:ok, %{:conn => Conn.t(), :url => binary(), optional(atom()) => any()}}
@@ -33,6 +34,42 @@ defmodule PowAssent.Strategy do
       @behaviour unquote(__MODULE__)
     end
   end
+
+  @doc """
+  Makes a HTTP request.
+  """
+  @spec request(atom(), binary(), binary(), list(), Keyword.t()) :: {:ok, HTTPResponse.t()} | {:error, HTTPResponse.t()} | {:error, term()}
+  def request(method, url, body, headers, config) do
+    http_adapter = Keyword.get(config, :http_adapter, PowAssent.HTTPAdapter.Httpc)
+
+    method
+    |> http_adapter.request(url, body, headers)
+    |> parse_status_response()
+  end
+
+  defp parse_status_response({:ok, %{status: status} = resp}) when status in 200..399 do
+    {:ok, resp}
+  end
+  defp parse_status_response({:ok, %{status: status} = resp}) when status in 400..599 do
+    {:error, resp}
+  end
+  defp parse_status_response({:error, reason}) do
+    {:error, reason}
+  end
+
+  @doc """
+  Decodes a request response.
+  """
+  @spec decode_response({atom(), any()}, Keyword.t()) :: {atom(), any()}
+  def decode_response({status, %{body: body, headers: headers} = resp}, config) do
+    case List.keyfind(headers, "content-type", 0) do
+      {"content-type", "application/json" <> _rest} ->
+        {status, %{resp | body: decode_json!(body, config)}}
+      _any ->
+        {status, resp}
+    end
+  end
+  def decode_response(any, _config), do: any
 
   @doc """
   Recursively prunes map for nil values.
@@ -58,4 +95,18 @@ defmodule PowAssent.Strategy do
   defp default_json_library do
     Application.get_env(:phoenix, :json_library, Poison)
   end
+
+  @doc """
+  Generates a URL
+  """
+  @spec to_url(binary(), binary(), Keyword.t()) :: binary()
+  def to_url(site, uri, []), do: endpoint(site, uri)
+  def to_url(site, uri, params) do
+    endpoint(site, uri) <> "?" <> URI.encode_query(params)
+  end
+
+  defp endpoint(site, <<"/"::utf8, _::binary>> = uri),
+    do: site <> uri
+  defp endpoint(_site, url),
+    do: url
 end

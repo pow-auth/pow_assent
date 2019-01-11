@@ -36,12 +36,12 @@ defmodule TestProvider do
     |> Keyword.put(:strategy, OAuth2.Strategy.AuthCode)
   end
 
-  defp normalize({:ok, %{conn: conn, client: client, user: user}}) do
+  defp normalize({:ok, %{conn: conn, user: user}}) do
     user = %{"uid"      => user["uid"],
              "name"     => user["name"],
              "email"    => user["email"]} |> Helpers.prune()
 
-    {:ok, %{conn: conn, client: client, user: user}}
+    {:ok, %{conn: conn, user: user}}
   end
   defp normalize({:error, error}), do: {:error, error}
 end

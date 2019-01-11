@@ -8,7 +8,7 @@ defmodule PowAssent.Strategy.FacebookTest do
 
   setup %{conn: conn} do
     bypass = Bypass.open()
-    config = [site: bypass_server(bypass)]
+    config = [site: bypass_server(bypass), client_secret: ""]
 
     {:ok, conn: conn, config: config, bypass: bypass}
   end
@@ -28,9 +28,8 @@ defmodule PowAssent.Strategy.FacebookTest do
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
       Bypass.expect_once(bypass, "POST", "/oauth/access_token", fn conn ->
-        assert {:ok, body, _conn} = Plug.Conn.read_body(conn)
-        assert body =~ "scope=email"
-        assert body =~ "redirect_uri=test"
+        assert conn.query_string =~ "scope=email"
+        assert conn.query_string =~ "redirect_uri=test"
 
         conn
         |> put_resp_content_type("application/json")
@@ -68,10 +67,9 @@ defmodule PowAssent.Strategy.FacebookTest do
 
     test "handles error", %{config: config, conn: conn, params: params} do
       config = Keyword.put(config, :site, "http://localhost:8888")
-      expected = %OAuth2.Error{reason: :econnrefused}
 
       assert {:error, %{conn: %Plug.Conn{}, error: error}} = Facebook.callback(config, conn, params)
-      assert error == expected
+      assert error == :econnrefused
     end
   end
 end

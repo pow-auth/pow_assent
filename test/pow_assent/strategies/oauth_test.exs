@@ -32,7 +32,7 @@ defmodule PowAssent.Strategy.OAuthTest do
     test "bubbles up network error", %{conn: conn, config: config, bypass: bypass} do
       Bypass.down(bypass)
 
-      assert {:error, %{conn: _conn, error: %OAuth2.Error{reason: :econnrefused}}} = OAuth.authorize_url(config, conn)
+      assert {:error, %{conn: _conn, error: :econnrefused}} = OAuth.authorize_url(config, conn)
     end
   end
 
@@ -81,7 +81,7 @@ defmodule PowAssent.Strategy.OAuthTest do
         |> Plug.Conn.resp(500, Jason.encode!(%{error: "Unknown error"}))
       end)
 
-      {:error, %{conn: _conn, error: %OAuth2.Response{body: %{"error" => "Unknown error"}}}} = OAuth.callback(config, conn, params)
+      {:error, %{conn: _conn, error: %{status: 500, body: %{"error" => "Unknown error"}}}} = OAuth.callback(config, conn, params)
     end
   end
 end

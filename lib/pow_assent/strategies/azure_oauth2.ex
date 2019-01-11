@@ -86,10 +86,10 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
       "last_name"  => user["family_name"]}}
   end
 
-  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()}
-  def get_user(config, client) do
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()}
+  def get_user(config, token) do
     user =
-      client.token.other_params["id_token"]
+      token["id_token"]
       |> String.split(".")
       |> Enum.at(1)
       |> Base.decode64!(padding: false)

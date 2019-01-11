@@ -113,5 +113,6 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     assign(conn, :callback_url, url)
   end
 
+  defp handle_strategy_error(:econnrefused), do: raise "Connection refused"
   defp handle_strategy_error(error), do: raise error
 end

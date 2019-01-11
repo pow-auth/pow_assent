@@ -37,7 +37,6 @@ defmodule PowAssent.MixProject do
     [
       {:pow, "~> 1.0.0"},
 
-      {:oauth2, "~> 0.9"},
       {:oauther, "~> 1.1"},
 
       {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},

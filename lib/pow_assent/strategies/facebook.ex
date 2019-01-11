@@ -55,19 +55,21 @@ defmodule PowAssent.Strategy.Facebook do
     "#{config[:site]}/#{user["id"]}/picture"
   end
 
-  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}
-  def get_user(config, client) do
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  def get_user(config, access_token) do
     params = %{
-      "appsecret_proof" => appsecret_proof(client),
+      "appsecret_proof" => appsecret_proof(config, access_token),
       "fields" => config[:user_url_request_fields]}
     config = Keyword.put(config, :user_url, user_url(config, params))
 
-    OAuth2.get_user(config, client)
+    OAuth2.get_user(config, access_token)
   end
 
-  defp appsecret_proof(client) do
+  defp appsecret_proof(config, access_token) do
+    client_secret = Keyword.get(config, :client_secret)
+
     :sha256
-    |> :crypto.hmac(client.client_secret, client.token.access_token)
+    |> :crypto.hmac(client_secret, access_token["access_token"])
     |> Base.encode16(case: :lower)
   end
 

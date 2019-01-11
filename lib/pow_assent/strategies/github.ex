@@ -16,7 +16,6 @@ defmodule PowAssent.Strategy.Github do
   """
   use PowAssent.Strategy.OAuth2.Base
 
-  alias OAuth2.{Client, Response}
   alias PowAssent.Strategy.OAuth2
 
   @spec default_config(Keyword.t()) :: Keyword.t()
@@ -44,21 +43,25 @@ defmodule PowAssent.Strategy.Github do
         "Blog"   => user["blog"]}}}
   end
 
-  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}
-  def get_user(config, client) do
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  def get_user(config, access_token) do
     config
-    |> OAuth2.get_user(client)
-    |> get_email(client, config)
+    |> OAuth2.get_user(access_token)
+    |> get_email(access_token, config)
   end
 
-  defp get_email({:ok, user}, client, config) do
-    client
-    |> Client.get(config[:user_emails_url])
+  defp get_email({:ok, user}, access_token, config) do
+    url     = Helpers.to_url(config[:site], config[:user_emails_url], [])
+    headers = OAuth2.authorization_headers(config, access_token)
+
+    :get
+    |> Helpers.request(url, nil, headers, config)
+    |> Helpers.decode_response(config)
     |> process_get_email_response(user)
   end
-  defp get_email({:error, error}, _client, _config), do: {:error, error}
+  defp get_email({:error, error}, _access_token, _config), do: {:error, error}
 
-  defp process_get_email_response({:ok, %Response{body: emails}}, user) do
+  defp process_get_email_response({:ok, %{body: emails}}, user) do
     email = get_primary_email(emails)
 
     {:ok, Map.put(user, "email", email)}

@@ -52,10 +52,9 @@ defmodule PowAssent.Strategy.InstagramTest do
 
     test "handles error", %{config: config, conn: conn, params: params} do
       config = Keyword.put(config, :site, "http://localhost:8888")
-      expected = %OAuth2.Error{reason: :econnrefused}
 
       assert {:error, %{conn: %Plug.Conn{}, error: error}} = Instagram.callback(config, conn, params)
-      assert error == expected
+      assert error == :econnrefused
     end
   end
 end
