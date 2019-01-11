@@ -1,6 +1,11 @@
 defmodule PowAssent.HTTPAdapter.Httpc do
   @moduledoc """
   HTTP adapter module for making http requests.
+
+  This adapter should only be used for tests as there is no SSL support by
+  default. SSL support can be enabled by setting
+  `config :pow, httpc_opts: [ssl: [verify: :verify_peer, cacertfile: '/path/to/cert']]`,
+  but it's recommended to use another HTTP library to make this step easier.
   """
   @type method :: :get | :post
   @type body :: binary() | nil
@@ -14,7 +19,7 @@ defmodule PowAssent.HTTPAdapter.Httpc do
     request = httpc_request(url, body, headers)
 
     method
-    |> :httpc.request(request, [], [])
+    |> :httpc.request(request, opts(), [])
     |> format_response()
   end
 
@@ -50,4 +55,6 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   end
   defp format_response({:error, {:failed_connect, _}}), do: {:error, :econnrefused}
   defp format_response(response), do: response
+
+  defp opts(), do: Application.get_env(:pow, :httpc_opts, [])
 end
