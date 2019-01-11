@@ -38,7 +38,7 @@ defmodule PowAssent.Strategy do
   @doc """
   Makes a HTTP request.
   """
-  @spec request(atom(), binary(), binary(), list(), Keyword.t()) :: {:ok, HTTPResponse.t()} | {:error, HTTPResponse.t()} | {:error, term()}
+  @spec request(atom(), binary(), binary() | nil, list(), Keyword.t()) :: {:ok, HTTPResponse.t()} | {:error, HTTPResponse.t()} | {:error, term()}
   def request(method, url, body, headers, config) do
     http_adapter = Keyword.get(config, :http_adapter, PowAssent.HTTPAdapter.Httpc)
 

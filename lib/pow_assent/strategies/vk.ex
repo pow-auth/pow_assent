@@ -49,7 +49,7 @@ defmodule PowAssent.Strategy.VK do
       "verified"    => user["verified"] > 0}}
   end
 
-  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
   def get_user(config, token) do
     params = Keyword.get(config, :user_url_params, %{})
     config = Keyword.put(config, :user_url, user_url(config, token, params))
@@ -70,9 +70,9 @@ defmodule PowAssent.Strategy.VK do
 
     {:ok, user}
   end
-  defp handle_user_response({:ok, user}, _client),
+  defp handle_user_response({:ok, user}, _token),
     do: {:error, %PowAssent.RequestError{message: "Retrieved invalid response: #{inspect user}"}}
-  defp handle_user_response({:error, error}, _client),
+  defp handle_user_response({:error, error}, _token),
     do: {:error, error}
 
   defp get_email(%{"email" => email}), do: email
