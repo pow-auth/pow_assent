@@ -255,7 +255,7 @@ defmodule MyApp.Users.User do
 end
 ```
 
-The fields available can be found in the `normalize/1` method of [the strategy](lib/pow_assent/strategies/).
+The fields available can be found in the `normalize/2` method of [the strategy](lib/pow_assent/strategies/).
 
 ## Security concerns
 
