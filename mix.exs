@@ -29,7 +29,7 @@ defmodule PowAssent.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :certifi, :ssl_verify_fun]
     ]
   end
 
@@ -38,6 +38,8 @@ defmodule PowAssent.MixProject do
       {:pow, "~> 1.0.0"},
 
       {:oauther, "~> 1.1"},
+      {:certifi, ">= 0.0.0", optional: true},
+      {:ssl_verify_fun, ">= 0.0.0", optional: true},
 
       {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},
       {:phoenix_ecto, ">= 3.0.0 and <= 4.0.0"},

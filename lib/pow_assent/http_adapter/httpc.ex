@@ -2,10 +2,9 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   @moduledoc """
   HTTP adapter module for making http requests.
 
-  This adapter should only be used for tests as there is no SSL support by
-  default. SSL support can be enabled by setting
-  `config :pow, httpc_opts: [ssl: [verify: :verify_peer, cacertfile: '/path/to/cert']]`,
-  but it's recommended to use another HTTP library to make this step easier.
+  SSL support will automatically be enabled if the `:certifi` and
+  `:ssl_verify_fun` libraries exists in your project. You can also override
+  the httc opts by setting `config :pow, httpc_opts: opts`.
   """
   @type method :: :get | :post
   @type body :: binary() | nil
@@ -19,7 +18,7 @@ defmodule PowAssent.HTTPAdapter.Httpc do
     request = httpc_request(url, body, headers)
 
     method
-    |> :httpc.request(request, opts(), [])
+    |> :httpc.request(request, opts(url), [])
     |> format_response()
   end
 
@@ -56,5 +55,34 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   defp format_response({:error, {:failed_connect, _}}), do: {:error, :econnrefused}
   defp format_response(response), do: response
 
-  defp opts(), do: Application.get_env(:pow, :httpc_opts, [])
+  defp opts(url), do: Application.get_env(:pow, :httpc_opts) || default_opts(url)
+
+  defp default_opts(url) do
+    case certifi_and_ssl_verify_fun_available?() do
+      true  -> [ssl: ssl_opts(url)]
+      false -> []
+    end
+  end
+
+  defp certifi_and_ssl_verify_fun_available?() do
+    app_available?(:certifi) && app_available?(:ssl_verify_fun)
+  end
+
+  defp app_available?(app) do
+    case :application.get_key(app, :vsn) do
+      {:ok, _vsn} -> true
+      _           -> false
+    end
+  end
+
+  defp ssl_opts(url) do
+    %{host: host} = URI.parse(url)
+
+    [
+      verify: :verify_peer,
+      depth: 99,
+      cacerts: :certifi.cacerts(),
+      verify_fun: {&:ssl_verify_hostname.verify_fun/3, check_hostname: to_charlist(host)}
+    ]
+  end
 end
