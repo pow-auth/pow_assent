@@ -28,13 +28,12 @@ defmodule PowAssent.Strategy.Facebook do
       token_url: "/oauth/access_token",
       user_url: "/me",
       authorization_params: [scope: "email"],
-      user_url_request_fields: "name,email",
-      get_user_fn: &get_user/2
+      user_url_request_fields: "name,email"
     ]
   end
 
-  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
-  def normalize(client, _config, user) do
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()}
+  def normalize(config, user) do
     {:ok, %{
       "uid"         => user["id"],
       "nickname"    => user["username"],
@@ -43,7 +42,7 @@ defmodule PowAssent.Strategy.Facebook do
       "first_name"  => user["first_name"],
       "last_name"   => user["last_name"],
       "location"    => (user["location"] || %{})["name"],
-      "image"       => image_url(client, user),
+      "image"       => image_url(config, user),
       "description" => user["bio"],
       "urls"        => %{
         "Facebook" => user["link"],
@@ -52,23 +51,25 @@ defmodule PowAssent.Strategy.Facebook do
     }}
   end
 
-  defp image_url(client, user) do
-    "#{client.site}/#{user["id"]}/picture"
+  defp image_url(config, user) do
+    "#{config[:site]}/#{user["id"]}/picture"
   end
 
-  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()} | {:error, any()}
-  def get_user(config, client) do
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  def get_user(config, access_token) do
     params = %{
-      "appsecret_proof" => appsecret_proof(client),
+      "appsecret_proof" => appsecret_proof(config, access_token),
       "fields" => config[:user_url_request_fields]}
     config = Keyword.put(config, :user_url, user_url(config, params))
 
-    OAuth2.get_user(config, client)
+    OAuth2.get_user(config, access_token)
   end
 
-  defp appsecret_proof(client) do
+  defp appsecret_proof(config, access_token) do
+    client_secret = Keyword.get(config, :client_secret)
+
     :sha256
-    |> :crypto.hmac(client.client_secret, client.token.access_token)
+    |> :crypto.hmac(client_secret, access_token["access_token"])
     |> Base.encode16(case: :lower)
   end
 

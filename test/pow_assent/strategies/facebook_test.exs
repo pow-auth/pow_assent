@@ -1,16 +1,17 @@
 defmodule PowAssent.Strategy.FacebookTest do
   use PowAssent.Test.Phoenix.ConnCase
 
-  import OAuth2.TestHelpers
+  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.Facebook
 
-  @access_token "access_token"
+  @user_response %{name: "Dan Schultzer", email: "foo@example.com", id: "1"}
 
-  setup %{conn: conn} do
-    bypass = Bypass.open()
-    config = [site: bypass_server(bypass)]
+  setup :setup_bypass
 
-    {:ok, conn: conn, config: config, bypass: bypass}
+  setup context do
+    config = Keyword.put(context[:config], :client_secret, "")
+
+    {:ok, Map.to_list(%{context | config: config})}
   end
 
   test "authorize_url/2", %{conn: conn, config: config} do
@@ -27,26 +28,16 @@ defmodule PowAssent.Strategy.FacebookTest do
     end
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once(bypass, "POST", "/oauth/access_token", fn conn ->
-        assert {:ok, body, _conn} = Plug.Conn.read_body(conn)
-        assert body =~ "scope=email"
-        assert body =~ "redirect_uri=test"
-
-        send_resp(conn, 200, Poison.encode!(%{"access_token" => @access_token}))
+      expect_oauth2_access_token_request(bypass, [uri: "/oauth/access_token"], fn conn ->
+        assert conn.query_string =~ "scope=email"
+        assert conn.query_string =~ "redirect_uri=test"
       end)
 
-      Bypass.expect_once(bypass, "GET", "/me", fn conn ->
-        assert_access_token_in_header(conn, @access_token)
-
+      expect_oauth2_user_request(bypass, @user_response, [uri: "/me"], fn conn ->
         conn = Plug.Conn.fetch_query_params(conn)
 
         assert conn.params["fields"] == "name,email"
-
-        assert conn.params["appsecret_proof"] ==
-                 Base.encode16(:crypto.hmac(:sha256, "", @access_token), case: :lower)
-
-        user = %{name: "Dan Schultzer", email: "foo@example.com", id: "1"}
-        Plug.Conn.resp(conn, 200, Poison.encode!(user))
+        assert conn.params["appsecret_proof"] == Base.encode16(:crypto.hmac(:sha256, "", "access_token"), case: :lower)
       end)
 
       expected = %{
@@ -63,10 +54,9 @@ defmodule PowAssent.Strategy.FacebookTest do
 
     test "handles error", %{config: config, conn: conn, params: params} do
       config = Keyword.put(config, :site, "http://localhost:8888")
-      expected = %OAuth2.Error{reason: :econnrefused}
 
       assert {:error, %{conn: %Plug.Conn{}, error: error}} = Facebook.callback(config, conn, params)
-      assert error == expected
+      assert error == :econnrefused
     end
   end
 end

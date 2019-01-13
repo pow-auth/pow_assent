@@ -16,7 +16,7 @@ defmodule PowAssent.Strategy.Github do
   """
   use PowAssent.Strategy.OAuth2.Base
 
-  alias OAuth2.{Client, Response}
+  alias PowAssent.Strategy.OAuth2
 
   @spec default_config(Keyword.t()) :: Keyword.t()
   def default_config(_config) do
@@ -30,39 +30,45 @@ defmodule PowAssent.Strategy.Github do
     ]
   end
 
-  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
-  def normalize(client, config, user) do
-    case get_email(client, config) do
-      {:ok, email} ->
-        {:ok, %{
-          "uid"      => Integer.to_string(user["id"]),
-          "nickname" => user["login"],
-          "email"    => email,
-          "name"     => user["name"],
-          "image"    => user["avatar_url"],
-          "urls"     => %{
-            "GitHub" => user["html_url"],
-            "Blog"   => user["blog"]}}}
-
-      {:error, error} ->
-        {:error, error}
-    end
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  def normalize(_config, user) do
+    {:ok, %{
+      "uid"      => Integer.to_string(user["id"]),
+      "nickname" => user["login"],
+      "email"    => user["email"],
+      "name"     => user["name"],
+      "image"    => user["avatar_url"],
+      "urls"     => %{
+        "GitHub" => user["html_url"],
+        "Blog"   => user["blog"]}}}
   end
 
-  defp get_email(client, config) do
-    case Client.get(client, config[:user_emails_url]) do
-      {:ok, %Response{body: emails}} -> {:ok, get_primary_email(emails)}
-      {:error, error}                -> {:error, error}
-    end
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  def get_user(config, access_token) do
+    config
+    |> OAuth2.get_user(access_token)
+    |> get_email(access_token, config)
   end
 
-  defp get_primary_email(emails) do
-    emails
-    |> Enum.find(%{}, fn(element) -> element["primary"] && element["verified"] end)
-    |> Map.fetch("email")
-    |> case do
-      {:ok, email} -> email
-      :error       -> nil
-    end
+  defp get_email({:ok, user}, access_token, config) do
+    url     = Helpers.to_url(config[:site], config[:user_emails_url], [])
+    headers = OAuth2.authorization_headers(config, access_token)
+
+    :get
+    |> Helpers.request(url, nil, headers, config)
+    |> Helpers.decode_response(config)
+    |> process_get_email_response(user)
   end
+  defp get_email({:error, error}, _access_token, _config), do: {:error, error}
+
+  defp process_get_email_response({:ok, %{body: emails}}, user) do
+    email = get_primary_email(emails)
+
+    {:ok, Map.put(user, "email", email)}
+  end
+  defp process_get_email_response({:error, error}, _user), do: {:error, error}
+
+  defp get_primary_email([%{"verified" => true, "primary" => true, "email" => email} | _rest]),
+    do: email
+  defp get_primary_email(_any), do: nil
 end

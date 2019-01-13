@@ -17,6 +17,7 @@ defmodule PowAssent.Strategy.OAuth do
   """
   use PowAssent.Strategy
 
+  alias PowAssent.Strategy, as: Helpers
   alias Plug.Conn
 
   @doc false
@@ -32,11 +33,11 @@ defmodule PowAssent.Strategy.OAuth do
   end
 
   @doc false
-  @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
-  def callback(config, conn, %{"oauth_token" => oauth_token, "oauth_verifier" => oauth_verifier}) do
+  @spec callback(Keyword.t(), Conn.t(), map(), atom()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
+  def callback(config, conn, %{"oauth_token" => oauth_token, "oauth_verifier" => oauth_verifier}, strategy \\ __MODULE__) do
     config
     |> get_access_token(oauth_token, oauth_verifier)
-    |> fetch_user(config)
+    |> fetch_user(config, strategy)
     |> case do
       {:ok, user}    -> {:ok, %{conn: conn, user: user}}
       {:error, error} -> {:error, %{conn: conn, error: error}}
@@ -50,8 +51,8 @@ defmodule PowAssent.Strategy.OAuth do
       consumer_key: config[:consumer_key],
       consumer_secret: config[:consumer_secret]])
 
-    :post
-    |> request(site, request_token_url, credentials, params)
+    config
+    |> request(:post, site, request_token_url, credentials, params)
     |> process_request_token_response()
   end
 
@@ -63,9 +64,7 @@ defmodule PowAssent.Strategy.OAuth do
   end
   defp build_authorize_url({:error, error}, _config), do: {:error, error}
 
-  @doc false
-  @spec get_access_token(Keyword.t(), binary(), binary()) :: {:ok, map} | {:error, term}
-  def get_access_token(config, oauth_token, oauth_verifier) do
+  defp get_access_token(config, oauth_token, oauth_verifier) do
     site             = config[:site]
     access_token_url = process_url(config, config[:access_token_url] || "/oauth/access_token")
     params           = [{"oauth_verifier", oauth_verifier}]
@@ -74,47 +73,66 @@ defmodule PowAssent.Strategy.OAuth do
       consumer_secret: config[:consumer_secret],
       token: oauth_token])
 
-    :post
-    |> request(site, access_token_url, credentials, params)
+    config
+    |> request(:post, site, access_token_url, credentials, params)
     |> process_request_token_response()
   end
 
-  defp request(method, site, url, credentials, params \\ [], body \\ "") do
+  defp request(config, method, site, url, credentials, params) do
     signed_params        = OAuther.sign(Atom.to_string(method), url, params, credentials)
     {header, req_params} = OAuther.header(signed_params)
-    client               = %OAuth2.Client{site: site}
+    headers              = request_headers(method, header)
+    body                 = request_body(method, req_params)
+    url                  = Helpers.to_url(site, url, [])
 
-    method
-    |> OAuth2.Request.request(client, url, body, [header], [form: req_params])
-    |> case do
-      {:ok, response} -> {:ok, response.body}
-      {:error, error} -> {:error, error}
-    end
+    Helpers.request(method, url, body, headers, config)
   end
 
-  defp process_request_token_response({:ok, body}) do
+  defp request_headers(:post, header), do: [{"content-type", "application/x-www-form-urlencoded"}, header]
+  defp request_headers(_method, header), do: [header]
+
+  defp request_body(:post, req_params), do: URI.encode_query(req_params)
+  defp request_body(_method, _req_params), do: nil
+
+  defp process_request_token_response({:ok, %{body: body}}) do
     {:ok, URI.decode_query(body)}
   end
   defp process_request_token_response({:error, error}), do: {:error, error}
 
-  defp fetch_user({:ok, token}, config) do
-    fun = Keyword.get(config, :get_user, &get_user/2)
-    fun.(token, config)
-  end
-  defp fetch_user({:error, error}, _config), do: {:error, error}
+  defp fetch_user({:ok, token}, config, strategy),
+    do: strategy.get_user(config, token)
+  defp fetch_user({:error, error}, _config, _strategy),
+    do: {:error, error}
 
-  @doc false
-  @spec get_user(map, Keyword.t()) :: {:ok, map} | {:error, term}
-  def get_user(token, config) do
+  @doc """
+  Makes a HTTP get request to the API.
+
+  JSON responses will be decoded to maps.
+  """
+  @spec get(Keyword.t(), map(), binary(), Keyword.t()) :: {:ok, map()} | {:error, term()}
+  def get(config, token, url, params \\ []) do
     site        = config[:site]
-    url         = process_url(config, config[:user_url])
+    url         = process_url(config, url)
     credentials = OAuther.credentials([
       consumer_key: config[:consumer_key],
       consumer_secret: config[:consumer_secret],
       token: token["oauth_token"],
       token_secret: token["oauth_token_secret"]])
 
-    request(:get, site, url, credentials)
+    config
+    |> request(:get, site, url, credentials, params)
+    |> Helpers.decode_response(config)
+  end
+
+  @doc false
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
+  def get_user(config, token) do
+    config
+    |> get(token, config[:user_url])
+    |> case do
+      {:ok, %{body: body}} -> {:ok, body}
+      any -> any
+    end
   end
 
   defp process_url(config, url) do

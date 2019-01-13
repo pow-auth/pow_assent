@@ -5,7 +5,7 @@ defmodule PowAssent.PlugTest do
   alias Plug.{ProcessStore, Session, Test}
   alias PowAssent.Plug
   alias PowAssent.Test.{ContextMock, Ecto.Users.User}
-  import OAuth2.TestHelpers
+  import PowAssent.OAuthHelpers
 
   @default_config [
     mod: Pow.Plug.Session,
@@ -24,7 +24,7 @@ defmodule PowAssent.PlugTest do
   describe "authenticate/3" do
     setup do
       server = Bypass.open()
-      setup_strategy_env(server)
+      setup_oauth2_strategy_env(server)
 
       {:ok, conn: setup_conn(), server: server}
     end
@@ -39,7 +39,7 @@ defmodule PowAssent.PlugTest do
   describe "callback/3" do
     setup do
       server = Bypass.open()
-      setup_strategy_env(server)
+      setup_oauth2_strategy_env(server)
       opts = Session.init(store: ProcessStore, key: "foobar")
       conn = Session.call(setup_conn(), opts)
 
@@ -47,7 +47,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "loads existing user", %{conn: conn, server: server} do
-      bypass_oauth(server, %{}, %{uid: "existing_user"})
+      expect_oauth2_flow(server, user: %{uid: "existing_user"})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
       assert {:ok, %{id: 1, email: "test@example.com"}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
@@ -57,7 +57,7 @@ defmodule PowAssent.PlugTest do
       user = %{ContextMock.user() | id: :loaded}
       conn = Pow.Plug.assign_current_user(conn, user, @default_config)
 
-      bypass_oauth(server, %{}, %{uid: "new_identity"})
+      expect_oauth2_flow(server, user: %{uid: "new_identity"})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
       assert {:ok, ^user, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
@@ -67,7 +67,7 @@ defmodule PowAssent.PlugTest do
     test "already taken user identity", %{conn: conn, server: server} do
       conn = Pow.Plug.assign_current_user(conn, %{ContextMock.user() | id: :bound_to_different_user}, @default_config)
 
-      bypass_oauth(server, %{}, %{uid: "new_identity"})
+      expect_oauth2_flow(server, user: %{uid: "new_identity"})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
       assert {:error, {:bound_to_different_user, %{}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
@@ -75,7 +75,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "creates user", %{conn: conn, server: server} do
-      bypass_oauth(server, %{}, %{uid: "new_user"})
+      expect_oauth2_flow(server, user: %{uid: "new_user"})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
       assert {:ok, {:new, %{id: :new_user, email: "test@example.com"}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
@@ -83,7 +83,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "missing user id", %{conn: conn, server: server} do
-      bypass_oauth(server, %{}, %{uid: "new_user", email: ""})
+      expect_oauth2_flow(server, user: %{uid: "new_user", email: ""})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
       assert {:error, {:missing_user_id_field, %{}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
@@ -139,7 +139,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "lists providers", %{conn: conn} do
-      setup_strategy_env(%Bypass{port: 1234})
+      setup_oauth2_strategy_env(%Bypass{port: 1234})
 
       assert Plug.providers_for_current_user(conn) == [:test_provider]
     end
@@ -154,7 +154,7 @@ defmodule PowAssent.PlugTest do
   describe "available_providers/1" do
     setup do
       conn = setup_conn()
-      setup_strategy_env(%Bypass{port: 1234})
+      setup_oauth2_strategy_env(%Bypass{port: 1234})
 
       {:ok, conn: conn}
     end

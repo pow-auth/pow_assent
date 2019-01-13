@@ -1,17 +1,23 @@
 defmodule PowAssent.Strategy.GoogleTest do
   use PowAssent.Test.Phoenix.ConnCase
 
-  import OAuth2.TestHelpers
+  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.Google
 
-  @access_token "access_token"
+  @user_response %{
+    "id" => "1",
+    "email" => "foo@example.com",
+    "verified_email" => true,
+    "name" => "Dan Schultzer",
+    "given_name" => "Dan",
+    "family_name" => "Schultzer",
+    "link" => "https://example.com/profile",
+    "picture" => "https://example.com/images/profile.jpg",
+    "locale" => "en-US",
+    "hd" => "example.com"
+  }
 
-  setup %{conn: conn} do
-    bypass = Bypass.open()
-    config = [site: bypass_server(bypass)]
-
-    {:ok, conn: conn, config: config, bypass: bypass}
-  end
+  setup :setup_bypass
 
   test "authorize_url/2", %{conn: conn, config: config} do
     assert {:ok, %{conn: _conn, url: url}} = Google.authorize_url(config, conn)
@@ -26,28 +32,8 @@ defmodule PowAssent.Strategy.GoogleTest do
     end
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once(bypass, "POST", "/oauth2/v4/token", fn conn ->
-        send_resp(conn, 200, Poison.encode!(%{access_token: @access_token}))
-      end)
-
-      Bypass.expect_once(bypass, "GET", "/oauth2/v2/userinfo", fn conn ->
-        assert_access_token_in_header(conn, @access_token)
-
-        user = %{
-          "id" => "1",
-          "email" => "foo@example.com",
-          "verified_email" => true,
-          "name" => "Dan Schultzer",
-          "given_name" => "Dan",
-          "family_name" => "Schultzer",
-          "link" => "https://example.com/profile",
-          "picture" => "https://example.com/images/profile.jpg",
-          "locale" => "en-US",
-          "hd" => "example.com"
-        }
-
-        Plug.Conn.resp(conn, 200, Poison.encode!(user))
-      end)
+      expect_oauth2_access_token_request(bypass, uri: "/oauth2/v4/token")
+      expect_oauth2_user_request(bypass, @user_response, uri: "/oauth2/v2/userinfo")
 
       expected = %{
         "email" => "foo@example.com",

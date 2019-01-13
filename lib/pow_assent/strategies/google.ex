@@ -27,8 +27,8 @@ defmodule PowAssent.Strategy.Google do
     ]
   end
 
-  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
-  def normalize(_client, _config, user) do
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()}
+  def normalize(_config, user) do
     {:ok, %{
       "uid"        => user["id"],
       "name"       => user["name"],

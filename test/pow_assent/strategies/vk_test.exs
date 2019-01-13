@@ -1,10 +1,19 @@
 defmodule PowAssent.Strategy.VKTest do
   use PowAssent.Test.Phoenix.ConnCase
 
-  import OAuth2.TestHelpers
+  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.VK
 
-  @access_token "access_token"
+  @users_response [
+    %{
+      "id" => 210_700_286,
+      "first_name" => "Lindsay",
+      "last_name" => "Stirling",
+      "screen_name" => "lindseystirling",
+      "photo_200" => "https://pp.userapi.com/c840637/v840637830/2d20e/wMuAZn-RFak.jpg",
+      "verified" => 1
+    }
+  ]
 
   setup %{conn: conn} do
     bypass = Bypass.open()
@@ -32,34 +41,16 @@ defmodule PowAssent.Strategy.VKTest do
     end
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once(bypass, "POST", "/access_token", fn conn ->
-        assert {:ok, body, _conn} = Plug.Conn.read_body(conn)
-        assert body =~ "scope=email"
-
-        send_resp(conn, 200, Poison.encode!(%{"access_token" => @access_token, "email" => "lindsay.stirling@example.com"}))
+      expect_oauth2_access_token_request(bypass, [uri: "/access_token", params: %{"access_token" => "access_token", "email" => "lindsay.stirling@example.com"}], fn conn ->
+        assert conn.query_string =~ "scope=email"
       end)
 
-      Bypass.expect_once(bypass, "GET", "/method/users.get", fn conn ->
-        assert_access_token_in_header(conn, @access_token)
-
+      expect_oauth2_user_request(bypass, %{"response" => @users_response}, [uri: "/method/users.get"], fn conn ->
         conn = Plug.Conn.fetch_query_params(conn)
 
         assert conn.params["fields"] == "uid,first_name,last_name,photo_200,screen_name,verified"
         assert conn.params["v"] == "5.69"
-        assert conn.params["access_token"] == @access_token
-
-        users = [
-          %{
-            "id" => 210_700_286,
-            "first_name" => "Lindsay",
-            "last_name" => "Stirling",
-            "screen_name" => "lindseystirling",
-            "photo_200" => "https://pp.userapi.com/c840637/v840637830/2d20e/wMuAZn-RFak.jpg",
-            "verified" => 1
-          }
-        ]
-
-        Plug.Conn.resp(conn, 200, Poison.encode!(%{"response" => users}))
+        assert conn.params["access_token"] == "access_token"
       end)
 
       expected = %{
@@ -79,10 +70,9 @@ defmodule PowAssent.Strategy.VKTest do
 
     test "handles error", %{config: config, conn: conn, params: params} do
       config = Keyword.put(config, :site, "http://localhost:8888")
-      expected = %OAuth2.Error{reason: :econnrefused}
 
       assert {:error, %{conn: %Plug.Conn{}, error: error}} = VK.callback(config, conn, params)
-      assert error == expected
+      assert error == :econnrefused
     end
   end
 end

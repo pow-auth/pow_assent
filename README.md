@@ -33,7 +33,11 @@ Add PowAssent to your list of dependencies in `mix.exs`:
 def deps do
   [
     # ...
-    {:pow_assent, "~> 0.1.0-rc.0"}
+    {:pow_assent, "~> 0.1.0-rc.0"},
+
+    # Optional but recommended for SSL validation
+    {:certifi, "~> 2.4"},
+    {:ssl_verify_fun, "~> "1.1"},
     # ...
   ]
 end
@@ -185,7 +189,7 @@ defmodule TestProvider do
     ]
   end
 
-  def normalize(_client, _config, user) do
+  def normalize(_config, user) do
     %{
       "uid"   => user["sub"],
       "name"  => user["name"],

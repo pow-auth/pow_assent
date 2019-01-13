@@ -20,13 +20,12 @@ defmodule PowAssent.Strategy.Instagram do
   def default_config(_config) do
     [
       site: "https://api.instagram.com",
-      authorization_params: [scope: "basic"],
-      get_user_fn: &get_user/2
+      authorization_params: [scope: "basic"]
     ]
   end
 
-  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
-  def normalize(_client, _config, user) do
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()}
+  def normalize(_config, user) do
     {:ok, %{
       "uid"      => user["id"],
       "name"     => user["full_name"],
@@ -34,8 +33,8 @@ defmodule PowAssent.Strategy.Instagram do
       "nickname" => user["username"]}}
   end
 
-  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()}
-  def get_user(_config, client) do
-    {:ok, client.token.other_params["user"]}
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()}
+  def get_user(_config, token) do
+    {:ok, token["user"]}
   end
 end

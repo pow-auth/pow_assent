@@ -72,13 +72,12 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
       site: "https://login.microsoftonline.com",
       authorize_url: "/#{tenant_id}/oauth2/authorize",
       token_url: "/#{tenant_id}/oauth2/token",
-      authorization_params: [response_mode: "query", response_type: "code", resource: resource],
-      get_user_fn: &get_user/2
+      authorization_params: [response_mode: "query", response_type: "code", resource: resource]
     ]
   end
 
-  @spec normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()}
-  def normalize(_client, _config, user) do
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()}
+  def normalize(_config, user) do
     {:ok, %{
       "uid"        => user["sub"],
       "name"       => user["name"],
@@ -87,14 +86,14 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
       "last_name"  => user["family_name"]}}
   end
 
-  @spec get_user(Keyword.t(), Client.t()) :: {:ok, map()}
-  def get_user(_config, client) do
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()}
+  def get_user(config, token) do
     user =
-      client.token.other_params["id_token"]
+      token["id_token"]
       |> String.split(".")
       |> Enum.at(1)
       |> Base.decode64!(padding: false)
-      |> Poison.decode!()
+      |> Helpers.decode_json!(config)
 
       {:ok, user}
   end

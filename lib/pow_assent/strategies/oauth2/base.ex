@@ -14,7 +14,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
           ]
         end
 
-        def normalize(_client, _config, user) do
+        def normalize(_config, user) do
           %{
             "uid"         => user["id"],
             "name"        => user["name"],
@@ -23,12 +23,13 @@ defmodule PowAssent.Strategy.OAuth2.Base do
         end
       end
   """
-  alias OAuth2.{Client, Strategy.AuthCode}
+  alias PowAssent.Strategy, as: Helpers
   alias PowAssent.Strategy.OAuth2
   alias Plug.Conn
 
   @callback default_config(Keyword.t()) :: Keyword.t()
-  @callback normalize(Client.t(), Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @callback normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @callback get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
 
   @doc false
   defmacro __using__(_opts) do
@@ -38,41 +39,47 @@ defmodule PowAssent.Strategy.OAuth2.Base do
       use PowAssent.Strategy
 
       alias PowAssent.Strategy, as: Helpers
-      alias Plug.Conn
-      alias OAuth2.Client
 
       @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
-      def authorize_url(config, conn) do
-        config
-        |> set_config()
-        |> OAuth2.authorize_url(conn)
-      end
+      def authorize_url(config, conn), do: unquote(__MODULE__).authorize_url(config, conn, __MODULE__)
 
-      @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{client: Client.t(), conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
-      def callback(config, conn, params) do
-        config = set_config(config)
+      @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
+      def callback(config, conn, params), do: unquote(__MODULE__).callback(config, conn, params, __MODULE__)
 
-        config
-        |> OAuth2.callback(conn, params)
-        |> maybe_normalize(config)
-      end
-
-      defp maybe_normalize({:ok, %{client: client, user: user} = results}, config) do
-        case normalize(client, config, user) do
-          {:ok, user}     -> {:ok, %{results | user: Helpers.prune(user)}}
-          {:error, error} -> maybe_normalize({:error, error}, config)
-        end
-      end
-      defp maybe_normalize({:error, error}, _config), do: {:error, error}
-
-      defp set_config(config) do
-        config
-        |> default_config()
-        |> Keyword.merge(config)
-        |> Keyword.put_new(:strategy, AuthCode)
-      end
+      def get_user(config, token), do: OAuth2.get_user(config, token)
 
       defoverridable unquote(__MODULE__)
     end
+  end
+
+  @spec authorize_url(Keyword.t(), Conn.t(), module()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
+  def authorize_url(config, conn, strategy) do
+    config
+    |> set_config(strategy)
+    |> OAuth2.authorize_url(conn)
+  end
+
+  @spec callback(Keyword.t(), Conn.t(), map(), module()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
+  def callback(config, conn, params, strategy) do
+    config = set_config(config, strategy)
+
+    config
+    |> OAuth2.callback(conn, params, strategy)
+    |> normalize(config, strategy)
+  end
+
+  defp normalize({:ok, %{user: user} = results}, config, strategy) do
+    case strategy.normalize(config, user) do
+      {:ok, user}     -> {:ok, %{results | user: Helpers.prune(user)}}
+      {:error, error} -> normalize({:error, error}, config, strategy)
+    end
+  end
+  defp normalize({:error, error}, _config, _strategy), do: {:error, error}
+
+  defp set_config(config, strategy) do
+    config
+    |> strategy.default_config()
+    |> Keyword.merge(config)
+    |> Keyword.put(:strategy, strategy)
   end
 end

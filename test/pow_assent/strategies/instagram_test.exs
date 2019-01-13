@@ -1,17 +1,17 @@
 defmodule PowAssent.Strategy.InstagramTest do
   use PowAssent.Test.Phoenix.ConnCase
 
-  import OAuth2.TestHelpers
+  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.Instagram
 
-  @access_token "access_token"
+  @user_response %{
+    "id" => "1574083",
+    "username" => "snoopdogg",
+    "full_name" => "Snoop Dogg",
+    "profile_picture" => "..."
+  }
 
-  setup %{conn: conn} do
-    bypass = Bypass.open()
-    config = [site: bypass_server(bypass)]
-
-    {:ok, conn: conn, config: config, bypass: bypass}
-  end
+  setup :setup_bypass
 
   test "authorize_url/2", %{conn: conn, config: config} do
     assert {:ok, %{conn: _conn, url: url}} = Instagram.authorize_url(config, conn)
@@ -26,16 +26,7 @@ defmodule PowAssent.Strategy.InstagramTest do
     end
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
-        user = %{
-          "id" => "1574083",
-          "username" => "snoopdogg",
-          "full_name" => "Snoop Dogg",
-          "profile_picture" => "..."
-        }
-
-        send_resp(conn, 200, Poison.encode!(%{access_token: @access_token, user: user}))
-      end)
+      expect_oauth2_access_token_request(bypass, uri: "/oauth/token", params: %{access_token: "access_token", user: @user_response})
 
       expected = %{
         "image" => "...",
@@ -50,10 +41,9 @@ defmodule PowAssent.Strategy.InstagramTest do
 
     test "handles error", %{config: config, conn: conn, params: params} do
       config = Keyword.put(config, :site, "http://localhost:8888")
-      expected = %OAuth2.Error{reason: :econnrefused}
 
       assert {:error, %{conn: %Plug.Conn{}, error: error}} = Instagram.callback(config, conn, params)
-      assert error == expected
+      assert error == :econnrefused
     end
   end
 end
