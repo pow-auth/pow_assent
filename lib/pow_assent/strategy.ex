@@ -65,6 +65,8 @@ defmodule PowAssent.Strategy do
     case List.keyfind(headers, "content-type", 0) do
       {"content-type", "application/json" <> _rest} ->
         {status, %{resp | body: decode_json!(body, config)}}
+      {"content-type", "application/x-www-form-urlencoded" <> _reset} ->
+        {status, %{resp | body: URI.decode_query(body)}}
       _any ->
         {status, resp}
     end
