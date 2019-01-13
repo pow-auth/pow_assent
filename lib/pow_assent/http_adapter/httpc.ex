@@ -26,7 +26,17 @@ defmodule PowAssent.HTTPAdapter.Httpc do
     url          = to_charlist(url)
     headers      = Enum.map(headers, fn {k, v} -> {to_charlist(k), to_charlist(v)} end)
 
-    do_httpc_request(url, body, headers)
+    do_httpc_request(url, body, headers ++ [default_user_agent_header()])
+  end
+
+  defp default_user_agent_header do
+    version =
+      case :application.get_key(:pow_assent, :vsn) do
+        {:ok, vsn} -> vsn
+        _ -> '0.0.0'
+      end
+
+    {'User-Agent', version}
   end
 
   defp do_httpc_request(url, nil, headers) do
