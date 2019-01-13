@@ -1,4 +1,6 @@
 defmodule PowAssent.HTTPResponse do
+  @moduledoc false
+
   @type header :: {binary(), binary()}
   @type t      :: %__MODULE__{
     status: integer(),
