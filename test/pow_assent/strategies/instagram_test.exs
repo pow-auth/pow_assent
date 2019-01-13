@@ -1,17 +1,17 @@
 defmodule PowAssent.Strategy.InstagramTest do
   use PowAssent.Test.Phoenix.ConnCase
 
-  import OAuth2.TestHelpers
+  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.Instagram
 
-  @access_token "access_token"
+  @user_response %{
+    "id" => "1574083",
+    "username" => "snoopdogg",
+    "full_name" => "Snoop Dogg",
+    "profile_picture" => "..."
+  }
 
-  setup %{conn: conn} do
-    bypass = Bypass.open()
-    config = [site: bypass_server(bypass)]
-
-    {:ok, conn: conn, config: config, bypass: bypass}
-  end
+  setup :setup_bypass
 
   test "authorize_url/2", %{conn: conn, config: config} do
     assert {:ok, %{conn: _conn, url: url}} = Instagram.authorize_url(config, conn)
@@ -26,18 +26,7 @@ defmodule PowAssent.Strategy.InstagramTest do
     end
 
     test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
-        user = %{
-          "id" => "1574083",
-          "username" => "snoopdogg",
-          "full_name" => "Snoop Dogg",
-          "profile_picture" => "..."
-        }
-
-        conn
-        |> put_resp_content_type("application/json")
-        |> send_resp(200, Jason.encode!(%{access_token: @access_token, user: user}))
-      end)
+      expect_oauth2_access_token_request(bypass, uri: "/oauth/token", params: %{access_token: "access_token", user: @user_response})
 
       expected = %{
         "image" => "...",
