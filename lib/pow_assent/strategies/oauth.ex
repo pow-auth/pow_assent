@@ -64,9 +64,7 @@ defmodule PowAssent.Strategy.OAuth do
   end
   defp build_authorize_url({:error, error}, _config), do: {:error, error}
 
-  @doc false
-  @spec get_access_token(Keyword.t(), binary(), binary()) :: {:ok, map} | {:error, term}
-  def get_access_token(config, oauth_token, oauth_verifier) do
+  defp get_access_token(config, oauth_token, oauth_verifier) do
     site             = config[:site]
     access_token_url = process_url(config, config[:access_token_url] || "/oauth/access_token")
     params           = [{"oauth_verifier", oauth_verifier}]
@@ -80,7 +78,7 @@ defmodule PowAssent.Strategy.OAuth do
     |> process_request_token_response()
   end
 
-  defp request(config, method, site, url, credentials, params \\ []) do
+  defp request(config, method, site, url, credentials, params) do
     signed_params        = OAuther.sign(Atom.to_string(method), url, params, credentials)
     {header, req_params} = OAuther.header(signed_params)
     headers              = request_headers(method, header)
@@ -106,11 +104,15 @@ defmodule PowAssent.Strategy.OAuth do
   defp fetch_user({:error, error}, _config, _strategy),
     do: {:error, error}
 
-  @doc false
-  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
-  def get_user(config, token) do
+  @doc """
+  Makes a HTTP get request to the API.
+
+  JSON responses will be decoded to maps.
+  """
+  @spec get(Keyword.t(), map(), binary(), Keyword.t()) :: {:ok, map()} | {:error, term()}
+  def get(config, token, url, params \\ []) do
     site        = config[:site]
-    url         = process_url(config, config[:user_url])
+    url         = process_url(config, url)
     credentials = OAuther.credentials([
       consumer_key: config[:consumer_key],
       consumer_secret: config[:consumer_secret],
@@ -118,8 +120,15 @@ defmodule PowAssent.Strategy.OAuth do
       token_secret: token["oauth_token_secret"]])
 
     config
-    |> request(:get, site, url, credentials)
+    |> request(:get, site, url, credentials, params)
     |> Helpers.decode_response(config)
+  end
+
+  @doc false
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
+  def get_user(config, token) do
+    config
+    |> get(token, config[:user_url])
     |> case do
       {:ok, %{body: body}} -> {:ok, body}
       any -> any

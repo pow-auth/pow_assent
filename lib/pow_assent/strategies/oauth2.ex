@@ -48,18 +48,14 @@ defmodule PowAssent.Strategy.OAuth2 do
   end
 
   @doc false
-  @spec callback(Keyword.t(), Conn.t(), map(), atom()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
+  @spec callback(Keyword.t(), Conn.t(), map(), atom()) :: {:ok, %{conn: Conn.t(), user: map(), token: map()}} | {:error, %{conn: Conn.t(), error: any()}}
   def callback(config, conn, params, strategy \\ __MODULE__) do
     state  = conn.private[:pow_assent_state]
 
     state
     |> check_state(params)
     |> get_access_token(params, config)
-    |> fetch_user(config, strategy)
-    |> case do
-      {:ok, user} -> {:ok, %{conn: conn, user: user}}
-      {:error, error} -> {:error, %{conn: conn, error: error}}
-    end
+    |> fetch_user(config, conn, strategy)
   end
 
   defp check_state(_state, %{"error" => _} = params) do
@@ -102,10 +98,31 @@ defmodule PowAssent.Strategy.OAuth2 do
     {:error, error}
   end
 
-  defp fetch_user({:ok, token}, config, strategy),
-    do: strategy.get_user(config, token)
-  defp fetch_user({:error, error}, _config, _strategy),
-    do: {:error, error}
+  defp fetch_user({:ok, token}, config, conn, strategy) do
+    config
+    |> strategy.get_user(token)
+    |> case do
+      {:ok, user} -> {:ok, %{conn: conn, token: token, user: user}}
+      {:error, error} -> {:error, %{conn: conn, error: error}}
+    end
+  end
+  defp fetch_user({:error, error}, _config, conn, _strategy),
+    do: {:error, %{conn: conn, error: error}}
+
+  @doc """
+  Makes a HTTP get request to the API.
+
+  JSON responses will be decoded to maps.
+  """
+  @spec get(Keyword.t(), map(), binary(), Keyword.t()) :: {:ok, map()} | {:error, term()}
+  def get(config, token, url, params \\ []) do
+    url     = Helpers.to_url(config[:site], url, params)
+    headers = authorization_headers(config, token)
+
+    :get
+    |> Helpers.request(url, nil, headers, config)
+    |> Helpers.decode_response(config)
+  end
 
   @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
   def get_user(config, token) do
@@ -114,12 +131,8 @@ defmodule PowAssent.Strategy.OAuth2 do
         {:error, %ConfigurationError{message: "No user URL set"}}
 
       user_url ->
-        url     = Helpers.to_url(config[:site], user_url, [])
-        headers = authorization_headers(config, token)
-
-        :get
-        |> Helpers.request(url, nil, headers, config)
-        |> Helpers.decode_response(config)
+        config
+        |> get(token, user_url)
         |> process_user_response()
     end
   end
