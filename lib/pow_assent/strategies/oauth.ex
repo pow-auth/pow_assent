@@ -18,6 +18,7 @@ defmodule PowAssent.Strategy.OAuth do
   use PowAssent.Strategy
 
   alias PowAssent.Strategy, as: Helpers
+  alias PowAssent.{HTTPResponse, RequestError}
   alias Plug.Conn
 
   @doc false
@@ -53,7 +54,8 @@ defmodule PowAssent.Strategy.OAuth do
 
     config
     |> request(:post, site, request_token_url, credentials, params)
-    |> process_request_token_response()
+    |> Helpers.decode_response(config)
+    |> process_token_response()
   end
 
   defp build_authorize_url({:ok, token}, config) do
@@ -75,7 +77,8 @@ defmodule PowAssent.Strategy.OAuth do
 
     config
     |> request(:post, site, access_token_url, credentials, params)
-    |> process_request_token_response()
+    |> Helpers.decode_response(config)
+    |> process_token_response()
   end
 
   defp request(config, method, site, url, credentials, params) do
@@ -94,10 +97,12 @@ defmodule PowAssent.Strategy.OAuth do
   defp request_body(:post, req_params), do: URI.encode_query(req_params)
   defp request_body(_method, _req_params), do: nil
 
-  defp process_request_token_response({:ok, %{body: body}}) do
-    {:ok, URI.decode_query(body)}
-  end
-  defp process_request_token_response({:error, error}), do: {:error, error}
+  defp process_token_response({:ok, %HTTPResponse{status: 200, body: %{"oauth_token" => _} = token}}), do: {:ok, token}
+  defp process_token_response(any), do: process_response(any)
+
+  defp process_response({:ok, %HTTPResponse{} = response}), do: {:error, RequestError.unexpected(response)}
+  defp process_response({:error, %HTTPResponse{} = response}), do: {:error, RequestError.invalid(response)}
+  defp process_response({:error, error}), do: {:error, error}
 
   defp fetch_user({:ok, token}, config, strategy),
     do: strategy.get_user(config, token)
@@ -129,11 +134,12 @@ defmodule PowAssent.Strategy.OAuth do
   def get_user(config, token) do
     config
     |> get(token, config[:user_url])
-    |> case do
-      {:ok, %{body: body}} -> {:ok, body}
-      any -> any
-    end
+    |> process_user_response()
   end
+
+  defp process_user_response({:ok, %HTTPResponse{status: 200, body: user}}), do: {:ok, user}
+  defp process_user_response({:error, %HTTPResponse{status: 401}}), do: {:error, %RequestError{message: "Unauthorized token"}}
+  defp process_user_response(any), do: process_response(any)
 
   defp process_url(config, url) do
     case String.downcase(url) do

@@ -6,6 +6,8 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   `:ssl_verify_fun` libraries exists in your project. You can also override
   the httc opts by setting `config :pow, httpc_opts: opts`.
   """
+  alias PowAssent.HTTPResponse
+
   @type method :: :get | :post
   @type body :: binary() | nil
   @type headers :: [{binary(), binary()}]
@@ -60,7 +62,7 @@ defmodule PowAssent.HTTPAdapter.Httpc do
     headers = Enum.map(headers, fn {key, value} -> {String.downcase(to_string(key)), to_string(value)} end)
     body    = IO.iodata_to_binary(body)
 
-    {:ok, %{status: status, headers: headers, body: body}}
+    {:ok, %HTTPResponse{status: status, headers: headers, body: body}}
   end
   defp format_response({:error, {:failed_connect, _}}), do: {:error, :econnrefused}
   defp format_response(response), do: response

@@ -21,7 +21,7 @@ defmodule PowAssent.Strategy.OAuth2 do
 
   alias Plug.Conn
   alias PowAssent.Strategy, as: Helpers
-  alias PowAssent.{CallbackCSRFError, CallbackError, ConfigurationError, RequestError}
+  alias PowAssent.{CallbackCSRFError, CallbackError, ConfigurationError, HTTPResponse, RequestError}
 
   @doc false
   @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
@@ -85,18 +85,12 @@ defmodule PowAssent.Strategy.OAuth2 do
   end
   defp get_access_token({:error, error}, _params, _config), do: {:error, error}
 
-  defp process_access_token_response({:ok, %{body: %{"error" => error, "error_description" => error_description}}}) do
-    {:error, %RequestError{message: error_description, error: error}}
-  end
-  defp process_access_token_response({:ok, %{body: %{"access_token" => _access_token} = token}}) do
-    {:ok, token}
-  end
-  defp process_access_token_response({:error, %{body: %{"error" => error}}}) do
-    {:error, %RequestError{message: error}}
-  end
-  defp process_access_token_response({:error, error}) do
-    {:error, error}
-  end
+  defp process_access_token_response({:ok, %HTTPResponse{status: 200, body: %{"access_token" => _} = token}}), do: {:ok, token}
+  defp process_access_token_response(any), do: process_response(any)
+
+  defp process_response({:ok, %HTTPResponse{} = response}), do: {:error, RequestError.unexpected(response)}
+  defp process_response({:error, %HTTPResponse{} = response}), do: {:error, RequestError.invalid(response)}
+  defp process_response({:error, error}), do: {:error, error}
 
   defp fetch_user({:ok, token}, config, conn, strategy) do
     config
@@ -145,10 +139,9 @@ defmodule PowAssent.Strategy.OAuth2 do
     [{"authorization", "#{access_token_type} #{access_token}"}]
   end
 
-  defp process_user_response({:ok, %{body: user}}), do: {:ok, user}
-  defp process_user_response({:error, %{status: 401}}),
-    do: {:error, %RequestError{message: "Unauthorized token"}}
-  defp process_user_response({:error, error}), do: {:error, error}
+  defp process_user_response({:ok, %HTTPResponse{status: 200, body: user}}), do: {:ok, user}
+  defp process_user_response({:error, %HTTPResponse{status: 401}}), do: {:error, %RequestError{message: "Unauthorized token"}}
+  defp process_user_response(any), do: process_response(any)
 
   defp gen_state do
     24
