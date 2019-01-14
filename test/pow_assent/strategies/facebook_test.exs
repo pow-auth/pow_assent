@@ -36,6 +36,7 @@ defmodule PowAssent.Strategy.FacebookTest do
       expect_oauth2_user_request(bypass, @user_response, [uri: "/me"], fn conn ->
         conn = Plug.Conn.fetch_query_params(conn)
 
+        assert conn.params["access_token"] == "access_token"
         assert conn.params["fields"] == "name,email"
         assert conn.params["appsecret_proof"] == Base.encode16(:crypto.hmac(:sha256, "", "access_token"), case: :lower)
       end)

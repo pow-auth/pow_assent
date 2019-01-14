@@ -59,10 +59,11 @@ defmodule PowAssent.Strategy.Facebook do
   def get_user(config, access_token) do
     params = %{
       "appsecret_proof" => appsecret_proof(config, access_token),
-      "fields" => config[:user_url_request_fields]}
-    config = Keyword.put(config, :user_url, user_url(config, params))
+      "fields" => config[:user_url_request_fields],
+      "access_token" => access_token["access_token"]
+    }
 
-    OAuth2.get_user(config, access_token)
+    OAuth2.get_user(config, access_token, params)
   end
 
   defp appsecret_proof(config, access_token) do
@@ -72,6 +73,4 @@ defmodule PowAssent.Strategy.Facebook do
     |> :crypto.hmac(client_secret, access_token["access_token"])
     |> Base.encode16(case: :lower)
   end
-
-  defp user_url(config, params), do: config[:user_url] <> "?" <> URI.encode_query(params)
 end

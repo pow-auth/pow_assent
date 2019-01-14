@@ -62,16 +62,22 @@ defmodule PowAssent.Strategy do
   """
   @spec decode_response({atom(), any()}, Keyword.t()) :: {atom(), any()}
   def decode_response({status, %{body: body, headers: headers} = resp}, config) do
-    case List.keyfind(headers, "content-type", 0) do
-      {"content-type", "application/json" <> _rest} ->
-        {status, %{resp | body: decode_json!(body, config)}}
-      {"content-type", "application/x-www-form-urlencoded" <> _reset} ->
-        {status, %{resp | body: URI.decode_query(body)}}
-      _any ->
-        {status, resp}
-    end
+    {status, %{resp | body: decode_body(headers, body, config)}}
   end
   def decode_response(any, _config), do: any
+
+  defp decode_body(headers, body, config) do
+    case List.keyfind(headers, "content-type", 0) do
+      {"content-type", "application/json" <> _rest} ->
+        decode_json!(body, config)
+      {"content-type", "text/javascript" <> _rest} ->
+        decode_json!(body, config)
+      {"content-type", "application/x-www-form-urlencoded" <> _reset} ->
+        URI.decode_query(body)
+      _any ->
+        body
+      end
+  end
 
   @doc """
   Recursively prunes map for nil values.
