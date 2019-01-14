@@ -90,11 +90,19 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   defp ssl_opts(url) do
     %{host: host} = URI.parse(url)
 
+    Application.ensure_all_started(:certifi)
+    Application.ensure_all_started(:ssl_verify_hostname)
+
+    # This will prevent warnings from showing up if :certifi or
+    # :ssl_verify_hostname isn't available
+    certifi_mod = :certifi
+    ssl_verify_hostname_mod = :ssl_verify_hostname
+
     [
       verify: :verify_peer,
       depth: 99,
-      cacerts: :certifi.cacerts(),
-      verify_fun: {&:ssl_verify_hostname.verify_fun/3, check_hostname: to_charlist(host)}
+      cacerts: certifi_mod.cacerts(),
+      verify_fun: {&ssl_verify_hostname_mod.verify_fun/3, check_hostname: to_charlist(host)}
     ]
   end
 end
