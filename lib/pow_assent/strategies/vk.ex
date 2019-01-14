@@ -51,18 +51,14 @@ defmodule PowAssent.Strategy.VK do
 
   @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
   def get_user(config, token) do
-    params = Keyword.get(config, :user_url_params, %{})
-    config = Keyword.put(config, :user_url, user_url(config, token, params))
+    params =
+      config
+      |> Keyword.get(:user_url_params, %{})
+      |> Map.put("access_token", token["access_token"])
 
     config
-    |> OAuth2.get_user(token)
+    |> OAuth2.get_user(token, params)
     |> handle_user_response(token)
-  end
-
-  defp user_url(config, token, params) do
-    user_url_params = Map.put(params, "access_token", token["access_token"])
-
-    config[:user_url] <> "?" <> URI.encode_query(user_url_params)
   end
 
   defp handle_user_response({:ok, %{"response" => [user]}}, token) do

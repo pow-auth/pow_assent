@@ -48,6 +48,7 @@ defmodule PowAssent.Strategy.VKTest do
       expect_oauth2_user_request(bypass, %{"response" => @users_response}, [uri: "/method/users.get"], fn conn ->
         conn = Plug.Conn.fetch_query_params(conn)
 
+        assert conn.params["access_token"] == "access_token"
         assert conn.params["fields"] == "uid,first_name,last_name,photo_200,screen_name,verified"
         assert conn.params["v"] == "5.69"
         assert conn.params["access_token"] == "access_token"

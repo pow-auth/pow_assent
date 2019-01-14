@@ -124,15 +124,15 @@ defmodule PowAssent.Strategy.OAuth2 do
     |> Helpers.decode_response(config)
   end
 
-  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
-  def get_user(config, token) do
+  @spec get_user(Keyword.t(), map(), map()) :: {:ok, map()} | {:error, term()}
+  def get_user(config, token, params \\ []) do
     case config[:user_url] do
       nil ->
         {:error, %ConfigurationError{message: "No user URL set"}}
 
       user_url ->
         config
-        |> get(token, user_url)
+        |> get(token, user_url, params)
         |> process_user_response()
     end
   end
