@@ -15,12 +15,12 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   @doc """
   Make a HTTP request using :httpc.
   """
-  @spec request(method(), binary(), body(), headers()) :: {:ok, map()} | {:error, map()}
-  def request(method, url, body, headers) do
+  @spec request(method(), binary(), body(), headers(), Keyword.t()) :: {:ok, map()} | {:error, map()}
+  def request(method, url, body, headers, httpc_opts \\ Application.get_env(:pow, :httpc_opts)) do
     request = httpc_request(url, body, headers)
 
     method
-    |> :httpc.request(request, opts(url), [])
+    |> :httpc.request(request, parse_httpc_opts(httpc_opts, url), [])
     |> format_response()
   end
 
@@ -67,9 +67,10 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   defp format_response({:error, {:failed_connect, _}}), do: {:error, :econnrefused}
   defp format_response(response), do: response
 
-  defp opts(url), do: Application.get_env(:pow, :httpc_opts) || default_opts(url)
+  defp parse_httpc_opts(nil, url), do: default_httpc_opts(url)
+  defp parse_httpc_opts(opts, _url), do: opts
 
-  defp default_opts(url) do
+  defp default_httpc_opts(url) do
     case certifi_and_ssl_verify_fun_available?() do
       true  -> [ssl: ssl_opts(url)]
       false -> []
@@ -77,6 +78,9 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   end
 
   defp certifi_and_ssl_verify_fun_available?() do
+    Application.ensure_all_started(:certifi)
+    Application.ensure_all_started(:ssl_verify_fun)
+
     app_available?(:certifi) && app_available?(:ssl_verify_fun)
   end
 
@@ -89,9 +93,6 @@ defmodule PowAssent.HTTPAdapter.Httpc do
 
   defp ssl_opts(url) do
     %{host: host} = URI.parse(url)
-
-    Application.ensure_all_started(:certifi)
-    Application.ensure_all_started(:ssl_verify_hostname)
 
     # This will prevent warnings from showing up if :certifi or
     # :ssl_verify_hostname isn't available
