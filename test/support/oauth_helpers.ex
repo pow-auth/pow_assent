@@ -47,6 +47,7 @@ defmodule PowAssent.OAuthHelpers do
       case content_type do
         "application/x-www-form-urlencoded" -> URI.encode_query(params)
         "application/json"                  -> Jason.encode!(params)
+        _any                                -> params
       end
 
     Bypass.expect_once(bypass, "POST", "/oauth/request_token", fn conn ->

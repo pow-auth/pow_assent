@@ -16,8 +16,14 @@ defmodule PowAssent.Strategy.OAuthTest do
       assert url =~ bypass_server(bypass) <> "/oauth/authenticate?oauth_token=token"
     end
 
+    test "falls back to parse response as uri query", %{conn: conn, config: config, bypass: bypass} do
+      expect_oauth_request_token_request(bypass, content_type: "text/html", params: URI.encode_query(%{oauth_token: "token", oauth_token_secret: "token_secret"}))
+
+      assert {:ok, _resp} = OAuth.authorize_url(config, conn)
+    end
+
     test "bubbles up unexpected response", %{conn: conn, config: config, bypass: bypass} do
-      expect_oauth_request_token_request(bypass, status_code: 200, params: %{"error_code" => 215, "error_message" => "Bad Authentication data."})
+      expect_oauth_request_token_request(bypass, params: %{"error_code" => 215, "error_message" => "Bad Authentication data."})
 
       assert {:error, %{conn: _conn, error: %RequestError{error: :unexpected_response}}} = OAuth.authorize_url(config, conn)
     end

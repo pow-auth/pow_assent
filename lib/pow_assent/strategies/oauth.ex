@@ -97,6 +97,7 @@ defmodule PowAssent.Strategy.OAuth do
   defp request_body(:post, req_params), do: URI.encode_query(req_params)
   defp request_body(_method, _req_params), do: nil
 
+  defp process_token_response({:ok, %HTTPResponse{status: 200, body: body} = response}) when is_binary(body), do: process_token_response({:ok, %{response | body: URI.decode_query(body)}})
   defp process_token_response({:ok, %HTTPResponse{status: 200, body: %{"oauth_token" => _} = token}}), do: {:ok, token}
   defp process_token_response(any), do: process_response(any)
 
