@@ -74,7 +74,7 @@ defmodule PowAssent.Strategy.OAuth2 do
 
   defp get_access_token(:ok, %{"code" => code, "redirect_uri" => redirect_uri}, config) do
     client_secret = Keyword.get(config, :client_secret)
-    params        = authorization_params(config, code: code, client_secret: client_secret, redirect_uri: redirect_uri)
+    params        = authorization_params(config, code: code, client_secret: client_secret, redirect_uri: redirect_uri, grant_type: "authorization_code")
     token_url     = Keyword.get(config, :token_url, "/oauth/token")
     url           = Helpers.to_url(config[:site], token_url, params)
 
