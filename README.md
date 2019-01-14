@@ -37,7 +37,7 @@ def deps do
 
     # Optional but recommended for SSL validation
     {:certifi, "~> 2.4"},
-    {:ssl_verify_fun, "~> "1.1"},
+    {:ssl_verify_fun, "~> 1.1"},
     # ...
   ]
 end

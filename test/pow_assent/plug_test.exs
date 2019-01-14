@@ -50,7 +50,7 @@ defmodule PowAssent.PlugTest do
       expect_oauth2_flow(server, user: %{uid: "existing_user"})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
-      assert {:ok, %{id: 1, email: "test@example.com"}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
+      assert {:ok, %{id: 1, email: "test@example.com"}, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
     end
 
     test "creates user identity", %{conn: conn, server: server} do

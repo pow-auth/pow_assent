@@ -135,7 +135,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         |> send_resp(401, Jason.encode!(%{error: "invalid_client"}))
       end)
 
-      assert_raise PowAssent.RequestError, "invalid_client", fn ->
+      message = ~r/Server responded with status: 401/
+
+      assert_raise PowAssent.RequestError, message, fn ->
         get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
       end
     end

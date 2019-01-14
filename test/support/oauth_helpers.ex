@@ -39,16 +39,21 @@ defmodule PowAssent.OAuthHelpers do
   end
 
   @spec expect_oauth_request_token_request(Bypass.t(), Keyword.t()) :: :ok
-  def expect_oauth_request_token_request(bypass, _opts \\ []) do
-    Bypass.expect_once(bypass, "POST", "/oauth/request_token", fn conn ->
-      token = %{
-        oauth_token: "token",
-        oauth_token_secret: "token_secret"
-      }
+  def expect_oauth_request_token_request(bypass, opts \\ []) do
+    status_code    = Keyword.get(opts, :status_code, 200)
+    content_type   = Keyword.get(opts, :content_type, "application/x-www-form-urlencoded")
+    params         = Keyword.get(opts, :params, %{oauth_token: "token", oauth_token_secret: "token_secret"})
+    response       =
+      case content_type do
+        "application/x-www-form-urlencoded" -> URI.encode_query(params)
+        "application/json"                  -> Jason.encode!(params)
+        _any                                -> params
+      end
 
+    Bypass.expect_once(bypass, "POST", "/oauth/request_token", fn conn ->
       conn
-      |> Conn.put_resp_content_type("text/plain")
-      |> Conn.resp(200, URI.encode_query(token))
+      |> Conn.put_resp_content_type(content_type)
+      |> Conn.resp(status_code, response)
     end)
   end
 
@@ -71,7 +76,7 @@ defmodule PowAssent.OAuthHelpers do
       }
 
       conn
-      |> Conn.put_resp_content_type("text/plain")
+      |> Conn.put_resp_content_type("application/x-www-form-urlencoded")
       |> Conn.resp(200, URI.encode_query(token))
     end)
   end

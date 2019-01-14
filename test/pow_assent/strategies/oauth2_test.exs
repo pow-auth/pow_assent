@@ -2,7 +2,7 @@ defmodule PowAssent.Strategy.OAuth2Test do
   use PowAssent.Test.Phoenix.ConnCase
 
   import PowAssent.OAuthHelpers
-  alias PowAssent.Strategy.OAuth2, as: OAuth2Strategy
+  alias PowAssent.{ConfigurationError, RequestError, Strategy.OAuth2}
 
   setup :setup_bypass
 
@@ -14,7 +14,7 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
 
   test "authorize_url/2", %{conn: conn, config: config} do
-    assert {:ok, %{conn: conn, url: url, state: state}} = OAuth2Strategy.authorize_url(config, conn)
+    assert {:ok, %{conn: conn, url: url, state: state}} = OAuth2.authorize_url(config, conn)
 
     assert conn.private[:pow_assent_state] == state
     assert url == "#{config[:site]}/oauth/authorize?client_id=&redirect_uri=&response_type=code&state=#{state}"
@@ -41,27 +41,20 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
       expect_oauth2_user_request(bypass, %{name: "Dan Schultzer", email: "foo@example.com", uid: "1"})
 
-      assert {:ok, %{conn: _conn, user: user}} = OAuth2Strategy.callback(config, conn, params)
+      assert {:ok, %{conn: _conn, user: user}} = OAuth2.callback(config, conn, params)
       assert user == %{"email" => "foo@example.com", "name" => "Dan Schultzer", "uid" => "1"}
     end
 
     test "access token error with 200 response", %{conn: conn, config: config, params: params, bypass: bypass} do
       expect_oauth2_access_token_request(bypass, params: %{"error" => "error", "error_description" => "Error description"})
 
-      expected = %PowAssent.RequestError{error: "error", message: "Error description"}
-
-      assert {:error, %{conn: _conn, error: error}} = OAuth2Strategy.callback(config, conn, params)
-
-      assert error == expected
+      assert {:error, %{conn: _conn, error: %RequestError{error: :unexpected_response}}} = OAuth2.callback(config, conn, params)
     end
 
-    test "access token error with no 2XX response", %{conn: conn, config: config, params: params, bypass: bypass} do
+    test "access token error with 500 response", %{conn: conn, config: config, params: params, bypass: bypass} do
       expect_oauth2_access_token_request(bypass, status_code: 500, params: %{error: "Error"})
 
-      expected = %PowAssent.RequestError{error: nil, message: "Error"}
-
-      assert {:error, %{conn: %Plug.Conn{}, error: error}} = OAuth2Strategy.callback(config, conn, params)
-      assert error == expected
+      assert {:error, %{conn: _conn, error: %RequestError{error: :invalid_server_response}}} = OAuth2.callback(config, conn, params)
     end
 
     test "configuration error", %{conn: conn, config: config, params: params, bypass: bypass} do
@@ -69,10 +62,7 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
       expect_oauth2_access_token_request(bypass)
 
-      expected = %PowAssent.ConfigurationError{message: "No user URL set"}
-
-      assert {:error, %{conn: %Plug.Conn{}, error: error}} = OAuth2Strategy.callback(config, conn, params)
-      assert error == expected
+      assert {:error, %{conn: _conn, error: %ConfigurationError{message: "No user URL set"}}} = OAuth2.callback(config, conn, params)
     end
 
     test "user url connection error", %{conn: conn, config: config, params: params, bypass: bypass} do
@@ -80,18 +70,14 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
       expect_oauth2_access_token_request(bypass)
 
-      assert {:error, %{conn: %Plug.Conn{}, error: error}} = OAuth2Strategy.callback(config, conn, params)
-      assert error == :econnrefused
+      assert {:error, %{conn: _conn, error: :econnrefused}} = OAuth2.callback(config, conn, params)
     end
 
     test "user url unauthorized access token", %{conn: conn, config: config, params: params, bypass: bypass} do
       expect_oauth2_access_token_request(bypass)
       expect_oauth2_user_request(bypass, %{"error" => "Unauthorized"}, status_code: 401)
 
-      expected = %PowAssent.RequestError{message: "Unauthorized token"}
-
-      assert {:error, %{conn: %Plug.Conn{}, error: error}} = OAuth2Strategy.callback(config, conn, params)
-      assert error == expected
+      assert {:error, %{conn: _conn, error: %RequestError{message: "Unauthorized token"}}} = OAuth2.callback(config, conn, params)
     end
   end
 end

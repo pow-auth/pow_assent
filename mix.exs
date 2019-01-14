@@ -29,7 +29,7 @@ defmodule PowAssent.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :certifi, :ssl_verify_fun]
+      extra_applications: [:logger]
     ]
   end
 
