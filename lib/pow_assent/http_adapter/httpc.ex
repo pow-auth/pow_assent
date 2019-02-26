@@ -1,6 +1,6 @@
 defmodule PowAssent.HTTPAdapter.Httpc do
   @moduledoc """
-  HTTP adapter module for making http requests.
+  HTTP adapter module for making http requests with httpc.
 
   SSL support will automatically be enabled if the `:certifi` and
   `:ssl_verify_fun` libraries exists in your project. You can also override
@@ -13,9 +13,9 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   @type headers :: [{binary(), binary()}]
 
   @doc """
-  Make a HTTP request using :httpc.
+  Make a HTTP request.
   """
-  @spec request(method(), binary(), body(), headers(), Keyword.t()) :: {:ok, map()} | {:error, map()}
+  @spec request(method(), binary(), body(), headers(), Keyword.t()) :: {:ok, map()} | {:error, any()}
   def request(method, url, body, headers, httpc_opts \\ Application.get_env(:pow, :httpc_opts)) do
     request = httpc_request(url, body, headers)
 
