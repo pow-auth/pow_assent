@@ -2,7 +2,7 @@ defmodule PowAssent.HTTPAdapter.HttpcTest do
   use ExUnit.Case
   doctest PowAssent.HTTPAdapter.Httpc
 
-  alias PowAssent.{HTTPAdapter.Httpc, HTTPResponse}
+  alias PowAssent.HTTPAdapter.{Httpc, HTTPResponse}
 
   @expired_certificate_url "https://expired.badssl.com"
   @hsts_certificate_url "https://hsts.badssl.com"

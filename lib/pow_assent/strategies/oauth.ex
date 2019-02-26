@@ -18,7 +18,7 @@ defmodule PowAssent.Strategy.OAuth do
   use PowAssent.Strategy
 
   alias PowAssent.Strategy, as: Helpers
-  alias PowAssent.{HTTPResponse, RequestError}
+  alias PowAssent.{HTTPAdapter.HTTPResponse, RequestError}
   alias Plug.Conn
 
   @doc false

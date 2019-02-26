@@ -6,17 +6,13 @@ defmodule PowAssent.HTTPAdapter.Httpc do
   `:ssl_verify_fun` libraries exists in your project. You can also override
   the httc opts by setting `config :pow, httpc_opts: opts`.
   """
-  alias PowAssent.HTTPResponse
+  alias PowAssent.{HTTPAdapter, HTTPAdapter.HTTPResponse}
 
-  @type method :: :get | :post
-  @type body :: binary() | nil
-  @type headers :: [{binary(), binary()}]
+  @behaviour HTTPAdapter
 
-  @doc """
-  Make a HTTP request.
-  """
-  @spec request(method(), binary(), body(), headers(), Keyword.t()) :: {:ok, map()} | {:error, any()}
+  @impl HTTPAdapter
   def request(method, url, body, headers, httpc_opts \\ Application.get_env(:pow, :httpc_opts)) do
+    headers = headers ++ [HTTPAdapter.user_agent_header()]
     request = httpc_request(url, body, headers)
 
     method
@@ -28,17 +24,7 @@ defmodule PowAssent.HTTPAdapter.Httpc do
     url          = to_charlist(url)
     headers      = Enum.map(headers, fn {k, v} -> {to_charlist(k), to_charlist(v)} end)
 
-    do_httpc_request(url, body, headers ++ [default_user_agent_header()])
-  end
-
-  defp default_user_agent_header do
-    version =
-      case :application.get_key(:pow_assent, :vsn) do
-        {:ok, vsn} -> vsn
-        _ -> '0.0.0'
-      end
-
-    {'User-Agent', version}
+    do_httpc_request(url, body, headers)
   end
 
   defp do_httpc_request(url, nil, headers) do
