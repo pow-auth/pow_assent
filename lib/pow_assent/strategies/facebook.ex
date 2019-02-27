@@ -56,11 +56,11 @@ defmodule PowAssent.Strategy.Facebook do
 
   @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
   def get_user(config, access_token) do
-    params = %{
-      "appsecret_proof" => appsecret_proof(config, access_token),
-      "fields" => config[:user_url_request_fields],
-      "access_token" => access_token["access_token"]
-    }
+    params = [
+      appsecret_proof: appsecret_proof(config, access_token),
+      fields: config[:user_url_request_fields],
+      access_token: access_token["access_token"]
+    ]
 
     OAuth2.get_user(config, access_token, params)
   end

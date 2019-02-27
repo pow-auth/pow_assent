@@ -107,7 +107,7 @@ defmodule PowAssent.Strategy.OAuth2 do
 
   JSON responses will be decoded to maps.
   """
-  @spec get(Keyword.t(), map(), binary(), Keyword.t()) :: {:ok, map()} | {:error, term()}
+  @spec get(Keyword.t(), map(), binary(), map() | Keyword.t()) :: {:ok, map()} | {:error, term()}
   def get(config, token, url, params \\ []) do
     url     = Helpers.to_url(config[:site], url, params)
     headers = authorization_headers(config, token)
@@ -117,7 +117,7 @@ defmodule PowAssent.Strategy.OAuth2 do
     |> Helpers.decode_response(config)
   end
 
-  @spec get_user(Keyword.t(), map(), map()) :: {:ok, map()} | {:error, term()}
+  @spec get_user(Keyword.t(), map(), map() | Keyword.t()) :: {:ok, map()} | {:error, term()}
   def get_user(config, token, params \\ []) do
     case config[:user_url] do
       nil ->

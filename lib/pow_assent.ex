@@ -12,7 +12,7 @@ defmodule PowAssent do
   defmodule RequestError do
     defexception [:message, :error]
 
-    alias PowAssent.HTTPResponse
+    alias PowAssent.HTTPAdapter.HTTPResponse
 
     @spec unexpected(HTTPResponse.t()) :: %__MODULE__{}
     def unexpected(response) do

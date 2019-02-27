@@ -85,7 +85,7 @@ defmodule PowAssent.Strategy.OAuth do
     {header, req_params} = OAuther.header(signed_params)
     headers              = request_headers(method, header)
     body                 = request_body(method, req_params)
-    url                  = Helpers.to_url(site, url, [])
+    url                  = Helpers.to_url(site, url)
 
     Helpers.request(method, url, body, headers, config)
   end

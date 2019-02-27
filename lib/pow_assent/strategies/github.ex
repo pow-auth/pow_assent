@@ -50,7 +50,7 @@ defmodule PowAssent.Strategy.Github do
   end
 
   defp get_email({:ok, user}, access_token, config) do
-    url     = Helpers.to_url(config[:site], config[:user_emails_url], [])
+    url     = Helpers.to_url(config[:site], config[:user_emails_url])
     headers = OAuth2.authorization_headers(config, access_token)
 
     :get

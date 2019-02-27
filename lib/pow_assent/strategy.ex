@@ -115,6 +115,7 @@ defmodule PowAssent.Strategy do
   Generates a URL
   """
   @spec to_url(binary(), binary(), Keyword.t()) :: binary()
+  def to_url(site, uri, params \\ [])
   def to_url(site, uri, []), do: endpoint(site, uri)
   def to_url(site, uri, params) do
     endpoint(site, uri) <> "?" <> URI.encode_query(params)

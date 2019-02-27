@@ -18,12 +18,12 @@ defmodule PowAssent.Strategy.VK do
   alias PowAssent.Strategy.OAuth2
 
   @profile_fields ["uid", "first_name", "last_name", "photo_200", "screen_name", "verified"]
-  @url_params     %{"fields" => Enum.join(@profile_fields, ","), "v" => "5.69", "https" => "1"}
+  @url_params     [fields: Enum.join(@profile_fields, ","), v: "5.69", https: "1"]
 
   @spec default_config(Keyword.t()) :: Keyword.t()
   def default_config(config) do
-    params          = config[:user_url_params] || %{}
-    user_url_params = Map.merge(@url_params, params)
+    params          = Keyword.get(config, :user_url_params, [])
+    user_url_params = Keyword.merge(@url_params, params)
 
     [
       site: "https://api.vk.com",
@@ -52,8 +52,8 @@ defmodule PowAssent.Strategy.VK do
   def get_user(config, token) do
     params =
       config
-      |> Keyword.get(:user_url_params, %{})
-      |> Map.put("access_token", token["access_token"])
+      |> Keyword.get(:user_url_params, [])
+      |> Keyword.put(:access_token, token["access_token"])
 
     config
     |> OAuth2.get_user(token, params)
