@@ -38,8 +38,12 @@ defmodule PowAssent.MixProject do
       {:pow, "~> 1.0.0"},
 
       {:oauther, "~> 1.1"},
+
       {:certifi, ">= 0.0.0", optional: true},
       {:ssl_verify_fun, ">= 0.0.0", optional: true},
+
+      {:mint, "~> 0.1.0", optional: true},
+      {:castore, "~> 0.1.0", optional: true},
 
       {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},
       {:phoenix_ecto, ">= 3.0.0 and <= 4.0.0"},

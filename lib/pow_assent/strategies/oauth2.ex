@@ -21,7 +21,7 @@ defmodule PowAssent.Strategy.OAuth2 do
 
   alias Plug.Conn
   alias PowAssent.Strategy, as: Helpers
-  alias PowAssent.{CallbackCSRFError, CallbackError, ConfigurationError, HTTPResponse, RequestError}
+  alias PowAssent.{CallbackCSRFError, CallbackError, ConfigurationError, HTTPAdapter.HTTPResponse, RequestError}
 
   @doc false
   @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}

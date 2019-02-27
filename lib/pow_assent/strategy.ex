@@ -19,7 +19,7 @@ defmodule PowAssent.Strategy do
       end
   """
   alias Plug.Conn
-  alias PowAssent.HTTPResponse
+  alias PowAssent.{Config, HTTPResponse}
 
   @callback authorize_url(Keyword.t(), Conn.t()) ::
               {:ok, %{:conn => Conn.t(), :url => binary(), optional(atom()) => any()}}
@@ -38,13 +38,20 @@ defmodule PowAssent.Strategy do
   @doc """
   Makes a HTTP request.
   """
-  @spec request(atom(), binary(), binary() | nil, list(), Keyword.t()) :: {:ok, HTTPResponse.t()} | {:error, HTTPResponse.t()} | {:error, term()}
+  @spec request(atom(), binary(), binary() | nil, list(), Keyword.t() | nil) :: {:ok, HTTPResponse.t()} | {:error, HTTPResponse.t()} | {:error, term()}
   def request(method, url, body, headers, config) do
-    http_adapter = Keyword.get(config, :http_adapter, PowAssent.HTTPAdapter.Httpc)
+    {http_adapter, opts} = fetch_http_adapter(config)
 
     method
-    |> http_adapter.request(url, body, headers)
+    |> http_adapter.request(url, body, headers, opts)
     |> parse_status_response()
+  end
+
+  defp fetch_http_adapter(config) do
+    case Config.get(config, :http_adapter, PowAssent.HTTPAdapter.Httpc) do
+      {http_adapter, opts} -> {http_adapter, opts}
+      http_adapter         -> {http_adapter, nil}
+    end
   end
 
   defp parse_status_response({:ok, %{status: status} = resp}) when status in 200..399 do
@@ -96,7 +103,7 @@ defmodule PowAssent.Strategy do
   @spec decode_json!(binary() | map(), Keyword.t()) :: map()
   def decode_json!(map, _config) when is_map(map), do: map
   def decode_json!(response, config) do
-    json_library = Keyword.get(config, :json_library, default_json_library())
+    json_library = Config.get(config, :json_library, default_json_library())
     json_library.decode!(response)
   end
 

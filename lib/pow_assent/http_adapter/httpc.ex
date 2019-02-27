@@ -1,22 +1,19 @@
 defmodule PowAssent.HTTPAdapter.Httpc do
   @moduledoc """
-  HTTP adapter module for making http requests.
+  HTTP adapter module for making http requests with httpc.
 
   SSL support will automatically be enabled if the `:certifi` and
   `:ssl_verify_fun` libraries exists in your project. You can also override
-  the httc opts by setting `config :pow, httpc_opts: opts`.
+  the httpc options by updating the configuration to
+  `http_adapter: {PowAssent.HTTPAdapter.Httpc, [...]}`.
   """
-  alias PowAssent.HTTPResponse
+  alias PowAssent.{HTTPAdapter, HTTPAdapter.HTTPResponse}
 
-  @type method :: :get | :post
-  @type body :: binary() | nil
-  @type headers :: [{binary(), binary()}]
+  @behaviour HTTPAdapter
 
-  @doc """
-  Make a HTTP request using :httpc.
-  """
-  @spec request(method(), binary(), body(), headers(), Keyword.t()) :: {:ok, map()} | {:error, map()}
-  def request(method, url, body, headers, httpc_opts \\ Application.get_env(:pow, :httpc_opts)) do
+  @impl HTTPAdapter
+  def request(method, url, body, headers, httpc_opts \\ nil) do
+    headers = headers ++ [HTTPAdapter.user_agent_header()]
     request = httpc_request(url, body, headers)
 
     method
@@ -28,17 +25,7 @@ defmodule PowAssent.HTTPAdapter.Httpc do
     url          = to_charlist(url)
     headers      = Enum.map(headers, fn {k, v} -> {to_charlist(k), to_charlist(v)} end)
 
-    do_httpc_request(url, body, headers ++ [default_user_agent_header()])
-  end
-
-  defp default_user_agent_header do
-    version =
-      case :application.get_key(:pow_assent, :vsn) do
-        {:ok, vsn} -> vsn
-        _ -> '0.0.0'
-      end
-
-    {'User-Agent', version}
+    do_httpc_request(url, body, headers)
   end
 
   defp do_httpc_request(url, nil, headers) do

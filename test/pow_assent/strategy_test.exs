@@ -28,4 +28,23 @@ defmodule PowAssent.StrategyTest do
     headers = [{"content-type", "application/x-www-form-urlencoded; charset=utf-8"}]
     assert Strategy.decode_response({nil, %{body: body, headers: headers}}, []) == {nil, %{body: expected, headers: headers}}
   end
+
+  defmodule JSONMock do
+    def decode!(_string), do: :decoded
+  end
+
+  test "decode_json!/2" do
+    assert Strategy.decode_json!("{\"a\": 1}", []) == %{"a" => 1}
+    assert Strategy.decode_json!("{\"a\": 1}", json_library: JSONMock) == :decoded
+  end
+
+  defmodule HTTPMock do
+    def request(_method, _url, _body, _headers, nil), do: {:ok, %{status: 200}}
+    def request(_method, _url, _body, _headers, opts), do: {:ok, %{status: 200, opts: opts}}
+  end
+
+  test "request/5" do
+    assert Strategy.request(:get, "https://localhost:4000/", nil, [], http_adapter: HTTPMock) == {:ok, %{status: 200}}
+    assert Strategy.request(:get, "https://localhost:4000/", nil, [], http_adapter: {HTTPMock, a: 1}) == {:ok, %{status: 200, opts: [a: 1]}}
+  end
 end
