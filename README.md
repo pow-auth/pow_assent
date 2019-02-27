@@ -35,7 +35,7 @@ def deps do
     # ...
     {:pow_assent, "~> 0.1.0-rc.2"},
 
-    # Optional but recommended for SSL validation
+    # Optional, but recommended for SSL validation with :httpc adapter
     {:certifi, "~> 2.4"},
     {:ssl_verify_fun, "~> 1.1"},
     # ...
@@ -256,6 +256,32 @@ end
 ```
 
 The fields available can be found in the `normalize/2` method of [the strategy](lib/pow_assent/strategies/).
+
+## HTTP Adapter
+
+By default Erlangs built-in `:httpc` is used for requests. SSL verification is automatically enabled when `:certifi` and `:ssl_verify_fun` packages are available. `:httpc` only supports HTTP/1.1.
+
+If you would like HTTP/2 support, you should consider adding [`Mint`](https://github.com/ninenines/mint) to your project.
+
+Update `mix.exs`:
+
+```elixir
+def deps do
+  [
+    # ...
+    {:mint, "~> 0.1.0"},
+    {:castore, "~> 0.1.0"}, # Required for SSL validation
+    # ...
+  ]
+end
+```
+
+Update the PowAssent configuration with:
+
+```elixir
+config :my_app, :pow_assent,
+  http_adapter: PowAssent.HTTPAdapter.Mint
+```
 
 ## Security concerns
 

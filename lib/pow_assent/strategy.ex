@@ -19,7 +19,7 @@ defmodule PowAssent.Strategy do
       end
   """
   alias Plug.Conn
-  alias PowAssent.HTTPResponse
+  alias PowAssent.{Config, HTTPResponse}
 
   @callback authorize_url(Keyword.t(), Conn.t()) ::
               {:ok, %{:conn => Conn.t(), :url => binary(), optional(atom()) => any()}}
@@ -40,7 +40,7 @@ defmodule PowAssent.Strategy do
   """
   @spec request(atom(), binary(), binary() | nil, list(), Keyword.t()) :: {:ok, HTTPResponse.t()} | {:error, HTTPResponse.t()} | {:error, term()}
   def request(method, url, body, headers, config) do
-    http_adapter = Keyword.get(config, :http_adapter, PowAssent.HTTPAdapter.Httpc)
+    http_adapter = Config.get(config, :http_adapter, PowAssent.HTTPAdapter.Httpc)
 
     method
     |> http_adapter.request(url, body, headers)
@@ -96,7 +96,7 @@ defmodule PowAssent.Strategy do
   @spec decode_json!(binary() | map(), Keyword.t()) :: map()
   def decode_json!(map, _config) when is_map(map), do: map
   def decode_json!(response, config) do
-    json_library = Keyword.get(config, :json_library, default_json_library())
+    json_library = Config.get(config, :json_library, default_json_library())
     json_library.decode!(response)
   end
 
