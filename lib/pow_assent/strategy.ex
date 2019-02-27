@@ -38,13 +38,20 @@ defmodule PowAssent.Strategy do
   @doc """
   Makes a HTTP request.
   """
-  @spec request(atom(), binary(), binary() | nil, list(), Keyword.t()) :: {:ok, HTTPResponse.t()} | {:error, HTTPResponse.t()} | {:error, term()}
+  @spec request(atom(), binary(), binary() | nil, list(), Keyword.t() | nil) :: {:ok, HTTPResponse.t()} | {:error, HTTPResponse.t()} | {:error, term()}
   def request(method, url, body, headers, config) do
-    http_adapter = Config.get(config, :http_adapter, PowAssent.HTTPAdapter.Httpc)
+    {http_adapter, opts} = fetch_http_adapter(config)
 
     method
-    |> http_adapter.request(url, body, headers)
+    |> http_adapter.request(url, body, headers, opts)
     |> parse_status_response()
+  end
+
+  defp fetch_http_adapter(config) do
+    case Config.get(config, :http_adapter, PowAssent.HTTPAdapter.Httpc) do
+      {http_adapter, opts} -> {http_adapter, opts}
+      http_adapter         -> {http_adapter, nil}
+    end
   end
 
   defp parse_status_response({:ok, %{status: status} = resp}) when status in 200..399 do

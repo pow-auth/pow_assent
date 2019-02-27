@@ -2,17 +2,18 @@ defmodule PowAssent.HTTPAdapter.Mint do
   @moduledoc """
   HTTP adapter module for making http requests with Mint.
 
-  Mint can be configured by setting `config :pow, mint_opts: opts`.
+  Mint can be configured by updating the configuration to
+  `http_adapter: {PowAssent.HTTPAdapter.Mint, [...]}`.
   """
   alias PowAssent.{HTTPAdapter, HTTPAdapter.HTTPResponse}
 
   @behaviour HTTPAdapter
 
   @impl HTTPAdapter
-  def request(method, url, body, headers, mint_opts \\ Application.get_env(:pow, :mint_opts, [])) do
-    %{scheme: scheme, port: port, host: host, path: path} = URI.parse(url)
-
+  def request(method, url, body, headers, mint_opts \\ nil) do
     headers = headers ++ [HTTPAdapter.user_agent_header()]
+
+    %{scheme: scheme, port: port, host: host, path: path} = URI.parse(url)
 
     scheme
     |> open_mint_conn(host, port, mint_opts)
@@ -20,6 +21,7 @@ defmodule PowAssent.HTTPAdapter.Mint do
     |> format_response()
   end
 
+  defp open_mint_conn(scheme, host, port, nil), do: open_mint_conn(scheme, host, port, [])
   defp open_mint_conn("http", host, port, opts), do: open_mint_conn(:http, host, port, opts)
   defp open_mint_conn("https", host, port, opts), do: open_mint_conn(:https, host, port, opts)
   defp open_mint_conn(scheme, host, port, opts) when is_atom(scheme), do: Mint.HTTP.connect(scheme, host, port, opts)

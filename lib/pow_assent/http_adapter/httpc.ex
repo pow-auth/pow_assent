@@ -4,14 +4,15 @@ defmodule PowAssent.HTTPAdapter.Httpc do
 
   SSL support will automatically be enabled if the `:certifi` and
   `:ssl_verify_fun` libraries exists in your project. You can also override
-  the httc opts by setting `config :pow, httpc_opts: opts`.
+  the httpc options by updating the configuration to
+  `http_adapter: {PowAssent.HTTPAdapter.Httpc, [...]}`.
   """
   alias PowAssent.{HTTPAdapter, HTTPAdapter.HTTPResponse}
 
   @behaviour HTTPAdapter
 
   @impl HTTPAdapter
-  def request(method, url, body, headers, httpc_opts \\ Application.get_env(:pow, :httpc_opts)) do
+  def request(method, url, body, headers, httpc_opts \\ nil) do
     headers = headers ++ [HTTPAdapter.user_agent_header()]
     request = httpc_request(url, body, headers)
 

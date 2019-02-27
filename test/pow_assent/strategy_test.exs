@@ -39,10 +39,12 @@ defmodule PowAssent.StrategyTest do
   end
 
   defmodule HTTPMock do
-    def request(_method, _url, _body, _headers), do: {:ok, %{status: 200}}
+    def request(_method, _url, _body, _headers, nil), do: {:ok, %{status: 200}}
+    def request(_method, _url, _body, _headers, opts), do: {:ok, %{status: 200, opts: opts}}
   end
 
   test "request/5" do
     assert Strategy.request(:get, "https://localhost:4000/", nil, [], http_adapter: HTTPMock) == {:ok, %{status: 200}}
+    assert Strategy.request(:get, "https://localhost:4000/", nil, [], http_adapter: {HTTPMock, a: 1}) == {:ok, %{status: 200, opts: [a: 1]}}
   end
 end

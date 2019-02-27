@@ -12,7 +12,7 @@ defmodule PowAssent.HTTPAdapter.HttpcTest do
       assert {:ok, %HTTPResponse{status: 200}} = Httpc.request(:get, @hsts_certificate_url, nil, [])
       assert {:error, :econnrefused} = Httpc.request(:get, @expired_certificate_url, nil, [])
 
-      assert {:ok, %HTTPResponse{status: 200}} = Httpc.request(:get, @expired_certificate_url, nil, [], [])
+      assert {:ok, %HTTPResponse{status: 200}} = Httpc.request(:get, @expired_certificate_url, nil, [], ssl: [])
     end
   end
 end
