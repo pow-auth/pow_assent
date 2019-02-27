@@ -70,8 +70,6 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback as authentication with email confirmation" do
     test "with missing e-mail confirmation", %{conn: conn, server: server} do
-      Application.put_env(:pow_assent_mailer, :pow_assent, Application.get_env(:pow_assent, :pow_assent))
-
       expect_oauth2_flow(server, user: %{uid: "user-missing-email-confirmation"})
 
       conn = Phoenix.ConnTest.dispatch conn, PowAssent.Test.Phoenix.MailerEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)

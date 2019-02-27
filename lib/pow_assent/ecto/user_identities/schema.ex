@@ -30,7 +30,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
     * `:user` - the user schema module to use in the `belongs_to` association.
   """
   alias Ecto.Changeset
-  alias Pow.Config
+  alias PowAssent.Config
 
   @callback changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
 

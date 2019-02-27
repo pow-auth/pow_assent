@@ -15,7 +15,7 @@ defmodule PowAssent.Plug do
     {strategy, provider_config} = get_provider_config(conn, provider)
 
     provider_config
-    |> Pow.Config.put(:redirect_uri, callback_url)
+    |> Config.put(:redirect_uri, callback_url)
     |> strategy.authorize_url(conn)
     |> case do
       {:ok, %{url: url, conn: conn}}        -> {:ok, url, conn}
@@ -36,9 +36,9 @@ defmodule PowAssent.Plug do
                                                {:error, {:strategy, any()}, Conn.t()} |
                                                {:error, map(), Conn.t()}
   def callback(conn, provider, params) do
-    pow_config                  = fetch_pow_config(conn)
+    pow_config                  = Pow.Plug.fetch_config(conn)
     user                        = Pow.Plug.current_user(conn)
-    {strategy, provider_config} = get_provider_config(conn, provider)
+    {strategy, provider_config} = get_provider_config(pow_config, provider)
 
     provider_config
     |> strategy.callback(conn, params)
@@ -86,7 +86,7 @@ defmodule PowAssent.Plug do
   """
   @spec create_user(Conn.t(), binary(), map(), map()) :: {:ok, map(), Conn.t()} | {:error, map(), Conn.t()}
   def create_user(conn, provider, params, user_id_params) do
-    config = fetch_pow_config(conn)
+    config = Pow.Plug.fetch_config(conn)
     uid    = params["uid"]
 
     provider
@@ -102,7 +102,7 @@ defmodule PowAssent.Plug do
   """
   @spec delete_identity(Conn.t(), binary()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
   def delete_identity(conn, provider) do
-    config = fetch_pow_config(conn)
+    config = Pow.Plug.fetch_config(conn)
 
     conn
     |> Pow.Plug.current_user()
@@ -118,7 +118,7 @@ defmodule PowAssent.Plug do
   """
   @spec providers_for_current_user(Conn.t()) :: [atom()]
   def providers_for_current_user(conn) do
-    config = fetch_pow_config(conn)
+    config = Pow.Plug.fetch_config(conn)
 
     conn
     |> Pow.Plug.current_user()
@@ -132,35 +132,50 @@ defmodule PowAssent.Plug do
   @doc """
   Lists available strategy providers for connection.
   """
-  @spec available_providers(Conn.t()) :: [atom()]
-  def available_providers(conn) do
+  @spec available_providers(Conn.t() | Config.t()) :: [atom()]
+  def available_providers(%Conn{} = conn) do
     conn
-    |> fetch_config()
+    |> fetch_pow_assent_config()
+    |> available_providers()
+  end
+  def available_providers(config) do
+    config
     |> Config.get_providers()
     |> Keyword.keys()
   end
 
-  defp get_provider_config(conn, provider) do
-    provider = String.to_atom(provider)
-    config   =
-      conn
-      |> fetch_config()
-      |> Config.get_provider_config(provider)
-
+  defp get_provider_config(%Conn{} = conn, provider) do
+    conn
+    |> fetch_pow_assent_config()
+    |> get_provider_config(provider)
+  end
+  defp get_provider_config(config, provider) do
+    provider        = String.to_atom(provider)
+    config          = Config.get_provider_config(config, provider)
     strategy        = config[:strategy]
     provider_config = Keyword.delete(config, :strategy)
 
     {strategy, provider_config}
   end
 
-  defp fetch_config(conn) do
+  defp fetch_pow_assent_config(%Conn{} = conn) do
     conn
-    |> fetch_pow_config()
-    |> Config.env_config()
+    |> Pow.Plug.fetch_config()
+    |> fetch_pow_assent_config()
+  end
+  defp fetch_pow_assent_config(config) do
+    config
+    |> Keyword.get(:pow_assent, [])
+    |> maybe_merge_otp_app(config)
   end
 
-  defp fetch_pow_config(conn) do
-    Pow.Plug.fetch_config(conn)
+  defp maybe_merge_otp_app(config, pow_config) do
+    pow_config
+    |> Pow.Config.get(:otp_app)
+    |> case do
+      nil     -> config
+      otp_app -> Config.put(config, :otp_app, otp_app)
+    end
   end
 
   defp get_mod(config), do: config[:mod]

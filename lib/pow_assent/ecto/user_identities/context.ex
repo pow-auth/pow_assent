@@ -34,7 +34,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     * `:user` - the user schema module (required)
   """
   alias Ecto.Changeset
-  alias Pow.Config
+  alias PowAssent.Config
   require Ecto.Query
 
   @type user :: map()
