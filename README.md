@@ -157,14 +157,13 @@ First, register [a new app on Github](https://github.com/settings/applications/n
 
 ```elixir
 config :my_app, :pow_assent,
-  providers:
-       [
-         github: [
-           client_id: "REPLACE_WITH_CLIENT_ID",
-           client_secret: "REPLACE_WITH_CLIENT_SECRET",
-           strategy: PowAssent.Strategy.Github
-        ]
-      ]
+  providers: [
+    github: [
+      client_id: "REPLACE_WITH_CLIENT_ID",
+      client_secret: "REPLACE_WITH_CLIENT_SECRET",
+      strategy: PowAssent.Strategy.Github
+    ]
+  ]
 ```
 
 Now start (or restart) your Phoenix app, and visit `http://localhost:4000/auth/github/new`.

@@ -5,15 +5,14 @@ defmodule PowAssent.Strategy.OAuth do
   ## Usage
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              example: [
-                consumer_key: "REPLACE_WITH_CONSUMER_KEY",
-                consumer_secret: "REPLACE_WITH_CONSUMER_SECRET",
-                strategy: PowAssent.Strategy.OAuth,
-                site: "https://auth.example.com"
-              ]
-            ]
+        providers: [
+          example: [
+            consumer_key: "REPLACE_WITH_CONSUMER_KEY",
+            consumer_secret: "REPLACE_WITH_CONSUMER_SECRET",
+            strategy: PowAssent.Strategy.OAuth,
+            site: "https://auth.example.com"
+          ]
+        ]
   """
   use PowAssent.Strategy
 

@@ -5,17 +5,16 @@ defmodule PowAssent.Strategy.OAuth2 do
   ## Usage
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              example: [
-                client_id: "REPLACE_WITH_CLIENT_ID",
-                client_secret: "REPLACE_WITH_CLIENT_SECRET",
-                strategy: PowAssent.Strategy.OAuth2,
-                site: "https://auth.example.com",
-                authorization_params: [scope: "user:read user:write"],
-                user_url: "https://example.com/api/user"
-              ]
-            ]
+        providers: [
+          example: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            strategy: PowAssent.Strategy.OAuth2,
+            site: "https://auth.example.com",
+            authorization_params: [scope: "user:read user:write"],
+            user_url: "https://example.com/api/user"
+          ]
+        ]
   """
   use PowAssent.Strategy
 

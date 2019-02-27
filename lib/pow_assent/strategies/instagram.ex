@@ -5,14 +5,13 @@ defmodule PowAssent.Strategy.Instagram do
   ## Usage
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              instagram: [
-                client_id: "REPLACE_WITH_CLIENT_ID",
-                client_secret: "REPLACE_WITH_CLIENT_SECRET",
-                strategy: PowAssent.Strategy.Instagram
-              ]
-            ]
+        providers: [
+          instagram: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            strategy: PowAssent.Strategy.Instagram
+          ]
+        ]
   """
   use PowAssent.Strategy.OAuth2.Base
 

@@ -5,29 +5,27 @@ defmodule PowAssent.Strategy.Slack do
   ## Usage
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              slack: [
-                client_id: "REPLACE_WITH_CLIENT_ID",
-                client_secret: "REPLACE_WITH_CLIENT_SECRET",
-                strategy: PowAssent.Strategy.Slack
-              ]
-            ]
+        providers: [
+          slack: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            strategy: PowAssent.Strategy.Slack
+          ]
+        ]
 
   By default, the user can decide what team should be used for authorization.
   If you want to limit to a specific team, please pass a team id to the
   configuration:
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              slack: [
-                client_id: "REPLACE_WITH_CLIENT_ID",
-                client_secret: "REPLACE_WITH_CLIENT_SECRET",
-                strategy: PowAssent.Strategy.Slack,
-                team_id: "XXXXXXX"
-              ]
-            ]
+        providers: [
+          slack: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            strategy: PowAssent.Strategy.Slack,
+            team_id: "XXXXXXX"
+          ]
+        ]
 
   This value will be not be used if you set a `authorization_params` key.
   Instead you should set `team: TEAM_ID` in the `authorization_params` keyword

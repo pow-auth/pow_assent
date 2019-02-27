@@ -5,44 +5,41 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
   ## Usage
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              azure: [
-                client_id: "REPLACE_WITH_CLIENT_ID",
-                client_secret: "REPLACE_WITH_CLIENT_SECRET",
-                strategy: PowAssent.Strategy.AzureOAuth2
-              ]
-            ]
+        providers: [
+          azure: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            strategy: PowAssent.Strategy.AzureOAuth2
+          ]
+        ]
 
   A tenant id can be set to limit scope of users who can get access (defaults
   to "common"):
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              azure: [
-                client_id: "REPLACE_WITH_CLIENT_ID",
-                client_secret: "REPLACE_WITH_CLIENT_SECRET",
-                tenant_id: "8eaef023-2b34-4da1-9baa-8bc8c9d6a490",
-                strategy: PowAssent.Strategy.AzureOAuth2,
-              ]
-            ]
+        providers: [
+          azure: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            tenant_id: "8eaef023-2b34-4da1-9baa-8bc8c9d6a490",
+            strategy: PowAssent.Strategy.AzureOAuth2,
+          ]
+        ]
 
   The resource that client should pull a token for defaults to
   `https://graph.microsoft.com/`. It can be overridden with the
   `resource` key (or the `authorization_params` key):
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              azure: [
-                client_id: "REPLACE_WITH_CLIENT_ID",
-                client_secret: "REPLACE_WITH_CLIENT_SECRET",
-                tenant_id: "8eaef023-2b34-4da1-9baa-8bc8c9d6a490",
-                resource: "https://service.contoso.com/",
-                strategy: PowAssent.Strategy.AzureOAuth2
-              ]
-            ]
+        providers: [
+          azure: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            tenant_id: "8eaef023-2b34-4da1-9baa-8bc8c9d6a490",
+            resource: "https://service.contoso.com/",
+            strategy: PowAssent.Strategy.AzureOAuth2
+          ]
+        ]
 
   ## Setting up Azure AD
 

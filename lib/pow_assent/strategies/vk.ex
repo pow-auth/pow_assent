@@ -5,14 +5,13 @@ defmodule PowAssent.Strategy.VK do
   ## Usage
 
       config :my_app, :pow_assent,
-        providers:
-            [
-              vk: [
-                client_id: "REPLACE_WITH_CLIENT_ID",
-                client_secret: "REPLACE_WITH_CLIENT_SECRET",
-                strategy: PowAssent.Strategy.VK
-              ]
-            ]
+        providers: [
+          vk: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            strategy: PowAssent.Strategy.VK
+          ]
+        ]
   """
   use PowAssent.Strategy.OAuth2.Base
 
