@@ -2,7 +2,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Fields do
   @moduledoc """
   Handles the Ecto schema fields for user.
   """
-  alias Pow.Config
+  alias PowAssent.Config
 
   @doc """
   List of attributes for the ecto schema.

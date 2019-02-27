@@ -6,7 +6,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
 
     * `:binary_id` - if the schema module should use binary id, default nil.
   """
-  alias Pow.Config
+  alias PowAssent.Config
 
   @template """
   defmodule <%= inspect schema.module %> do

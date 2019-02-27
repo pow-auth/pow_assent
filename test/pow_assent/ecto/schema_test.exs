@@ -11,7 +11,7 @@ module_raised_with =
       end
     end
   rescue
-    e in Pow.Config.ConfigError -> e.message
+    e in PowAssent.Config.ConfigError -> e.message
   end
 
 defmodule PowAssent.Ecto.SchemaTest do

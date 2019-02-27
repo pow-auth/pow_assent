@@ -1,20 +1,27 @@
 defmodule PowAssent.ViewHelpersTest do
   use PowAssent.Test.Phoenix.ConnCase
 
+  alias Plug.Conn
   alias Phoenix.HTML.Link
   alias PowAssent.Phoenix.ViewHelpers
   alias PowAssent.Test.Ecto.Users.User
 
   setup %{conn: conn} do
-    Application.put_env(:pow_assent, :pow_assent,
-      providers: [
-        test_provider: [
-          strategy: TestProvider
+    config = [
+      repo: PowAssent.Test.Phoenix.MockRepo,
+      pow_assent: [
+        providers: [
+          test_provider: [
+            strategy: TestProvider
+          ]
         ]
       ]
-    )
+    ]
 
-    conn = get(conn, Routes.pow_assent_authorization_path(conn, :new, "test_provider"))
+    conn =
+      conn
+      |> Conn.put_private(:pow_config, config)
+      |> Conn.put_private(:phoenix_router, PowAssent.Test.Phoenix.Router)
 
     {:ok, conn: conn}
   end

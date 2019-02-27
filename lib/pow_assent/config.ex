@@ -2,44 +2,67 @@ defmodule PowAssent.Config do
   @moduledoc """
   Methods to parse and modify configurations.
   """
-  alias Pow.Config
 
   defmodule ConfigError do
     defexception [:message]
   end
 
+  @type t :: Keyword.t()
+
+  @doc """
+  Gets the key value from the configuration.
+
+  If not found, it'll fall back to environment config, and lastly to the
+  default value which is `nil` if not specified.
+  """
+  @spec get(t(), atom(), any()) :: any()
+  def get(config, key, default \\ nil) do
+    case Keyword.get(config, key, :not_found) do
+      :not_found -> get_env_config(config, key, default)
+      value      -> value
+    end
+  end
+
+  @doc """
+  Puts a new key value to the configuration.
+  """
+  @spec put(t(), atom(), any()) :: t()
+  def put(config, key, value) do
+    Keyword.put(config, key, value)
+  end
+
+  defp get_env_config(config, key, default, env_key \\ :pow_assent) do
+    config
+    |> Keyword.get(:otp_app)
+    |> case do
+      nil     -> Application.get_all_env(env_key)
+      otp_app -> Application.get_env(otp_app, env_key, [])
+    end
+    |> Keyword.get(key, default)
+  end
+
   @doc """
   Gets the providers for the configuration.
   """
-  @spec get_providers(Config.t()) :: Config.t()
-  def get_providers(config) do
-    Config.get(config, :providers, [])
-  end
+  @spec get_providers(t()) :: t()
+  def get_providers(config), do: get(config, :providers, [])
 
   @doc """
   Gets the provider configuration from the provided configuration.
   """
-  @spec get_provider_config(Config.t(), atom()) :: Config.t() | no_return
+  @spec get_provider_config(t(), atom()) :: t() | no_return
   def get_provider_config(config, provider) do
-    Config.get(get_providers(config), provider) || raise_no_provider_configuration(provider)
+    config
+    |> get_providers()
+    |> get(provider)
+    |> Kernel.||(raise_error("No provider configuration available for #{provider}."))
   end
 
-  defp raise_no_provider_configuration(provider) do
-    raise ConfigError, message: "No provider configuration available for #{provider}."
-  end
-
-  @doc """
-  Gets the application environment configuration for the provided `:otp_app`.
-
-  If no `:otp_app` defined, it'll just pull the global environment configuration.
+ @doc """
+  Raise a ConfigError exception.
   """
-  @spec env_config(Config.t()) :: Config.t()
-  def env_config(config \\ []) do
-    otp_app = Pow.Config.get(config, :otp_app)
-
-    case otp_app do
-      nil     -> Application.get_all_env(:pow_assent)
-      otp_app -> Application.get_env(otp_app, :pow_assent, [])
-    end
+  @spec raise_error(binary()) :: no_return
+  def raise_error(message) do
+    raise ConfigError, message: message
   end
 end
