@@ -40,21 +40,16 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
 
     quote do
       @behaviour unquote(__MODULE__)
-      import unquote(__MODULE__), only: [pow_assent_user_identity_fields: 0]
-
       @pow_user_mod unquote(user_mod)
       @pow_assent_config unquote(config)
 
       @spec changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
-      def changeset(user_identity_or_changeset, attrs),
-        do: pow_assent_changeset(user_identity_or_changeset, attrs)
-
-      @spec pow_assent_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
-      def pow_assent_changeset(user_identity_or_changeset, attrs) do
-        unquote(__MODULE__).changeset(user_identity_or_changeset, attrs, unquote(config))
-      end
+      def changeset(user_identity_or_changeset, attrs), do: pow_assent_changeset(user_identity_or_changeset, attrs)
 
       defoverridable unquote(__MODULE__)
+
+      unquote(__MODULE__).__pow_assent_methods__()
+      unquote(__MODULE__).__register_fields__()
     end
   end
 
@@ -66,9 +61,28 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
     quote do
       belongs_to :user, @pow_user_mod
 
-      for {name, type, opts} <- unquote(__MODULE__).Fields.attrs(@pow_assent_config) do
-        field(name, type, opts)
+      for {name, type, defaults} <- @pow_assent_fields do
+        field(name, type, defaults)
       end
+    end
+  end
+
+  @doc false
+  defmacro __pow_assent_methods__ do
+    quote do
+      import unquote(__MODULE__), only: [pow_assent_user_identity_fields: 0]
+
+      @spec pow_assent_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
+      def pow_assent_changeset(user_identity_or_changeset, attrs) do
+        unquote(__MODULE__).changeset(user_identity_or_changeset, attrs, @pow_assent_config)
+      end
+    end
+  end
+
+  @doc false
+  defmacro __register_fields__ do
+    quote do
+      @pow_assent_fields unquote(__MODULE__).Fields.attrs(@pow_assent_config)
     end
   end
 

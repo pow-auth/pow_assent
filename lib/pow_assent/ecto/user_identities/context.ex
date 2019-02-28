@@ -18,7 +18,8 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
         end
       end
 
-  Remember to update configuration with `users_context: MyApp.Users`.
+  Remember to update configuration with
+  `user_identities_context: MyApp.UserIdentities`.
 
   The following Pow methods can be accessed:
 
@@ -35,7 +36,8 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   alias Ecto.Changeset
   alias PowAssent.Config
-  require Ecto.Query
+  # import Ecto.Query, only: [where: 3, join: 3, select: 3]
+  import Ecto.Query
 
   @type user :: map()
   @type user_identity :: map()
@@ -47,7 +49,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
               | {:error, Changeset.t()}
   @callback create_user(binary(), binary(), map(), map()) ::
               {:ok, map()}
-              | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}}
+              | {:error, {:bound_to_different_user | :invalid_user_id_field, Changeset.t()}}
               | {:error, Changeset.t()}
   @callback delete(user(), binary()) ::
               {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
@@ -99,16 +101,12 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   @spec get_user_by_provider_uid(binary(), binary(), Config.t()) :: user() | nil
   def get_user_by_provider_uid(provider, uid, config) do
-    repo   = repo(config)
-    struct = user_identity_struct(config)
-
-    struct
-    |> repo.get_by(provider: provider, uid: uid)
-    |> repo.preload(:user)
-    |> case do
-      nil      -> nil
-      identity -> identity.user
-    end
+    config
+    |> user_identity_schema_mod()
+    |> where([i], i.provider == ^provider and i.uid == ^uid)
+    |> join(:left, [i], i in assoc(i, :user))
+    |> select([_, u], u)
+    |> repo(config).one()
   end
 
   @doc """
@@ -118,12 +116,11 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   @spec create(user(), binary(), binary(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, map()}} | {:error, Changeset.t()}
   def create(user, provider, uid, config) do
-    repo          = repo(config)
     user_identity = Ecto.build_assoc(user, :user_identities)
 
     user_identity
     |> user_identity.__struct__.changeset(%{provider: provider, uid: uid})
-    |> repo.insert()
+    |> repo(config).insert()
     |> case do
       {:error, %{errors: [uid_provider: _]} = changeset} ->
         {:error, {:bound_to_different_user, changeset}}
@@ -138,23 +135,22 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec create_user(binary(), binary(), map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :missing_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
+  @spec create_user(binary(), binary(), map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
   def create_user(provider, uid, params, user_id_params, config) do
-    repo          = repo(config)
-    user_struct   = user_struct(config)
+    user_mod      = user_schema_mod(config)
     user_identity = %{provider: provider, uid: uid}
-    user          = struct(user_struct)
-    user_id_field = user_struct.pow_user_id_field()
+    user_id_field = user_mod.pow_user_id_field()
 
-    user
-    |> user_struct.user_identity_changeset(user_identity, params, user_id_params)
-    |> repo.insert()
+    user_mod
+    |> struct()
+    |> user_mod.user_identity_changeset(user_identity, params, user_id_params)
+    |> repo(config).insert()
     |> case do
       {:error, %{changes: %{user_identities: [%{errors: [uid_provider: _]}]}} = changeset} ->
         {:error, {:bound_to_different_user, changeset}}
 
       {:error, %{errors: [{^user_id_field, _}]} = changeset} ->
-        {:error, {:missing_user_id_field, changeset}}
+        {:error, {:invalid_user_id_field, changeset}}
 
       {:error, changeset} ->
         {:error, changeset}
@@ -177,19 +173,19 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
     user.user_identities
     |> Enum.split_with(&(&1.provider == provider))
-    |> maybe_delete(user, repo, config)
+    |> maybe_delete(user, repo)
   end
 
-  defp maybe_delete({user_identities, rest}, %{password_hash: password_hash}, repo, config) when length(rest) > 0 or not is_nil(password_hash) do
-    user_identity = user_identity_struct(config)
-    results       =
-      user_identity
-      |> Ecto.Query.where([u], u.id in ^Enum.map(user_identities, &(&1.id)))
+  defp maybe_delete({user_identities, rest}, %{password_hash: password_hash} = user, repo) when length(rest) > 0 or not is_nil(password_hash) do
+    results =
+      user
+      |> Ecto.assoc(:user_identities)
+      |> where([i], i.id in ^Enum.map(user_identities, &(&1.id)))
       |> repo.delete_all()
 
     {:ok, results}
   end
-  defp maybe_delete(_any, user, _repo, _config) do
+  defp maybe_delete(_any, user, _repo) do
     changeset =
       user
       |> Changeset.change()
@@ -205,24 +201,27 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   @spec all(user(), Config.t()) :: [map()]
   def all(user, config) do
-    repo = repo(config)
-
     user
     |> Ecto.assoc(:user_identities)
-    |> repo.all()
+    |> repo(config).all()
   end
 
-  defp user_identity_struct(config) do
-    association = user_struct(config).__schema__(:association, :user_identities) || raise_no_user_identity_error()
+  defp user_identity_schema_mod(config) when is_list(config) do
+    config
+    |> user_schema_mod()
+    |> user_identity_schema_mod()
+  end
+  defp user_identity_schema_mod(user_mod) when is_atom(user_mod) do
+    association = user_mod.__schema__(:association, :user_identities) || raise_no_user_identity_error()
 
     association.queryable
   end
 
   @spec raise_no_user_identity_error :: no_return
   defp raise_no_user_identity_error do
-    Config.raise_error("The `:user` configuration option doesnt' have a `:user_identities` association.")
+    Config.raise_error("The `:user` configuration option doesn't have a `:user_identities` association.")
   end
 
-  def user_struct(config), do: Pow.Ecto.Context.user_schema_mod(config)
-  def repo(config), do: Pow.Ecto.Context.repo(config)
+  defdelegate user_schema_mod(config), to: Pow.Ecto.Context
+  defdelegate repo(config), to: Pow.Ecto.Context
 end

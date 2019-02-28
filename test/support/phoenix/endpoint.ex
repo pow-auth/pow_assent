@@ -20,10 +20,12 @@ defmodule PowAssent.Test.Phoenix.Endpoint do
 
   plug Pow.Plug.Session,
     user: PowAssent.Test.Ecto.Users.User,
-    repo: PowAssent.Test.Phoenix.MockRepo,
     routes_backend: PowAssent.Test.Phoenix.Routes,
     messages_backend: PowAssent.Test.Phoenix.Messages,
-    otp_app: :pow_assent
+    otp_app: :pow_assent,
+    pow_assent: [
+      user_identities_context: PowAssent.Test.UserIdentitiesMock
+    ]
 
   plug PowAssent.Test.Phoenix.Router
 end

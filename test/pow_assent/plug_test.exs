@@ -4,14 +4,16 @@ defmodule PowAssent.PlugTest do
 
   alias Plug.{ProcessStore, Session, Test}
   alias PowAssent.Plug
-  alias PowAssent.Test.{ContextMock, Ecto.Users.User}
+  alias PowAssent.Test.{UserIdentitiesMock, Ecto.Users.User}
   import PowAssent.OAuthHelpers
 
   @default_config [
     mod: Pow.Plug.Session,
-    user_identities_context: ContextMock,
     user: User,
-    otp_app: :pow_assent
+    otp_app: :pow_assent,
+    pow_assent: [
+      user_identities_context: UserIdentitiesMock
+    ]
   ]
 
   defp setup_conn do
@@ -54,7 +56,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "creates user identity", %{conn: conn, server: server} do
-      user = %{ContextMock.user() | id: :loaded}
+      user = %{UserIdentitiesMock.user() | id: :loaded}
       conn = Pow.Plug.assign_current_user(conn, user, @default_config)
 
       expect_oauth2_flow(server, user: %{uid: "new_identity"})
@@ -65,7 +67,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "already taken user identity", %{conn: conn, server: server} do
-      conn = Pow.Plug.assign_current_user(conn, %{ContextMock.user() | id: :bound_to_different_user}, @default_config)
+      conn = Pow.Plug.assign_current_user(conn, %{UserIdentitiesMock.user() | id: :bound_to_different_user}, @default_config)
 
       expect_oauth2_flow(server, user: %{uid: "new_identity"})
 
@@ -86,7 +88,7 @@ defmodule PowAssent.PlugTest do
       expect_oauth2_flow(server, user: %{uid: "new_user", email: ""})
 
       assert {:ok, url, _conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
-      assert {:error, {:missing_user_id_field, %{}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
+      assert {:error, {:invalid_user_id_field, %{}}, conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token", "redirect_uri" => url})
       refute conn.private[:plug_session]["pow_assent_auth"]
     end
   end
@@ -114,7 +116,7 @@ defmodule PowAssent.PlugTest do
     setup do
       conn = setup_conn()
 
-      conn = Pow.Plug.assign_current_user(conn, ContextMock.user(), @default_config)
+      conn = Pow.Plug.assign_current_user(conn, UserIdentitiesMock.user(), @default_config)
 
       {:ok, conn: conn}
     end
@@ -133,7 +135,7 @@ defmodule PowAssent.PlugTest do
     setup do
       conn = setup_conn()
 
-      conn = Pow.Plug.assign_current_user(conn, ContextMock.user(), @default_config)
+      conn = Pow.Plug.assign_current_user(conn, UserIdentitiesMock.user(), @default_config)
 
       {:ok, conn: conn}
     end

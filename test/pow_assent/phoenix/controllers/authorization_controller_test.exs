@@ -2,7 +2,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   import PowAssent.OAuthHelpers
-  alias PowAssent.Test.Ecto.Users.User
+  alias PowAssent.Test.{Ecto.Users.User, UserIdentitiesMock}
 
   @provider "test_provider"
   @callback_params %{code: "test", redirect_uri: ""}
@@ -12,7 +12,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
     setup_oauth2_strategy_env(server)
 
-    {:ok, conn: conn, user: %User{id: 1}, server: server}
+    {:ok, conn: conn, user: %User{id: :loaded}, server: server}
   end
 
   describe "GET /auth/:provider/new" do
@@ -33,7 +33,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback with current user session" do
     test "adds identity", %{conn: conn, server: server, user: user} do
-      expect_oauth2_flow(server)
+      expect_oauth2_flow(server, user: %{uid: "new_identity"})
 
       conn =
         conn
@@ -46,11 +46,11 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
 
     test "with identity bound to another user", %{conn: conn, server: server, user: user} do
-      expect_oauth2_flow(server, user: %{uid: "duplicate"})
+      expect_oauth2_flow(server, user: %{uid: "new_identity"})
 
       conn =
         conn
-        |> Pow.Plug.assign_current_user(user, [])
+        |> Pow.Plug.assign_current_user(%{user | id: :bound_to_different_user}, [])
         |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :new)
@@ -60,7 +60,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback as authentication" do
     test "with valid params", %{conn: conn, server: server} do
-      expect_oauth2_flow(server, user: %{uid: "existing"})
+      expect_oauth2_flow(server, user: %{uid: "existing_user"})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
@@ -70,9 +70,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback as authentication with email confirmation" do
     test "with missing e-mail confirmation", %{conn: conn, server: server} do
-      expect_oauth2_flow(server, user: %{uid: "user-missing-email-confirmation"})
+      expect_oauth2_flow(server, user: %{uid: "new_user-missing_email_confirmation"})
 
-      conn = Phoenix.ConnTest.dispatch conn, PowAssent.Test.Phoenix.MailerEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+      conn = Phoenix.ConnTest.dispatch conn, PowAssent.Test.Phoenix.EndpointConfirmEmail, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       refute Pow.Plug.current_user(conn)
 
@@ -86,19 +86,19 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback as registration" do
     test "with valid params", %{conn: conn, server: server} do
-      expect_oauth2_flow(server, user: %{email: "newuser@example.com"})
+      expect_oauth2_flow(server, user: %{uid: "new_user"})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == "/registration_created"
       assert user = Pow.Plug.current_user(conn)
       assert [user_identity] = user.user_identities
-      assert user_identity.uid == "1"
+      assert user_identity.uid == "new_user"
       assert user_identity.provider == "test_provider"
     end
 
     test "with missing params", %{conn: conn, server: server} do
-      expect_oauth2_flow(server, user: %{email: "newuser@example.com", name: ""})
+      expect_oauth2_flow(server, user: %{uid: "new_user", name: ""})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
@@ -107,12 +107,12 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
 
     test "with missing required user id", %{conn: conn, server: server} do
-      expect_oauth2_flow(server)
+      expect_oauth2_flow(server, user: %{"email" => ""})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert Plug.Conn.get_session(conn, "pow_assent_params") == %{"name" => "Dan Schultzer", "uid" => "1"}
+      assert Plug.Conn.get_session(conn, "pow_assent_params") == %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => ""}
     end
 
     test "with an existing required user id", %{conn: conn, server: server} do
@@ -121,7 +121,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert Plug.Conn.get_session(conn, "pow_assent_params") == %{"email" => "taken@example.com", "name" => "Dan Schultzer", "uid" => "1"}
+      assert Plug.Conn.get_session(conn, "pow_assent_params") == %{"email" => "taken@example.com", "name" => "Dan Schultzer", "uid" => "new_user"}
     end
   end
 
@@ -149,7 +149,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
 
     test "with same state", %{conn: conn, server: server} do
-      expect_oauth2_flow(server)
+      expect_oauth2_flow(server, user: %{"email" => ""})
 
       conn =
         conn
@@ -170,44 +170,24 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   end
 
   describe "DELETE /auth/:provider" do
-    test "with no user password", %{conn: conn} do
+    test "when requires a user password set", %{conn: conn} do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(%User{id: :with_user_identity}, [])
+        |> Pow.Plug.assign_current_user(:no_password, [])
         |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)
       assert get_flash(conn, :error) == "Authentication cannot be removed until you've entered a password for your account."
     end
 
-    test "with two identities", %{conn: conn} do
+    test "when can be deleted", %{conn: conn} do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(%User{id: :with_two_user_identities}, [])
+        |> Pow.Plug.assign_current_user(UserIdentitiesMock.user(), [])
         |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)
       assert get_flash(conn, :info) == "Authentication with Test provider has been removed"
-    end
-
-    test "with user password", %{conn: conn} do
-      conn =
-        conn
-        |> Pow.Plug.assign_current_user(%User{id: :with_user_identity, password_hash: :set}, [])
-        |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
-
-      assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)
-      assert get_flash(conn, :info) == "Authentication with Test provider has been removed"
-    end
-
-    test "with current_user session without provider", %{conn: conn, user: user} do
-      conn =
-        conn
-        |> Pow.Plug.assign_current_user(user, [])
-        |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
-
-      assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)
-      assert get_flash(conn, :error) == "Authentication cannot be removed until you've entered a password for your account."
     end
   end
 end

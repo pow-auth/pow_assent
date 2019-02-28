@@ -11,9 +11,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
   @template """
   defmodule <%= inspect schema.module %> do
     use Ecto.Schema
-    use PowAssent.Ecto.UserIdentities.Schema,
-      user: <%= inspect schema.user_module %>
-
+    use PowAssent.Ecto.UserIdentities.Schema, user: <%= inspect(schema.user_module) %>
   <%= if schema.binary_id do %>
     @primary_key {:id, :binary_id, autogenerate: true}
     @foreign_key_type :binary_id<% end %>

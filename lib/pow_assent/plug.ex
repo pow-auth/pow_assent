@@ -1,6 +1,18 @@
 defmodule PowAssent.Plug do
   @moduledoc """
   Plug helper methods.
+
+  If you wish to configure PowAssent through the Pow plug interface rather than
+  environment config, please add PowAssent config with `:pow_assent` config:
+
+      plug Pow.Plug.Session,
+        repo: MyApp.Repo,
+        user: MyApp.User,
+        pow_assent: [
+          http_adapter: PowAssent.HTTPAdapter.Mint,
+          json_library: Poison,
+          user_identities_context: MyApp.UserIdentities
+        ]
   """
   alias Plug.Conn
   alias PowAssent.{Config, Operations}
@@ -32,18 +44,18 @@ defmodule PowAssent.Plug do
   authenticated.
   """
   @spec callback(Conn.t(), binary(), map()) :: {:ok, map(), Conn.t()} |
-                                               {:error, {:bound_to_different_user | :missing_user_id_field, map()}, Conn.t()} |
+                                               {:error, {:bound_to_different_user | :invalid_user_id_field, map()}, Conn.t()} |
                                                {:error, {:strategy, any()}, Conn.t()} |
                                                {:error, map(), Conn.t()}
   def callback(conn, provider, params) do
-    pow_config                  = Pow.Plug.fetch_config(conn)
+    config                      = fetch_config(conn)
     user                        = Pow.Plug.current_user(conn)
-    {strategy, provider_config} = get_provider_config(pow_config, provider)
+    {strategy, provider_config} = get_provider_config(config, provider)
 
     provider_config
     |> strategy.callback(conn, params)
     |> parse_callback_response()
-    |> get_or_create_by_identity(provider, user, pow_config)
+    |> get_or_create_by_identity(provider, user, config)
   end
 
   defp parse_callback_response({:ok, %{user: params, conn: conn}}) do
@@ -86,7 +98,7 @@ defmodule PowAssent.Plug do
   """
   @spec create_user(Conn.t(), binary(), map(), map()) :: {:ok, map(), Conn.t()} | {:error, map(), Conn.t()}
   def create_user(conn, provider, params, user_id_params) do
-    config = Pow.Plug.fetch_config(conn)
+    config = fetch_config(conn)
     uid    = params["uid"]
 
     provider
@@ -102,7 +114,7 @@ defmodule PowAssent.Plug do
   """
   @spec delete_identity(Conn.t(), binary()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
   def delete_identity(conn, provider) do
-    config = Pow.Plug.fetch_config(conn)
+    config = fetch_config(conn)
 
     conn
     |> Pow.Plug.current_user()
@@ -118,7 +130,7 @@ defmodule PowAssent.Plug do
   """
   @spec providers_for_current_user(Conn.t()) :: [atom()]
   def providers_for_current_user(conn) do
-    config = Pow.Plug.fetch_config(conn)
+    config = fetch_config(conn)
 
     conn
     |> Pow.Plug.current_user()
@@ -135,7 +147,7 @@ defmodule PowAssent.Plug do
   @spec available_providers(Conn.t() | Config.t()) :: [atom()]
   def available_providers(%Conn{} = conn) do
     conn
-    |> fetch_pow_assent_config()
+    |> fetch_config()
     |> available_providers()
   end
   def available_providers(config) do
@@ -144,9 +156,17 @@ defmodule PowAssent.Plug do
     |> Keyword.keys()
   end
 
+  defp fetch_config(conn) do
+    config = Pow.Plug.fetch_config(conn)
+
+    config
+    |> Keyword.take([:otp_app, :mod, :repo, :user])
+    |> Keyword.merge(Keyword.get(config, :pow_assent, []))
+  end
+
   defp get_provider_config(%Conn{} = conn, provider) do
     conn
-    |> fetch_pow_assent_config()
+    |> fetch_config()
     |> get_provider_config(provider)
   end
   defp get_provider_config(config, provider) do
@@ -156,26 +176,6 @@ defmodule PowAssent.Plug do
     provider_config = Keyword.delete(config, :strategy)
 
     {strategy, provider_config}
-  end
-
-  defp fetch_pow_assent_config(%Conn{} = conn) do
-    conn
-    |> Pow.Plug.fetch_config()
-    |> fetch_pow_assent_config()
-  end
-  defp fetch_pow_assent_config(config) do
-    config
-    |> Keyword.get(:pow_assent, [])
-    |> maybe_merge_otp_app(config)
-  end
-
-  defp maybe_merge_otp_app(config, pow_config) do
-    pow_config
-    |> Pow.Config.get(:otp_app)
-    |> case do
-      nil     -> config
-      otp_app -> Config.put(config, :otp_app, otp_app)
-    end
   end
 
   defp get_mod(config), do: config[:mod]

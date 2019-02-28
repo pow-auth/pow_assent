@@ -119,7 +119,7 @@ defmodule PowAssent.OAuthHelpers do
   @spec expect_oauth2_flow(Bypass.t(), Keyword.t()) :: :ok
   def expect_oauth2_flow(bypass, opts \\ []) do
     token_params = Keyword.get(opts, :token, %{"access_token" => "access_token"})
-    user_params  = Map.merge(%{uid: "1", name: "Dan Schultzer"}, Keyword.get(opts, :user, %{}))
+    user_params  = Map.merge(%{uid: "new_user", name: "Dan Schultzer"}, Keyword.get(opts, :user, %{}))
 
     expect_oauth2_access_token_request(bypass, params: token_params)
     expect_oauth2_user_request(bypass, user_params)
