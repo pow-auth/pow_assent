@@ -19,7 +19,9 @@ defmodule PowAssent.MixProject do
 
       # Docs
       name: "PowAssent",
-      docs: docs()
+      docs: docs(),
+
+      xref: [exclude: [Mint.HTTP, :certifi, :ssl_verify_hostname]]
     ]
   end
 
