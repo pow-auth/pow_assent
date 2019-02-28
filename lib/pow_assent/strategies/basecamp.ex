@@ -4,14 +4,14 @@ defmodule PowAssent.Strategy.Basecamp do
 
   ## Usage
 
-      config :my_app, :pow_assent,
-        providers: [
-          basecamp: [
-            client_id: "REPLACE_WITH_CLIENT_ID",
-            client_secret: "REPLACE_WITH_CLIENT_SECRET",
-            strategy: PowAssent.Strategy.Basecamp
-          ]
-        ]
+config :my_app, :pow_assent,
+  providers: [
+    basecamp: [
+      client_id: "REPLACE_WITH_CLIENT_ID",
+      client_secret: "REPLACE_WITH_CLIENT_SECRET",
+      strategy: PowAssent.Strategy.Basecamp
+    ]
+  ]
   """
   use PowAssent.Strategy.OAuth2.Base
 
@@ -29,12 +29,12 @@ defmodule PowAssent.Strategy.Basecamp do
   @spec normalize(Keyword.t(), map()) :: {:ok, map()}
   def normalize(_config, user) do
     {:ok, %{
-      "uid"         => Integer.to_string(user["identity"]["id"]),
-      "name"        => "#{user["identity"]["first_name"]} #{user["identity"]["last_name"]}",
-      "first_name"  => user["identity"]["first_name"],
-      "last_name"   => user["identity"]["last_name"],
-      "email"       => user["identity"]["email_address"],
-      "accounts"    => user["accounts"]
+      "uid"        => Integer.to_string(user["identity"]["id"]),
+      "name"       => "#{user["identity"]["first_name"]} #{user["identity"]["last_name"]}",
+      "first_name" => user["identity"]["first_name"],
+      "last_name"  => user["identity"]["last_name"],
+      "email"      => user["identity"]["email_address"],
+      "accounts"   => user["accounts"]
     }}
   end
 end

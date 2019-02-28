@@ -44,8 +44,8 @@ defmodule PowAssent.Strategy.Facebook do
       "image"       => image_url(config, user),
       "description" => user["bio"],
       "urls"        => %{
-        "Facebook" => user["link"],
-        "Website"  => user["website"]},
+        "Facebook"  => user["link"],
+        "Website"   => user["website"]},
       "verified"    => user["verified"]
     }}
   end

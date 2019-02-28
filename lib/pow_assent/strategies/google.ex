@@ -36,8 +36,7 @@ defmodule PowAssent.Strategy.Google do
       "last_name"  => user["family_name"],
       "image"      => user["picture"],
       "domain"     => user["hd"],
-      "urls"       => %{
-        "Google" => user["link"]}}}
+      "urls"       => %{"Google" => user["link"]}}}
   end
 
   defp verified_email(%{"verified_email" => true} = user), do: user["email"]

@@ -37,9 +37,10 @@ defmodule TestProvider do
   end
 
   defp normalize({:ok, %{conn: conn, user: user}}) do
-    user = %{"uid"      => user["uid"],
-             "name"     => user["name"],
-             "email"    => user["email"]} |> Helpers.prune()
+    user = Helpers.prune(%{
+      "uid" => user["uid"],
+      "name" => user["name"],
+      "email" => user["email"]})
 
     {:ok, %{conn: conn, user: user}}
   end

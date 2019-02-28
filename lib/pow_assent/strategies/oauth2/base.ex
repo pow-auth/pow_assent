@@ -16,9 +16,9 @@ defmodule PowAssent.Strategy.OAuth2.Base do
 
         def normalize(_config, user) do
           %{
-            "uid"         => user["id"],
-            "name"        => user["name"],
-            "email"       => user["email"]
+            "uid"   => user["id"],
+            "name"  => user["name"],
+            "email" => user["email"]
           }
         end
       end

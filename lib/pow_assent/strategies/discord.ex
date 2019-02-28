@@ -29,10 +29,10 @@ defmodule PowAssent.Strategy.Discord do
   @spec normalize(Keyword.t(), map()) :: {:ok, map()}
   def normalize(_config, user) do
     {:ok, %{
-      "uid"        => user["id"],
-      "name"       => user["username"],
-      "email"      => verified_email(user),
-      "image"      => "https://cdn.discordapp.com/avatars/#{user["id"]}/#{user["avatar"]}"}}
+      "uid"   => user["id"],
+      "name"  => user["username"],
+      "email" => verified_email(user),
+      "image" => "https://cdn.discordapp.com/avatars/#{user["id"]}/#{user["avatar"]}"}}
   end
 
   defp verified_email(%{"verified" => true} = user), do: user["email"]

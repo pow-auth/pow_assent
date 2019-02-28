@@ -38,14 +38,14 @@ defmodule PowAssent.Strategy.VK do
   @spec normalize(Keyword.t(), map()) :: {:ok, map()}
   def normalize(_config, user) do
     {:ok, %{
-      "uid"         => to_string(user["id"]),
-      "nickname"    => user["screen_name"],
-      "first_name"  => user["first_name"],
-      "last_name"   => user["last_name"],
-      "name"        => Enum.join([user["first_name"], user["last_name"]], " "),
-      "email"       => user["email"],
-      "image"       => user["photo_200"],
-      "verified"    => user["verified"] > 0}}
+      "uid"        => to_string(user["id"]),
+      "nickname"   => user["screen_name"],
+      "first_name" => user["first_name"],
+      "last_name"  => user["last_name"],
+      "name"       => Enum.join([user["first_name"], user["last_name"]], " "),
+      "email"      => user["email"],
+      "image"      => user["photo_200"],
+      "verified"   => user["verified"] > 0}}
   end
 
   @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
