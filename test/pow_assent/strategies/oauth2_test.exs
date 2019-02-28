@@ -2,7 +2,7 @@ defmodule PowAssent.Strategy.OAuth2Test do
   use PowAssent.Test.Phoenix.ConnCase
 
   import PowAssent.OAuthHelpers
-  alias PowAssent.{ConfigurationError, RequestError, Strategy.OAuth2}
+  alias PowAssent.{ConfigurationError, CallbackError, RequestError, Strategy.OAuth2}
 
   setup :setup_bypass
 
@@ -43,6 +43,12 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
       assert {:ok, %{conn: _conn, user: user}} = OAuth2.callback(config, conn, params)
       assert user == %{"email" => "foo@example.com", "name" => "Dan Schultzer", "uid" => "1"}
+    end
+
+    test "with redirect error", %{conn: conn, config: config} do
+      params = %{"error" => "access_denied", "error_description" => "The user denied the request", "state" => "test"}
+
+      assert {:error, %{conn: _conn, error: %CallbackError{message: "The user denied the request", error: "access_denied", error_uri: nil}}} = OAuth2.callback(config, conn, params)
     end
 
     test "access token error with 200 response", %{conn: conn, config: config, params: params, bypass: bypass} do

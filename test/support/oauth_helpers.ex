@@ -125,13 +125,6 @@ defmodule PowAssent.OAuthHelpers do
     expect_oauth2_user_request(bypass, user_params)
   end
 
-  @spec expect_once_oauth2_access_token(Bypass.t(), binary(), binary()) :: any()
-  def expect_once_oauth2_access_token(bypass, uri, access_token) do
-    Bypass.expect_once(bypass, "POST", uri, fn conn ->
-      send_json_resp(conn, %{access_token: access_token})
-    end)
-  end
-
   defp assert_bearer_token_in_header(conn, token) do
     expected = {"authorization", "Bearer #{token}"}
 
@@ -147,7 +140,7 @@ defmodule PowAssent.OAuthHelpers do
     end
   end
 
-  defp send_json_resp(conn, body, status_code \\ 200) do
+  defp send_json_resp(conn, body, status_code) do
     conn
     |> Conn.put_resp_content_type("application/json")
     |> Conn.send_resp(status_code, Jason.encode!(body))

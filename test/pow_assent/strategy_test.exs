@@ -21,6 +21,9 @@ defmodule PowAssent.StrategyTest do
     headers = [{"content-type", "application/json; charset=utf-8"}]
     assert Strategy.decode_response({nil, %{body: body, headers: headers}}, []) == {nil, %{body: expected, headers: headers}}
 
+    headers = [{"content-type", "text/javascript"}]
+    assert Strategy.decode_response({nil, %{body: body, headers: headers}}, []) == {nil, %{body: expected, headers: headers}}
+
     headers = [{"content-type", "application/x-www-form-urlencoded"}]
     body = URI.encode_query(expected)
     assert Strategy.decode_response({nil, %{body: body, headers: headers}}, []) == {nil, %{body: expected, headers: headers}}

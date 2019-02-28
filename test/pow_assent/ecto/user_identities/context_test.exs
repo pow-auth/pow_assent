@@ -1,10 +1,21 @@
+defmodule PowAssent.Test.Ecto.Users.UserWithoutUserIdentities do
+  @moduledoc false
+  use Ecto.Schema
+  use Pow.Ecto.Schema
+
+  schema "users" do
+    pow_user_fields()
+    timestamps()
+  end
+end
+
 defmodule PowAssent.Ecto.UserIdentities.ContextTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.UserIdentities.Context
 
   alias Ecto.Changeset
   alias PowAssent.Ecto.UserIdentities.Context
-  alias PowAssent.Test.Ecto.{Repo, Users.User}
+  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithoutUserIdentities}
 
   @config [repo: Repo, user: User]
 
@@ -27,6 +38,12 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
 
       {:ok, _user} = Repo.delete(user)
       refute Context.get_user_by_provider_uid("test_provider", "1", @config)
+    end
+
+    test "requires user has :user_identities assoc" do
+      assert_raise PowAssent.Config.ConfigError, "The `:user` configuration option doesn't have a `:user_identities` association.", fn ->
+        Context.get_user_by_provider_uid("test_provider", "2", repo: Repo, user: UserWithoutUserIdentities)
+      end
     end
   end
 

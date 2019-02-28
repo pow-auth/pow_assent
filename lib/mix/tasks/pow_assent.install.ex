@@ -8,24 +8,25 @@ defmodule Mix.Tasks.PowAssent.Install do
   """
   use Mix.Task
 
-  alias Mix.Pow
+  alias Mix.Project
   alias Mix.Tasks.PowAssent.Ecto.Install
-
-  @switches []
-  @default_opts []
 
   @doc false
   def run(args) do
-    Pow.no_umbrella!("pow_assent.install")
+    no_umbrella!()
 
-    args
-    |> Pow.parse_options(@switches, @default_opts)
-    |> run_ecto_install(args)
+    run_ecto_install(args)
   end
 
-  defp run_ecto_install(config, args) do
+  defp run_ecto_install(args) do
     Install.run(args)
+  end
 
-    config
+  defp no_umbrella! do
+    if Project.umbrella?() do
+      Mix.raise("mix pow_assent.install can't be used in umbrella apps. Run mix pow_assent.ecto.install in your ecto app directory.")
+    end
+
+    :ok
   end
 end

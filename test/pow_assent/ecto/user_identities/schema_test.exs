@@ -1,8 +1,21 @@
+module_raised_with =
+  try do
+    defmodule PowAssent.Test.UserIdentities.InvalidUserIdentity do
+      use PowAssent.Ecto.UserIdentities.Schema
+    end
+  rescue
+    e in PowAssent.Config.ConfigError -> e.message
+  end
+
 defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.UserIdentities.Schema
 
   alias PowAssent.Test.Ecto.{Repo, UserIdentities.UserIdentity, Users.User}
+
+  test "raises error during compile when there's no `:user` configuration" do
+    assert unquote(module_raised_with) =~  "No :user configuration option found for user identity schema module."
+  end
 
   test "pow_assent_user_identity_fields/1" do
     user = %UserIdentity{}

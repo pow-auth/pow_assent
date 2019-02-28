@@ -100,8 +100,7 @@ defmodule PowAssent.Strategy do
   @doc """
   Decode a JSON response to a map
   """
-  @spec decode_json!(binary() | map(), Keyword.t()) :: map()
-  def decode_json!(map, _config) when is_map(map), do: map
+  @spec decode_json!(binary(), Keyword.t()) :: map()
   def decode_json!(response, config) do
     json_library = Config.get(config, :json_library, default_json_library())
     json_library.decode!(response)
