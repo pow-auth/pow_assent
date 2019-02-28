@@ -1,5 +1,5 @@
 # Changelog
 
-## v1.0.0 (TBA)
+## v0.1.0 (2019-02-28)
 
 * Initial release
