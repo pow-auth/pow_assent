@@ -76,7 +76,7 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
       expect_oauth2_access_token_request(bypass)
 
-      assert {:error, %{conn: _conn, error: :econnrefused}} = OAuth2.callback(config, conn, params)
+      assert {:error, %{conn: _conn, error: %PowAssent.RequestError{error: :unreachable}}} = OAuth2.callback(config, conn, params)
     end
 
     test "user url unauthorized access token", %{conn: conn, config: config, params: params, bypass: bypass} do

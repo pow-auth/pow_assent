@@ -51,8 +51,7 @@ defmodule PowAssent.HTTPAdapter.Httpc do
 
     {:ok, %HTTPResponse{status: status, headers: headers, body: body}}
   end
-  defp format_response({:error, {:failed_connect, _}}), do: {:error, :econnrefused}
-  defp format_response(response), do: response
+  defp format_response({:error, error}), do: {:error, error}
 
   defp parse_httpc_opts(nil, url), do: default_httpc_opts(url)
   defp parse_httpc_opts(opts, _url), do: opts

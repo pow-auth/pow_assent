@@ -42,6 +42,22 @@ defmodule PowAssent do
         error: :invalid_server_response
       }
     end
+
+    @spec unreachable(atom(), binary(), term()) :: %__MODULE__{}
+    def unreachable(adapter, url, error) do
+      %__MODULE__{
+        message:
+          """
+          Server was unreachable with #{inspect adapter}.
+
+          Failed with the following error:
+          #{inspect error}
+
+          URL: #{url}
+          """,
+        error: :unreachable
+      }
+    end
   end
 
   defmodule ConfigurationError do

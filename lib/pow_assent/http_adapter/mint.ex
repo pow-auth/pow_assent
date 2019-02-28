@@ -58,8 +58,7 @@ defmodule PowAssent.HTTPAdapter.Mint do
 
     {:ok, %HTTPResponse{status: status, headers: headers, body: body}}
   end
-  defp format_response({:error, {:tls_alert, _tls_error}}), do: {:error, :econnrefused}
-  defp format_response(response), do: response
+  defp format_response({:error, response}), do: {:error, response}
 
   defp merge_body([{:data, _request, new_body} | rest], body), do: merge_body(rest, body <> new_body)
   defp merge_body(_rest, body), do: body

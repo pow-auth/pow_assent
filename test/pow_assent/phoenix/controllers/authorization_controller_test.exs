@@ -163,7 +163,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     test "with timeout", %{conn: conn, server: server} do
       Bypass.down(server)
 
-      assert_raise RuntimeError, "Connection refused", fn ->
+      message = ~r/Server was unreachable with PowAssent.HTTPAdapter.Httpc/
+
+      assert_raise PowAssent.RequestError, message, fn ->
         get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
       end
     end

@@ -72,8 +72,7 @@ defmodule PowAssent.Strategy.VKTest do
     test "handles error", %{config: config, conn: conn, params: params} do
       config = Keyword.put(config, :site, "http://localhost:8888")
 
-      assert {:error, %{conn: %Plug.Conn{}, error: error}} = VK.callback(config, conn, params)
-      assert error == :econnrefused
+      assert {:error, %{conn: %Plug.Conn{}, error: %PowAssent.RequestError{error: :unreachable}}} = VK.callback(config, conn, params)
     end
   end
 end
