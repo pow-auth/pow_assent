@@ -1,4 +1,4 @@
-defmodule PowAssent.Strategy.AzureOAuth2 do
+defmodule PowAssent.Strategy.AzureOAuth2Test do
   use PowAssent.Test.Phoenix.ConnCase
 
   import PowAssent.OAuthHelpers
@@ -30,9 +30,9 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
       expected = %{
         "uid" => "JWvYdCWPhhlpS1Zsf7yYUxShUwtUm5yzPmw_-jX3fHY",
         "name" => "Frank Miller",
-        "given_name" => "Frank",
-        "family_name" => "Miller",
-        "email" => "frank@contoso.com",
+        "first_name" => "Frank",
+        "last_name" => "Miller",
+        "email" => "frankm@contoso.com"
       }
 
       {:ok, %{user: user}} = AzureOAuth2.callback(config, conn, params)
