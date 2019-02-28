@@ -1,4 +1,4 @@
-defmodule PowAssent.Test.Ecto.Users.EmailConfirmUser do
+defmodule PowAssent.Test.Ecto.Users.UserConfirmEmail do
   @moduledoc false
   use Ecto.Schema
   use Pow.Ecto.Schema
@@ -8,7 +8,7 @@ defmodule PowAssent.Test.Ecto.Users.EmailConfirmUser do
 
   schema "users" do
     has_many :user_identities,
-      PowAssent.Test.Ecto.UserIdentities.EmailConfirmUserIdentity,
+      PowAssent.Test.Ecto.UserIdentities.UserIdentityConfirmEmail,
       on_delete: :delete_all,
       foreign_key: :user_id
 

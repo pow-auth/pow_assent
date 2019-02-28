@@ -56,8 +56,7 @@ defmodule PowAssent.Strategy.FacebookTest do
     test "handles error", %{config: config, conn: conn, params: params} do
       config = Keyword.put(config, :site, "http://localhost:8888")
 
-      assert {:error, %{conn: %Plug.Conn{}, error: error}} = Facebook.callback(config, conn, params)
-      assert error == :econnrefused
+      assert {:error, %{conn: %Plug.Conn{}, error: %PowAssent.RequestError{error: :unreachable}}} = Facebook.callback(config, conn, params)
     end
   end
 end

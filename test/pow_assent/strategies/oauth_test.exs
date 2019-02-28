@@ -43,7 +43,7 @@ defmodule PowAssent.Strategy.OAuthTest do
     test "bubbles up network error", %{conn: conn, config: config, bypass: bypass} do
       Bypass.down(bypass)
 
-      assert {:error, %{conn: _conn, error: :econnrefused}} = OAuth.authorize_url(config, conn)
+      assert {:error, %{conn: _conn, error: %PowAssent.RequestError{error: :unreachable}}} = OAuth.authorize_url(config, conn)
     end
   end
 

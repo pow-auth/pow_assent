@@ -41,7 +41,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
     |> put_flash(:error, messages(conn).invalid_request(conn))
     |> redirect(to: routes(conn).after_sign_out_path(conn))
   end
-  def respond_create({:error, {:missing_user_id_field, changeset}, conn}),
+  def respond_create({:error, {:invalid_user_id_field, changeset}, conn}),
     do: respond_create({:error, changeset, conn})
   def respond_create({:error, changeset, conn}) do
     conn

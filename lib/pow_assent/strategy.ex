@@ -19,7 +19,7 @@ defmodule PowAssent.Strategy do
       end
   """
   alias Plug.Conn
-  alias PowAssent.{Config, HTTPResponse}
+  alias PowAssent.{Config, HTTPResponse, RequestError}
 
   @callback authorize_url(Keyword.t(), Conn.t()) ::
               {:ok, %{:conn => Conn.t(), :url => binary(), optional(atom()) => any()}}
@@ -44,7 +44,7 @@ defmodule PowAssent.Strategy do
 
     method
     |> http_adapter.request(url, body, headers, opts)
-    |> parse_status_response()
+    |> parse_status_response(http_adapter, url)
   end
 
   defp fetch_http_adapter(config) do
@@ -54,14 +54,16 @@ defmodule PowAssent.Strategy do
     end
   end
 
-  defp parse_status_response({:ok, %{status: status} = resp}) when status in 200..399 do
+  defp parse_status_response({:ok, %{status: status} = resp}, _http_adapter, _url) when status in 200..399 do
     {:ok, resp}
   end
-  defp parse_status_response({:ok, %{status: status} = resp}) when status in 400..599 do
+  defp parse_status_response({:ok, %{status: status} = resp}, _http_adapter, _url) when status in 400..599 do
     {:error, resp}
   end
-  defp parse_status_response({:error, reason}) do
-    {:error, reason}
+  defp parse_status_response({:error, error}, http_adapter, url) do
+    [url | _rest] = String.split(url, "?", parts: 2)
+
+    {:error, RequestError.unreachable(http_adapter, url, error)}
   end
 
   @doc """
@@ -100,8 +102,7 @@ defmodule PowAssent.Strategy do
   @doc """
   Decode a JSON response to a map
   """
-  @spec decode_json!(binary() | map(), Keyword.t()) :: map()
-  def decode_json!(map, _config) when is_map(map), do: map
+  @spec decode_json!(binary(), Keyword.t()) :: map()
   def decode_json!(response, config) do
     json_library = Config.get(config, :json_library, default_json_library())
     json_library.decode!(response)

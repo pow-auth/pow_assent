@@ -2,7 +2,7 @@ defmodule PowAssent.Strategy.OAuth2Test do
   use PowAssent.Test.Phoenix.ConnCase
 
   import PowAssent.OAuthHelpers
-  alias PowAssent.{ConfigurationError, RequestError, Strategy.OAuth2}
+  alias PowAssent.{ConfigurationError, CallbackError, RequestError, Strategy.OAuth2}
 
   setup :setup_bypass
 
@@ -45,6 +45,12 @@ defmodule PowAssent.Strategy.OAuth2Test do
       assert user == %{"email" => "foo@example.com", "name" => "Dan Schultzer", "uid" => "1"}
     end
 
+    test "with redirect error", %{conn: conn, config: config} do
+      params = %{"error" => "access_denied", "error_description" => "The user denied the request", "state" => "test"}
+
+      assert {:error, %{conn: _conn, error: %CallbackError{message: "The user denied the request", error: "access_denied", error_uri: nil}}} = OAuth2.callback(config, conn, params)
+    end
+
     test "access token error with 200 response", %{conn: conn, config: config, params: params, bypass: bypass} do
       expect_oauth2_access_token_request(bypass, params: %{"error" => "error", "error_description" => "Error description"})
 
@@ -70,7 +76,7 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
       expect_oauth2_access_token_request(bypass)
 
-      assert {:error, %{conn: _conn, error: :econnrefused}} = OAuth2.callback(config, conn, params)
+      assert {:error, %{conn: _conn, error: %PowAssent.RequestError{error: :unreachable}}} = OAuth2.callback(config, conn, params)
     end
 
     test "user url unauthorized access token", %{conn: conn, config: config, params: params, bypass: bypass} do

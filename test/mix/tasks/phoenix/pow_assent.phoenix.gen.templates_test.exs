@@ -39,8 +39,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.TemplatesTest do
       assert view_content =~ "defmodule PowAssentWeb.PowAssent.RegistrationView do"
       assert view_content =~ "use PowAssentWeb, :view"
 
-      for _ <- 1..2, do: assert_received({:mix_shell, :info, [_msg]})
-      assert_received {:mix_shell, :info, [msg]}
+      assert_received {:mix_shell, :info, ["PowAssent Phoenix templates and views has been generated." <> msg]}
       assert msg =~ "defmodule PowAssentWeb.Endpoint"
       assert msg =~ "otp_app: :pow"
       assert msg =~ "repo: PowAssent.Repo"
@@ -66,8 +65,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.TemplatesTest do
       assert view_content =~ "defmodule TestWeb.PowAssent.RegistrationView do"
       assert view_content =~ "use TestWeb, :view"
 
-      for _ <- 1..2, do: assert_received({:mix_shell, :info, [_msg]})
-      assert_received {:mix_shell, :info, [msg]}
+      assert_received {:mix_shell, :info, ["PowAssent Phoenix templates and views has been generated." <> msg]}
       assert msg =~ "defmodule TestWeb.Endpoint"
       assert msg =~ "otp_app: :test"
       assert msg =~ "repo: Test.Repo"

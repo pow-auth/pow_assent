@@ -77,8 +77,8 @@ defmodule PowAssent.Strategy.AzureOAuth2 do
   def normalize(_config, user) do
     {:ok, %{
       "uid"        => user["sub"],
-      "name"       => user["name"],
-      "email"      => user["email"],
+      "name"       => "#{user["given_name"]} #{user["family_name"]}",
+      "email"      => user["email"] || user["upn"],
       "first_name" => user["given_name"],
       "last_name"  => user["family_name"]}}
   end

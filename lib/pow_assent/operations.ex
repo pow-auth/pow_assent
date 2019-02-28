@@ -42,7 +42,7 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.create_user/5` or
   `create_user/4` on a custom context module.
   """
-  @spec create_user(binary(), binary(), map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :missing_user_id_field, map()}} | {:error, map()} | no_return
+  @spec create_user(binary(), binary(), map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()}} | {:error, map()} | no_return
   def create_user(provider, uid, params, user_id_params, config) do
     case context_module(config) do
       Context -> Context.create_user(provider, uid, params, user_id_params, config)

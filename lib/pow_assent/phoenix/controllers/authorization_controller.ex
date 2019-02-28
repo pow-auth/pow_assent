@@ -64,7 +64,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> put_flash(:error, messages(conn).account_already_bound_to_other_user(conn))
     |> redirect(to: routes(conn).registration_path(conn, :new))
   end
-  def respond_callback({:error, {:missing_user_id_field, _changeset}, conn}) do
+  def respond_callback({:error, {:invalid_user_id_field, _changeset}, conn}) do
     conn
     |> put_session("pow_assent_params", conn.private[:pow_assent_params])
     |> redirect(to: routes(conn).path_for(conn, RegistrationController, :add_user_id, [conn.params["provider"]]))
@@ -113,6 +113,5 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     assign(conn, :callback_url, url)
   end
 
-  defp handle_strategy_error(:econnrefused), do: raise "Connection refused"
   defp handle_strategy_error(error), do: raise error
 end
