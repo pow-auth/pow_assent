@@ -19,11 +19,7 @@ defmodule PowAssent.MixProject do
 
       # Docs
       name: "PowAssent",
-      docs: docs(),
-
-      dialyzer: [
-        ignore_warnings: ".dialyzer_ignore",
-      ]
+      docs: docs()
     ]
   end
 
