@@ -5,7 +5,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
   ## Usage
 
       defmodule MyApp.MyOAuth2Strategy do
-        use PowAssent.Strategy.OAuth2
+        use PowAssent.Strategy.OAuth2.Base
 
         def default_config(_config) do
           [
