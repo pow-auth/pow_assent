@@ -4,14 +4,14 @@ defmodule PowAssent.Strategy.Basecamp do
 
   ## Usage
 
-config :my_app, :pow_assent,
-  providers: [
-    basecamp: [
-      client_id: "REPLACE_WITH_CLIENT_ID",
-      client_secret: "REPLACE_WITH_CLIENT_SECRET",
-      strategy: PowAssent.Strategy.Basecamp
-    ]
-  ]
+      config :my_app, :pow_assent,
+        providers: [
+          basecamp: [
+            client_id: "REPLACE_WITH_CLIENT_ID",
+            client_secret: "REPLACE_WITH_CLIENT_SECRET",
+            strategy: PowAssent.Strategy.Basecamp
+          ]
+        ]
   """
   use PowAssent.Strategy.OAuth2.Base
 
