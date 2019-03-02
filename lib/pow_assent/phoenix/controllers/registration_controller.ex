@@ -1,7 +1,6 @@
 defmodule PowAssent.Phoenix.RegistrationController do
   @moduledoc false
-  use Pow.Extension.Phoenix.Controller.Base,
-    messages_backend_fallback: PowAssent.Phoenix.Messages
+  use Pow.Extension.Phoenix.Controller.Base
 
   alias Plug.Conn
   alias PowAssent.Plug
