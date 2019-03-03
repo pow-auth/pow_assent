@@ -50,6 +50,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
 
       unquote(__MODULE__).__pow_assent_methods__()
       unquote(__MODULE__).__register_fields__()
+      unquote(__MODULE__).__register_assocs__()
     end
   end
 
@@ -59,11 +60,15 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @spec pow_assent_user_identity_fields :: Macro.t()
   defmacro pow_assent_user_identity_fields do
     quote do
-      belongs_to :user, @pow_user_mod
+      Enum.each(@pow_assent_assocs, fn
+        {:belongs_to, name, :users} ->
+          belongs_to(name, @pow_user_mod)
+      end)
 
-      for {name, type, defaults} <- @pow_assent_fields do
-        field(name, type, defaults)
-      end
+      Enum.each(@pow_assent_fields, fn
+        {name, type, defaults} ->
+          field(name, type, defaults)
+      end)
     end
   end
 
@@ -83,6 +88,13 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   defmacro __register_fields__ do
     quote do
       @pow_assent_fields unquote(__MODULE__).Fields.attrs(@pow_assent_config)
+    end
+  end
+
+  @doc false
+  defmacro __register_assocs__ do
+    quote do
+      @pow_assent_assocs unquote(__MODULE__).Fields.assocs(@pow_assent_config)
     end
   end
 

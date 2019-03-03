@@ -14,10 +14,6 @@ defmodule PowAssent.Ecto.Schema do
         use PowAssent.Ecto.Schema
 
         schema "users" do
-          has_many :user_identities,
-            MyApp.UserIdentities.UserIdentity,
-            on_delete: :delete_all
-
           field :custom_field, :string
 
           pow_user_fields()
@@ -55,8 +51,31 @@ defmodule PowAssent.Ecto.Schema do
         unquote(__MODULE__).changeset(user_or_changeset, user_identity, attrs, user_id_attrs, @pow_config)
       end
 
+      unquote(__MODULE__).__has_many__()
+
       defoverridable unquote(__MODULE__)
     end
+  end
+
+  @doc false
+  defmacro __has_many__() do
+    quote do
+      @pow_assocs {:has_many, :user_identities, unquote(__MODULE__).__user_identities_module__(__MODULE__), foreign_key: :user_id, on_delete: :delete_all}
+    end
+  end
+
+  @doc false
+  def __user_identities_module__(module) do
+    module
+    |> Module.split()
+    |> Enum.reverse()
+    |> case do
+      [_schema, base] -> [base]
+      [_schema, _context | rest] -> rest
+    end
+    |> Enum.reverse()
+    |> Enum.concat([UserIdentities, UserIdentity])
+    |> Module.concat()
   end
 
   @doc """

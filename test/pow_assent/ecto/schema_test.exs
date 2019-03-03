@@ -1,18 +1,15 @@
-module_raised_with =
-  try do
-    defmodule Pow.Test.Extension.Ecto.Schema.IvalidIdentity do
-      use Ecto.Schema
-      use PowAssent.Ecto.UserIdentities.Schema
+defmodule PowAssent.NoContextUser do
+  @moduledoc false
+  use Ecto.Schema
+  use Pow.Ecto.Schema
+  use PowAssent.Ecto.Schema
 
-      schema "user_identities" do
-        pow_assent_user_identity_fields()
+  schema "users" do
+    pow_user_fields()
 
-        timestamps(updated_at: false)
-      end
-    end
-  rescue
-    e in PowAssent.Config.ConfigError -> e.message
+    timestamps()
   end
+end
 
 defmodule PowAssent.Ecto.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
@@ -25,10 +22,7 @@ defmodule PowAssent.Ecto.SchemaTest do
     user = %User{}
 
     assert Map.has_key?(user, :user_identities)
-  end
-
-  test "user_schema/1 requires :user" do
-    assert unquote(module_raised_with) == "No :user configuration option found for user identity schema module."
+    assert %{on_delete: :delete_all} = User.__schema__(:association, :user_identities)
   end
 
   @user_identity %{
@@ -71,5 +65,36 @@ defmodule PowAssent.Ecto.SchemaTest do
       changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com"}, nil)
       refute changeset.changes[:email_confirmed_at]
     end
+  end
+
+  defmodule OverrideAssocUser do
+    @moduledoc false
+    use Ecto.Schema
+    use Pow.Ecto.Schema
+    use PowAssent.Ecto.Schema
+
+    schema "users" do
+      has_many :user_identities,
+        MyApp.UserIdentities.UserIdentity,
+        on_delete: :nothing
+
+      pow_user_fields()
+
+      timestamps()
+    end
+  end
+
+  test "schema/2 with overridden fields" do
+    user = %OverrideAssocUser{}
+
+    assert Map.has_key?(user, :user_identities)
+    assert %{on_delete: :nothing} = OverrideAssocUser.__schema__(:association, :user_identities)
+  end
+
+  test "schema/2 with no context user module name" do
+    user = %PowAssent.NoContextUser{}
+
+    assert Map.has_key?(user, :user_identities)
+    assert %{queryable: PowAssent.UserIdentities.UserIdentity} = PowAssent.NoContextUser.__schema__(:association, :user_identities)
   end
 end

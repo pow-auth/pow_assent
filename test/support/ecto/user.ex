@@ -5,10 +5,6 @@ defmodule PowAssent.Test.Ecto.Users.User do
   use PowAssent.Ecto.Schema
 
   schema "users" do
-    has_many :user_identities,
-      PowAssent.Test.Ecto.UserIdentities.UserIdentity,
-      on_delete: :delete_all
-
     field :name, :string
 
     pow_user_fields()
