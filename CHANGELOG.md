@@ -6,6 +6,7 @@
 
 * Detached `Plug` from strategies
 * `token` now included in `PowAssent.Strategy.OAuth.callback/2` response
+* Use `account_already_bound_to_other_user/1` message for already taken user identity in `PowAssent.Phoenix.RegistrationController`
 
 ### Update your custom strategies
 

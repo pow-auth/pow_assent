@@ -52,14 +52,12 @@ defmodule PowAssent.Plug do
                                                {:error, map(), Conn.t()}
   def callback(conn, provider, params) do
     config                      = fetch_config(conn)
-    user                        = Pow.Plug.current_user(conn)
     {strategy, provider_config} = get_provider_config(config, provider)
 
     provider_config
     |> maybe_set_state_config(conn)
     |> strategy.callback(params)
-    |> assign_pow_assent_params(conn)
-    |> get_or_create_by_identity(provider, user, config)
+    |> get_or_create_identity(provider, conn, config)
   end
 
   defp maybe_set_state_config(config, %{private: %{pow_assent_state: state}}) do
@@ -67,34 +65,38 @@ defmodule PowAssent.Plug do
   end
   defp maybe_set_state_config(config, _conn), do: config
 
-  defp assign_pow_assent_params({:ok, %{user: params}}, conn) do
-    conn = Conn.put_private(conn, :pow_assent_params, params)
-
-    {:ok, params, conn}
-  end
-  defp assign_pow_assent_params({:error, error}, conn) do
-    {:error, {:strategy, error}, conn}
-  end
-
-  defp get_or_create_by_identity({:ok, params, conn}, provider, nil, config) do
-    provider
-    |> Operations.get_user_by_provider_uid(params["uid"], config)
+  defp get_or_create_identity({:ok, %{user: user_params}}, provider, conn, config) do
+    conn
+    |> Pow.Plug.current_user()
     |> case do
-      nil  -> create_user(conn, provider, params, %{})
+      nil  -> get_or_create_user(conn, provider, user_params, config)
+      user -> create_identity(conn, user, provider, user_params, config)
+    end
+    |> maybe_assign_params(user_params)
+  end
+  defp get_or_create_identity({:error, error}, _provider, conn, _config), do: {:error, {:strategy, error}, conn}
+
+  defp get_or_create_user(conn, provider, %{"uid" => uid} = user_params, config) do
+    provider
+    |> Operations.get_user_by_provider_uid(uid, config)
+    |> case do
+      nil  -> create_user(conn, provider, user_params, %{})
       user -> {:ok, user, get_mod(config).do_create(conn, user, config)}
     end
   end
-  defp get_or_create_by_identity({:ok, params, conn}, provider, user, config) do
+
+  defp create_identity(conn, user, provider, %{"uid" => uid}, config) do
     user
-    |> Operations.create(provider, params["uid"], config)
+    |> Operations.create(provider, uid, config)
     |> case do
       {:ok, _user_identity} -> {:ok, user, conn}
       {:error, changeset}   -> {:error, changeset, conn}
     end
   end
-  defp get_or_create_by_identity({:error, error, conn}, _provider, _config, _user) do
-    {:error, error, conn}
-  end
+
+  defp maybe_assign_params({:ok, user, conn}, _params), do: {:ok, user, conn}
+  defp maybe_assign_params({:error, {:bound_to_different_user, changeset}, conn}, _params), do: {:error, {:bound_to_different_user, changeset}, conn}
+  defp maybe_assign_params({:error, error, conn}, params), do: {:error, error, Conn.put_private(conn, :pow_assent_params, params)}
 
   @doc """
   Create a user with user identity.
