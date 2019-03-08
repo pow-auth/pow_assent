@@ -202,15 +202,15 @@ You can also use `PowAssent.Strategy`:
 
 ```elixir
 defmodule TestProvider do
-  use PowAssent.Strategy
+  @behaviour PowAssent.Strategy
 
-  @spec authorize_url(Keyword.t(), Plug.Conn.t()) :: {:ok, %{conn: Plug.Conn.t(), url: binary()}} | {:error, any()}
-  def authorize_url(config, conn) do
+  @spec authorize_url(Keyword.t()) :: {:ok, %{url: binary()}} | {:error, term()}
+  def authorize_url(config) do
     # Generate authorization url
   end
 
-  @spec callback(Keyword.t(), Plug.Conn.t(), map()) :: {:ok, %{conn: Plug.Conn.t(), user: map()}} | {:error, any()}
-  def callback(config, conn, params) do
+  @spec callback(Keyword.t(), map()) :: {:ok, %{user: map()}} | {:error, term()}
+  def callback(config, params) do
     # Handle callback response
   end
 end

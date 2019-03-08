@@ -1,7 +1,6 @@
 defmodule PowAssent.Strategy.VKTest do
-  use PowAssent.Test.Phoenix.ConnCase
+  use PowAssent.Test.OAuth2TestCase
 
-  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.VK
 
   @users_response [
@@ -14,33 +13,30 @@ defmodule PowAssent.Strategy.VKTest do
       "verified" => 1
     }
   ]
+  @user %{
+    "email" => "lindsay.stirling@example.com",
+    "first_name" => "Lindsay",
+    "last_name" => "Stirling",
+    "name" => "Lindsay Stirling",
+    "nickname" => "lindseystirling",
+    "uid" => "210700286",
+    "image" => "https://pp.userapi.com/c840637/v840637830/2d20e/wMuAZn-RFak.jpg",
+    "verified" => true
+  }
 
-  setup %{conn: conn} do
-    bypass = Bypass.open()
-
-    config = [
-      site: bypass_server(bypass),
-      authorize_url: "/authorize",
-      token_url: "/access_token"
-    ]
-
-    {:ok, conn: conn, config: config, bypass: bypass}
-  end
-
-  test "authorize_url/2", %{conn: conn, config: config} do
-    assert {:ok, %{conn: _conn, url: url}} = VK.authorize_url(config, conn)
+  test "authorize_url/2", %{config: config} do
+    assert {:ok, %{url: url}} = VK.authorize_url(config)
     assert url =~ "/authorize"
   end
 
   describe "callback/2" do
-    setup %{conn: conn, config: config, bypass: bypass} do
-      params = %{"code" => "test", "redirect_uri" => "test", "state" => "test"}
-      conn = Plug.Conn.put_private(conn, :pow_assent_state, "test")
+    setup %{config: config, bypass: bypass} = context do
+      config = Keyword.put(config, :token_url, "http://localhost:#{bypass.port}/access_token")
 
-      {:ok, conn: conn, config: config, params: params, bypass: bypass}
+      {:ok, %{context | config: config}}
     end
 
-    test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
+    test "normalizes data", %{config: config, callback_params: params, bypass: bypass} do
       expect_oauth2_access_token_request(bypass, [uri: "/access_token", params: %{"access_token" => "access_token", "email" => "lindsay.stirling@example.com"}], fn conn ->
         assert conn.query_string =~ "scope=email"
       end)
@@ -54,25 +50,14 @@ defmodule PowAssent.Strategy.VKTest do
         assert conn.params["access_token"] == "access_token"
       end)
 
-      expected = %{
-        "email" => "lindsay.stirling@example.com",
-        "first_name" => "Lindsay",
-        "last_name" => "Stirling",
-        "name" => "Lindsay Stirling",
-        "nickname" => "lindseystirling",
-        "uid" => "210700286",
-        "image" => "https://pp.userapi.com/c840637/v840637830/2d20e/wMuAZn-RFak.jpg",
-        "verified" => true
-      }
-
-      {:ok, %{user: user}} = VK.callback(config, conn, params)
-      assert expected == user
+      assert {:ok, %{user: user}} = VK.callback(config, params)
+      assert user == @user
     end
 
-    test "handles error", %{config: config, conn: conn, params: params} do
-      config = Keyword.put(config, :site, "http://localhost:8888")
+    test "handles error", %{config: config, callback_params: params, bypass: bypass} do
+      Bypass.down(bypass)
 
-      assert {:error, %{conn: %Plug.Conn{}, error: %PowAssent.RequestError{error: :unreachable}}} = VK.callback(config, conn, params)
+      assert {:error, %PowAssent.RequestError{error: :unreachable}} = VK.callback(config, params)
     end
   end
 end

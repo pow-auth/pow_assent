@@ -16,23 +16,21 @@ defmodule PowAssent.Strategy.OAuth2 do
           ]
         ]
   """
-  use PowAssent.Strategy
+  @behaviour PowAssent.Strategy
 
-  alias Plug.Conn
   alias PowAssent.Strategy, as: Helpers
   alias PowAssent.{CallbackCSRFError, CallbackError, ConfigurationError, HTTPAdapter.HTTPResponse, RequestError}
 
   @doc false
-  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
-  def authorize_url(config, conn) do
+  @spec authorize_url(Keyword.t()) :: {:ok, %{state: binary(), url: binary()}} | {:error, term()}
+  def authorize_url(config) do
     state         = gen_state()
-    conn          = Conn.put_private(conn, :pow_assent_state, state)
     redirect_uri  = config[:redirect_uri]
     params        = authorization_params(config, state: state, redirect_uri: redirect_uri)
     authorize_url = Keyword.get(config, :authorize_url, "/oauth/authorize")
     url           = Helpers.to_url(config[:site], authorize_url, params)
 
-    {:ok, %{conn: conn, url: url, state: state}}
+    {:ok, %{url: url, state: state}}
   end
 
   defp authorization_params(config, params) do
@@ -47,14 +45,13 @@ defmodule PowAssent.Strategy.OAuth2 do
   end
 
   @doc false
-  @spec callback(Keyword.t(), Conn.t(), map(), atom()) :: {:ok, %{conn: Conn.t(), user: map(), token: map()}} | {:error, %{conn: Conn.t(), error: any()}}
-  def callback(config, conn, params, strategy \\ __MODULE__) do
-    state  = conn.private[:pow_assent_state]
-
-    state
+  @spec callback(Keyword.t(), map(), atom()) :: {:ok, %{user: map(), token: map()}} | {:error, term()}
+  def callback(config, params, strategy \\ __MODULE__) do
+    config
+    |> Keyword.get(:state)
     |> check_state(params)
     |> get_access_token(params, config)
-    |> fetch_user(config, conn, strategy)
+    |> fetch_user(config, strategy)
   end
 
   defp check_state(_state, %{"error" => _} = params) do
@@ -64,12 +61,9 @@ defmodule PowAssent.Strategy.OAuth2 do
 
     {:error, %CallbackError{message: message, error: error, error_uri: error_uri}}
   end
-  defp check_state(state, %{"code" => _code} = params) do
-    case params["state"] do
-      ^state -> :ok
-      _      -> {:error, %CallbackCSRFError{}}
-    end
-  end
+  defp check_state(stored_state, %{"state" => param_state}) when stored_state != param_state,
+    do: {:error, %CallbackCSRFError{}}
+  defp check_state(_state, _params), do: :ok
 
   defp get_access_token(:ok, %{"code" => code, "redirect_uri" => redirect_uri}, config) do
     client_secret = Keyword.get(config, :client_secret)
@@ -91,16 +85,16 @@ defmodule PowAssent.Strategy.OAuth2 do
   defp process_response({:error, %HTTPResponse{} = response}), do: {:error, RequestError.invalid(response)}
   defp process_response({:error, error}), do: {:error, error}
 
-  defp fetch_user({:ok, token}, config, conn, strategy) do
+  defp fetch_user({:ok, token}, config, strategy) do
     config
     |> strategy.get_user(token)
     |> case do
-      {:ok, user} -> {:ok, %{conn: conn, token: token, user: user}}
-      {:error, error} -> {:error, %{conn: conn, error: error}}
+      {:ok, user} -> {:ok, %{token: token, user: user}}
+      {:error, error} -> {:error, error}
     end
   end
-  defp fetch_user({:error, error}, _config, conn, _strategy),
-    do: {:error, %{conn: conn, error: error}}
+  defp fetch_user({:error, error}, _config, _strategy),
+    do: {:error, error}
 
   @doc """
   Makes a HTTP get request to the API.

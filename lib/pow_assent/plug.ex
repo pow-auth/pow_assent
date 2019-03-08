@@ -28,12 +28,15 @@ defmodule PowAssent.Plug do
 
     provider_config
     |> Config.put(:redirect_uri, callback_url)
-    |> strategy.authorize_url(conn)
-    |> case do
-      {:ok, %{url: url, conn: conn}}        -> {:ok, url, conn}
-      {:error, %{conn: conn, error: error}} -> {:error, error, conn}
-    end
+    |> strategy.authorize_url()
+    |> maybe_put_state(conn)
   end
+
+  defp maybe_put_state({:ok, %{url: url, state: state}}, conn) do
+    {:ok, url, Plug.Conn.put_private(conn, :pow_assent_state, state)}
+  end
+  defp maybe_put_state({:ok, %{url: url}}, conn), do: {:ok, url, conn}
+  defp maybe_put_state({:error, error}, conn), do: {:error, error, conn}
 
   @doc """
   Calls the callback method for the strategy provider.
@@ -53,37 +56,37 @@ defmodule PowAssent.Plug do
     {strategy, provider_config} = get_provider_config(config, provider)
 
     provider_config
-    |> strategy.callback(conn, params)
-    |> parse_callback_response()
+    |> maybe_set_state_config(conn)
+    |> strategy.callback(params)
+    |> assign_pow_assent_params(conn)
     |> get_or_create_by_identity(provider, user, config)
   end
 
-  defp parse_callback_response({:ok, %{user: params, conn: conn}}) do
+  defp maybe_set_state_config(config, %{private: %{pow_assent_state: state}}) do
+    Config.put(config, :state, state)
+  end
+  defp maybe_set_state_config(config, _conn), do: config
+
+  defp assign_pow_assent_params({:ok, %{user: params}}, conn) do
     conn = Conn.put_private(conn, :pow_assent_params, params)
 
-    {:ok, conn}
+    {:ok, params, conn}
   end
-  defp parse_callback_response({:error, %{error: error, conn: conn}}) do
+  defp assign_pow_assent_params({:error, error}, conn) do
     {:error, {:strategy, error}, conn}
   end
 
-  defp get_or_create_by_identity({:ok, conn}, provider, nil, config) do
-    params = conn.private[:pow_assent_params]
-    uid    = params["uid"]
-
+  defp get_or_create_by_identity({:ok, params, conn}, provider, nil, config) do
     provider
-    |> Operations.get_user_by_provider_uid(uid, config)
+    |> Operations.get_user_by_provider_uid(params["uid"], config)
     |> case do
       nil  -> create_user(conn, provider, params, %{})
       user -> {:ok, user, get_mod(config).do_create(conn, user, config)}
     end
   end
-  defp get_or_create_by_identity({:ok, conn}, provider, user, config) do
-    params = conn.private[:pow_assent_params]
-    uid    = params["uid"]
-
+  defp get_or_create_by_identity({:ok, params, conn}, provider, user, config) do
     user
-    |> Operations.create(provider, uid, config)
+    |> Operations.create(provider, params["uid"], config)
     |> case do
       {:ok, _user_identity} -> {:ok, user, conn}
       {:error, changeset}   -> {:error, changeset, conn}

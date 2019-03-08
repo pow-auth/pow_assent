@@ -7,33 +7,25 @@ defmodule PowAssent.Strategy do
   Set up `my_strategy.ex` the following way:
 
       defmodule MyStrategy do
-        use PowAssent.Strategy
+        @behaviour PowAssent.Strategy
 
-        def authorize_url(config, conn) do
-          # generate authorization url
+        def authorize_url(config) do
+          # Generate redirect URL
+
+          {:ok, url, []}
         end
 
-        def callback(config, conn, params) do
-          # return normalized user params map
+        def callback(config, params) do
+          # Fetch user data
+
+          {:ok, user, []}
         end
       end
   """
-  alias Plug.Conn
   alias PowAssent.{Config, HTTPResponse, RequestError}
 
-  @callback authorize_url(Keyword.t(), Conn.t()) ::
-              {:ok, %{:conn => Conn.t(), :url => binary(), optional(atom()) => any()}}
-              | {:error, %{conn: Conn.t(), error: any()}}
-  @callback callback(Keyword.t(), Conn.t(), map()) ::
-              {:ok, %{:conn => Conn.t(), :user => map(), optional(atom()) => any()}}
-              | {:error, %{conn: Conn.t(), error: any()}}
-
-  @doc false
-  defmacro __using__(_opts) do
-    quote do
-      @behaviour unquote(__MODULE__)
-    end
-  end
+  @callback authorize_url(Keyword.t()) :: {:ok, %{:url => binary(), optional(atom()) => any()}} | {:error, term()}
+  @callback callback(Keyword.t(), map()) :: {:ok, %{:user => map(), optional(atom()) => any()}} | {:error, term()}
 
   @doc """
   Makes a HTTP request.
