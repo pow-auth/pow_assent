@@ -1,9 +1,9 @@
-defmodule PowAssent.Test.UserIdentitiesConfirmEmailMock do
+defmodule PowAssent.Test.EmailConfirmation.UserIdentitiesMock do
   @moduledoc false
   use PowAssent.Ecto.UserIdentities.Context
-  alias PowAssent.Test.Ecto.Users.UserConfirmEmail
+  alias PowAssent.Test.EmailConfirmation.Users.User
 
-  @user %UserConfirmEmail{id: 1, email: "test@example.com", email_confirmation_token: "token"}
+  @user %User{id: 1, email: "test@example.com", email_confirmation_token: "token"}
 
   def get_user_by_provider_uid("test_provider", "new_user-missing_email_confirmation"), do: %{@user | email_confirmed_at: nil}
 

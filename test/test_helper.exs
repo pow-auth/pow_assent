@@ -18,4 +18,4 @@ Mix.Task.run("ecto.migrate", ~w(--quiet -r PowAssent.Test.Ecto.Repo))
 Ecto.Adapters.SQL.Sandbox.mode(PowAssent.Test.Ecto.Repo, :manual)
 
 {:ok, _pid} = PowAssent.Test.Phoenix.Endpoint.start_link()
-{:ok, _pid} = PowAssent.Test.Phoenix.EndpointConfirmEmail.start_link()
+{:ok, _pid} = PowAssent.Test.EmailConfirmation.Phoenix.Endpoint.start_link()

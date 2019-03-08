@@ -1,4 +1,4 @@
-defmodule PowAssent.Test.Phoenix.EndpointConfirmEmail do
+defmodule PowAssent.Test.EmailConfirmation.Phoenix.Endpoint do
   @moduledoc false
   use Phoenix.Endpoint, otp_app: :pow_assent
 
@@ -19,13 +19,13 @@ defmodule PowAssent.Test.Phoenix.EndpointConfirmEmail do
     signing_salt: "secret"
 
   plug Pow.Plug.Session,
-    user: PowAssent.Test.Ecto.Users.UserConfirmEmail,
+    user: PowAssent.Test.EmailConfirmation.Users.User,
     routes_backend: PowAssent.Test.Phoenix.Routes,
     messages_backend: PowAssent.Test.Phoenix.Messages,
     mailer_backend: PowAssent.Test.Phoenix.MailerMock,
     otp_app: :pow_assent,
     pow_assent: [
-      user_identities_context: PowAssent.Test.UserIdentitiesConfirmEmailMock
+      user_identities_context: PowAssent.Test.EmailConfirmation.UserIdentitiesMock
     ]
 
   plug PowAssent.Test.Phoenix.Router

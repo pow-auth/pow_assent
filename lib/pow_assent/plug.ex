@@ -80,7 +80,7 @@ defmodule PowAssent.Plug do
     provider
     |> Operations.get_user_by_provider_uid(uid, config)
     |> case do
-      nil  -> create_user(conn, provider, user_params, %{})
+      nil  -> create_user(conn, provider, user_params)
       user -> {:ok, user, get_mod(config).do_create(conn, user, config)}
     end
   end
@@ -101,8 +101,8 @@ defmodule PowAssent.Plug do
   @doc """
   Create a user with user identity.
   """
-  @spec create_user(Conn.t(), binary(), map(), map()) :: {:ok, map(), Conn.t()} | {:error, map(), Conn.t()}
-  def create_user(conn, provider, params, user_id_params) do
+  @spec create_user(Conn.t(), binary(), map(), map() | nil) :: {:ok, map(), Conn.t()} | {:error, map(), Conn.t()}
+  def create_user(conn, provider, params, user_id_params \\ nil) do
     config = fetch_config(conn)
     uid    = params["uid"]
 
