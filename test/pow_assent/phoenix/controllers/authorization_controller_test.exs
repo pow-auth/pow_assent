@@ -8,13 +8,13 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   @provider "test_provider"
   @callback_params %{code: "test", redirect_uri: ""}
 
-  setup %{conn: conn} do
-    user  = %User{id: :loaded}
+  setup _context do
+    user   = %User{id: :loaded}
     bypass = Bypass.open()
 
     put_oauth2_env(bypass)
 
-    {:ok, conn: conn, user: user, bypass: bypass}
+    {:ok, user: user, bypass: bypass}
   end
 
   describe "GET /auth/:provider/new" do

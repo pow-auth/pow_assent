@@ -11,10 +11,10 @@ defmodule PowAssent.Strategy.OAuth2Test do
   end
 
   describe "callback/2" do
-    setup %{config: config} = context do
+    setup %{config: config} do
       config = Keyword.put(config, :user_url, "/api/user")
 
-      {:ok, %{context | config: config}}
+      {:ok, config: config}
     end
 
     test "normalizes data", %{config: config, callback_params: params, bypass: bypass} do

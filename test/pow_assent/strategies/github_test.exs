@@ -58,10 +58,10 @@ defmodule PowAssent.Strategy.GithubTest do
   end
 
   describe "callback/2" do
-    setup %{config: config, bypass: bypass} = context do
+    setup %{config: config, bypass: bypass} do
       config = Keyword.put(config, :token_url, "http://localhost:#{bypass.port}/login/oauth/access_token")
 
-      {:ok, %{context | config: config}}
+      {:ok, config: config}
     end
 
     test "normalizes data", %{config: config, callback_params: params, bypass: bypass} do
