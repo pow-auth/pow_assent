@@ -32,15 +32,11 @@ defmodule PowAssent.Strategy.OAuth do
   end
 
   @doc false
-  @spec callback(Keyword.t(), map(), atom()) :: {:ok, %{user: map()}} | {:error, term()}
+  @spec callback(Keyword.t(), map(), atom()) :: {:ok, %{user: map(), token: map()}} | {:error, term()}
   def callback(config, %{"oauth_token" => oauth_token, "oauth_verifier" => oauth_verifier}, strategy \\ __MODULE__) do
     config
     |> get_access_token(oauth_token, oauth_verifier)
     |> fetch_user(config, strategy)
-    |> case do
-      {:ok, user}     -> {:ok, %{user: user}}
-      {:error, error} -> {:error, error}
-    end
   end
 
   defp get_request_token(config, params) do
@@ -103,8 +99,14 @@ defmodule PowAssent.Strategy.OAuth do
   defp process_response({:error, %HTTPResponse{} = response}), do: {:error, RequestError.invalid(response)}
   defp process_response({:error, error}), do: {:error, error}
 
-  defp fetch_user({:ok, token}, config, strategy),
-    do: strategy.get_user(config, token)
+  defp fetch_user({:ok, token}, config, strategy) do
+    config
+    |> strategy.get_user(token)
+    |> case do
+      {:ok, user}     -> {:ok, %{user: user, token: token}}
+      {:error, error} -> {:error, error}
+    end
+  end
   defp fetch_user({:error, error}, _config, _strategy),
     do: {:error, error}
 

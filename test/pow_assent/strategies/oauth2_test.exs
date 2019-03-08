@@ -30,8 +30,9 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
       expect_oauth2_user_request(bypass, %{name: "Dan Schultzer", email: "foo@example.com", uid: "1"})
 
-      assert {:ok, %{user: user}} = OAuth2.callback(config, params)
+      assert {:ok, %{user: user, token: token}} = OAuth2.callback(config, params)
       assert user == %{"email" => "foo@example.com", "name" => "Dan Schultzer", "uid" => "1"}
+      assert token == %{"access_token" => "access_token"}
     end
 
     test "with redirect error", %{config: config} do

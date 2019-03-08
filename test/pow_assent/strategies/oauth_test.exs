@@ -54,7 +54,9 @@ defmodule PowAssent.Strategy.OAuthTest do
       expect_oauth_access_token_request(bypass)
       expect_oauth_user_request(bypass, %{email: nil})
 
-      assert {:ok, %{user: %{"email" => nil}}} = OAuth.callback(config, params)
+      assert {:ok, %{user: user, token: token}} = OAuth.callback(config, params)
+      assert user == %{"email" => nil}
+      assert token == %{"oauth_token" => "7588892-kagSNqWge8gB1WwE3plnFsJHAZVfxWD7Vb57p0b4&", "oauth_token_secret" => "PbKfYqSryyeKDWz4ebtY3o5ogNLG11WJuZBc9fQrQo"}
     end
 
     test "bubbles up error response", %{config: config, callback_params: params, bypass: bypass} do

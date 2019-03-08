@@ -5,6 +5,7 @@
 ### Changes
 
 * Detached `Plug` from strategies
+* `token` now included in `PowAssent.Strategy.OAuth.callback/2` response
 
 ### Update your custom strategies
 
