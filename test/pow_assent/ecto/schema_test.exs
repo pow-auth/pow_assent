@@ -38,7 +38,7 @@ defmodule PowAssent.Ecto.SchemaTest do
 
   describe "user_identity_changeset/4" do
     test "validates required" do
-      changeset = User.user_identity_changeset(%User{}, %{}, %{}, %{})
+      changeset = User.user_identity_changeset(%User{}, %{}, %{}, nil)
 
       assert [user_identity] = changeset.changes.user_identities
       assert user_identity.errors[:uid] == {"can't be blank", [validation: :required]}
@@ -54,7 +54,7 @@ defmodule PowAssent.Ecto.SchemaTest do
 
       assert {:error, changeset} =
         %User{email: "john.doe@example.com", name: "John Doe"}
-        |> User.user_identity_changeset(@user_identity, %{}, %{})
+        |> User.user_identity_changeset(@user_identity, %{}, nil)
         |> Repo.insert()
 
       assert [user_identity] = changeset.changes.user_identities
@@ -65,10 +65,10 @@ defmodule PowAssent.Ecto.SchemaTest do
       changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{}, %{email: "test@example.com"})
       refute changeset.changes[:email_confirmed_at]
 
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{email: "test@example.com"}, %{})
+      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{email: "test@example.com"}, nil)
       assert changeset.changes[:email_confirmed_at]
 
-      changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com"}, %{})
+      changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com"}, nil)
       refute changeset.changes[:email_confirmed_at]
     end
   end

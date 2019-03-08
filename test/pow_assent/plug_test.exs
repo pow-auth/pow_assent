@@ -101,6 +101,8 @@ defmodule PowAssent.PlugTest do
   end
 
   describe "create_user/4" do
+    @user_id_params %{"email" => "test@example.com"}
+
     setup %{conn: conn} do
       conn = init_session(conn)
 
@@ -108,14 +110,14 @@ defmodule PowAssent.PlugTest do
     end
 
     test "creates user", %{conn: conn} do
-      assert {:ok, {:new, user}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "new_user"}, %{"email" => "test@example.com"})
+      assert {:ok, {:new, user}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "new_user"}, @user_id_params)
 
       assert Pow.Plug.current_user(conn) == user
       assert_pow_session conn
     end
 
     test "identity bound to other user", %{conn: conn} do
-      {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "different_user"}, %{})
+      {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "different_user"}, @user_id_params)
 
       refute_pow_session conn
     end

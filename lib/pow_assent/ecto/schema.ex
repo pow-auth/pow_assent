@@ -40,17 +40,17 @@ defmodule PowAssent.Ecto.Schema do
   """
   alias Ecto.{Changeset, Schema}
 
-  @callback user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map()) :: Changeset.t()
+  @callback user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
 
   @doc false
   defmacro __using__(_config) do
     quote do
       @behaviour unquote(__MODULE__)
 
-      @spec user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map()) :: Changeset.t()
+      @spec user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
       def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs), do: pow_assent_user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs)
 
-      @spec pow_assent_user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map()) :: Changeset.t()
+      @spec pow_assent_user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
       def pow_assent_user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
         unquote(__MODULE__).changeset(user_or_changeset, user_identity, attrs, user_id_attrs, @pow_config)
       end
@@ -65,7 +65,7 @@ defmodule PowAssent.Ecto.Schema do
   Only `Pow.Ecto.Schema.Changeset.user_id_field_changeset/3` is used for
   validation as password is not required.
   """
-  @spec changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map(), Config.t()) :: Changeset.t()
+  @spec changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil, Config.t()) :: Changeset.t()
   def changeset(user_or_changeset, user_identity, attrs, user_id_attrs, _config) do
     user_or_changeset
     |> Changeset.change()
@@ -74,7 +74,7 @@ defmodule PowAssent.Ecto.Schema do
     |> Changeset.cast_assoc(:user_identities)
   end
 
-  defp user_id_field_changeset(changeset, attrs, user_id_attrs) when user_id_attrs == %{} do
+  defp user_id_field_changeset(changeset, attrs, nil) do
     changeset
     |> changeset.data.__struct__.pow_user_id_field_changeset(attrs)
     |> maybe_set_confirmed_at()

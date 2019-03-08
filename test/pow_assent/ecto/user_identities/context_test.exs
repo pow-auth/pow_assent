@@ -77,7 +77,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     @valid_params %{name: "John Doe", email: "test@example.com"}
 
     test "with valid params" do
-      assert {:ok, user} = Context.create_user("test_provider", "1", @valid_params, %{}, @config)
+      assert {:ok, user} = Context.create_user("test_provider", "1", @valid_params, nil, @config)
       user = Repo.preload(user, :user_identities, force: true)
 
       assert user.name == "John Doe"
@@ -93,11 +93,11 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
         |> Changeset.change(email: "test-2@example.com", user_identities: [%{provider: "test_provider", uid: "1"}])
         |> Repo.insert!()
 
-      assert {:error, {:bound_to_different_user, _changeset}} =  Context.create_user("test_provider", "1", @valid_params, %{}, @config)
+      assert {:error, {:bound_to_different_user, _changeset}} = Context.create_user("test_provider", "1", @valid_params, nil, @config)
     end
 
     test "when user id field is missing" do
-      assert {:error, {:invalid_user_id_field, _changeset}} =  Context.create_user("test_provider", "1", Map.delete(@valid_params, :email), %{}, @config)
+      assert {:error, {:invalid_user_id_field, _changeset}} =  Context.create_user("test_provider", "1", Map.delete(@valid_params, :email), nil, @config)
     end
   end
 

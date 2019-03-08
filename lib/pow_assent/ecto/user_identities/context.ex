@@ -47,7 +47,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
               {:ok, user()}
               | {:error, {:bound_to_different_user, map()}}
               | {:error, Changeset.t()}
-  @callback create_user(binary(), binary(), map(), map()) ::
+  @callback create_user(binary(), binary(), map(), map() | nil) ::
               {:ok, map()}
               | {:error, {:bound_to_different_user | :invalid_user_id_field, Changeset.t()}}
               | {:error, Changeset.t()}
@@ -135,7 +135,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec create_user(binary(), binary(), map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
+  @spec create_user(binary(), binary(), map(), map() | nil, Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
   def create_user(provider, uid, params, user_id_params, config) do
     user_mod      = user_schema_mod(config)
     user_identity = %{provider: provider, uid: uid}
