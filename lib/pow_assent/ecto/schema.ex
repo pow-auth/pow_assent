@@ -88,10 +88,18 @@ defmodule PowAssent.Ecto.Schema do
   def changeset(user_or_changeset, user_identity, attrs, user_id_attrs, _config) do
     user_or_changeset
     |> Changeset.change()
+    |> maybe_accept_invitation()
     |> user_id_field_changeset(attrs, user_id_attrs)
     |> Changeset.cast(%{user_identities: [user_identity]}, [])
     |> Changeset.cast_assoc(:user_identities)
   end
+
+  defp maybe_accept_invitation(%Changeset{data: %user_mod{invitation_token: token, invitation_accepted_at: nil} = changeset}) when not is_nil(token) do
+    accepted_at = Pow.Ecto.Schema.__timestamp_for__(user_mod, :invitation_accepted_at)
+
+    Changeset.change(changeset, invitation_accepted_at: accepted_at)
+  end
+  defp maybe_accept_invitation(changeset), do: changeset
 
   defp user_id_field_changeset(changeset, attrs, nil) do
     changeset
