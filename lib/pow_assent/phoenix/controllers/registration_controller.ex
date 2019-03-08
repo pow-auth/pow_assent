@@ -38,8 +38,8 @@ defmodule PowAssent.Phoenix.RegistrationController do
   @spec respond_create({:error, map(), Conn.t()}) :: Conn.t()
   def respond_create({:error, {:bound_to_different_user, _changeset}, conn}) do
     conn
-    |> put_flash(:error, messages(conn).invalid_request(conn))
-    |> redirect(to: routes(conn).after_sign_out_path(conn))
+    |> put_flash(:error, messages(conn).account_already_bound_to_other_user(conn))
+    |> redirect(to: routes(conn).registration_path(conn, :new))
   end
   def respond_create({:error, {:invalid_user_id_field, changeset}, conn}),
     do: respond_create({:error, changeset, conn})

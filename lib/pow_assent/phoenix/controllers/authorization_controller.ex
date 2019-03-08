@@ -95,17 +95,12 @@ defmodule PowAssent.Phoenix.AuthorizationController do
 
   defp after_delete_path(conn), do: routes(conn).registration_path(conn, :edit)
 
-  defp load_state_from_session(%{private: %{plug_session: plug_session}} = conn, _opts) do
-    case plug_session do
-      %{"pow_assent_state" => state} ->
-        conn
-        |> Conn.put_private(:pow_assent_state, state)
-        |> Conn.put_session("pow_assent_state", nil)
-
-      _ ->
-        conn
-    end
+  defp load_state_from_session(%{private: %{plug_session: %{"pow_assent_state" => state}}} = conn, _opts) do
+    conn
+    |> Conn.put_private(:pow_assent_state, state)
+    |> Conn.put_session("pow_assent_state", nil)
   end
+  defp load_state_from_session(conn, _opts), do: conn
 
   defp assign_callback_url(conn, _opts) do
     url = routes(conn).url_for(conn, AuthorizationController, :callback, [conn.params["provider"]])

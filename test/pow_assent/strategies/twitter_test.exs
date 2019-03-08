@@ -1,7 +1,6 @@
 defmodule PowAssent.Strategy.TwitterTest do
-  use PowAssent.Test.Phoenix.ConnCase
+  use PowAssent.Test.OAuthTestCase
 
-  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.Twitter
 
   @user_response %{
@@ -98,33 +97,27 @@ defmodule PowAssent.Strategy.TwitterTest do
     verified: false
   }
 
-  setup :setup_bypass_oauth
-
-  test "authorize_url/2", %{conn: conn, config: config, bypass: bypass} do
+  test "authorize_url/2", %{config: config, bypass: bypass} do
     expect_oauth_request_token_request(bypass)
 
-    assert {:ok, %{conn: _conn, url: url}} = Twitter.authorize_url(config, conn)
-    assert url =~ bypass_server(bypass) <> "/oauth/authenticate?oauth_token=token"
+    assert {:ok, %{url: url}} = Twitter.authorize_url(config)
+    assert url =~ "http://localhost:#{bypass.port}/oauth/authenticate?oauth_token=token"
   end
 
-  describe "callback/2" do
-    test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      expect_oauth_access_token_request(bypass)
-      expect_oauth_user_request(bypass, @user_response, uri: "/1.1/account/verify_credentials.json")
+  test "callback/2", %{config: config, callback_params: params, bypass: bypass} do
+    expect_oauth_access_token_request(bypass)
+    expect_oauth_user_request(bypass, @user_response, uri: "/1.1/account/verify_credentials.json")
 
-      expected = %{
-        "description" =>
-          "I taught your phone that thing you like.  The Mobile Partner Engineer @Twitter. ",
-        "image" => "https://si0.twimg.com/profile_images/1751506047/dead_sexy_normal.JPG",
-        "location" => "San Francisco",
-        "name" => "Sean Cook",
-        "nickname" => "theSeanCook",
-        "uid" => "38895958",
-        "urls" => %{"Twitter" => "https://twitter.com/theSeanCook"}
-      }
-
-      {:ok, %{user: user}} = Twitter.callback(config, conn, params)
-      assert expected == user
-    end
+    assert {:ok, %{user: user}} = Twitter.callback(config, params)
+    assert user == %{
+      "description" =>
+        "I taught your phone that thing you like.  The Mobile Partner Engineer @Twitter. ",
+      "image" => "https://si0.twimg.com/profile_images/1751506047/dead_sexy_normal.JPG",
+      "location" => "San Francisco",
+      "name" => "Sean Cook",
+      "nickname" => "theSeanCook",
+      "uid" => "38895958",
+      "urls" => %{"Twitter" => "https://twitter.com/theSeanCook"}
+    }
   end
 end

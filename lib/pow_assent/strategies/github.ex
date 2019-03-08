@@ -29,7 +29,7 @@ defmodule PowAssent.Strategy.Github do
     ]
   end
 
-  @spec normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @spec normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
   def normalize(_config, user) do
     {:ok, %{
       "uid"      => Integer.to_string(user["id"]),
@@ -42,7 +42,7 @@ defmodule PowAssent.Strategy.Github do
         "Blog"   => user["blog"]}}}
   end
 
-  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
   def get_user(config, access_token) do
     config
     |> OAuth2.get_user(access_token)

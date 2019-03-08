@@ -25,26 +25,21 @@ defmodule PowAssent.Strategy.OAuth2.Base do
   """
   alias PowAssent.Strategy, as: Helpers
   alias PowAssent.Strategy.OAuth2
-  alias Plug.Conn
 
   @callback default_config(Keyword.t()) :: Keyword.t()
-  @callback normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
-  @callback get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @callback normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
+  @callback get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
 
   @doc false
   defmacro __using__(_opts) do
     quote do
       @behaviour unquote(__MODULE__)
 
-      use PowAssent.Strategy
-
       alias PowAssent.Strategy, as: Helpers
 
-      @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
-      def authorize_url(config, conn), do: unquote(__MODULE__).authorize_url(config, conn, __MODULE__)
+      def authorize_url(config), do: unquote(__MODULE__).authorize_url(config, __MODULE__)
 
-      @spec callback(Keyword.t(), Conn.t(), map()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
-      def callback(config, conn, params), do: unquote(__MODULE__).callback(config, conn, params, __MODULE__)
+      def callback(config, params), do: unquote(__MODULE__).callback(config, params, __MODULE__)
 
       def get_user(config, token), do: OAuth2.get_user(config, token)
 
@@ -52,19 +47,19 @@ defmodule PowAssent.Strategy.OAuth2.Base do
     end
   end
 
-  @spec authorize_url(Keyword.t(), Conn.t(), module()) :: {:ok, %{conn: Conn.t(), state: binary(), url: binary()}}
-  def authorize_url(config, conn, strategy) do
+  @spec authorize_url(Keyword.t(), module()) :: {:ok, %{state: binary(), url: binary()}}
+  def authorize_url(config, strategy) do
     config
     |> set_config(strategy)
-    |> OAuth2.authorize_url(conn)
+    |> OAuth2.authorize_url()
   end
 
-  @spec callback(Keyword.t(), Conn.t(), map(), module()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
-  def callback(config, conn, params, strategy) do
+  @spec callback(Keyword.t(), map(), module()) :: {:ok, %{user: map()}} | {:error, term()}
+  def callback(config, params, strategy) do
     config = set_config(config, strategy)
 
     config
-    |> OAuth2.callback(conn, params, strategy)
+    |> OAuth2.callback(params, strategy)
     |> normalize(config, strategy)
   end
 

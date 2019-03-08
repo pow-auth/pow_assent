@@ -1,7 +1,6 @@
 defmodule PowAssent.Strategy.GithubTest do
-  use PowAssent.Test.Phoenix.ConnCase
+  use PowAssent.Test.OAuth2TestCase
 
-  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.Github
 
   @user_response %{
@@ -36,7 +35,6 @@ defmodule PowAssent.Strategy.GithubTest do
     created_at: "2008-01-14T04:33:35Z",
     updated_at: "2008-01-14T04:33:35Z"
   }
-
   @emails_response [
     %{
       email: "octocat@github.com",
@@ -45,43 +43,34 @@ defmodule PowAssent.Strategy.GithubTest do
       visibility: "public"
     }
   ]
+  @user %{
+    "email" => "octocat@github.com",
+    "image" => "https://github.com/images/error/octocat_happy.gif",
+    "name" => "monalisa octocat",
+    "nickname" => "octocat",
+    "uid" => "1",
+    "urls" => %{"Blog" => "https://github.com/blog", "GitHub" => "https://github.com/octocat"}
+  }
 
-  setup :setup_bypass
-
-  setup context do
-    config = Keyword.put(context[:config], :token_url, "/login/oauth/access_token")
-
-    {:ok, Map.to_list(%{context | config: config})}
-  end
-
-  test "authorize_url/2", %{conn: conn, config: config} do
-    assert {:ok, %{conn: _conn, url: url}} = Github.authorize_url(config, conn)
+  test "authorize_url/2", %{config: config} do
+    assert {:ok, %{url: url}} = Github.authorize_url(config)
     assert url =~ "https://github.com/login/oauth/authorize?client_id="
   end
 
   describe "callback/2" do
-    setup %{conn: conn, config: config, bypass: bypass} do
-      params = %{"code" => "test", "redirect_uri" => "test"}
+    setup %{config: config, bypass: bypass} do
+      config = Keyword.put(config, :token_url, "http://localhost:#{bypass.port}/login/oauth/access_token")
 
-      {:ok, conn: conn, config: config, params: params, bypass: bypass}
+      {:ok, config: config}
     end
 
-    test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
+    test "normalizes data", %{config: config, callback_params: params, bypass: bypass} do
       expect_oauth2_access_token_request(bypass, uri: "/login/oauth/access_token")
       expect_oauth2_user_request(bypass, @user_response, uri: "/user")
       expect_oauth2_api_request(bypass, "/user/emails", @emails_response)
 
-      expected = %{
-        "email" => "octocat@github.com",
-        "image" => "https://github.com/images/error/octocat_happy.gif",
-        "name" => "monalisa octocat",
-        "nickname" => "octocat",
-        "uid" => "1",
-        "urls" => %{"Blog" => "https://github.com/blog", "GitHub" => "https://github.com/octocat"}
-      }
-
-      {:ok, %{user: user}} = Github.callback(config, conn, params)
-      assert expected == user
+      assert {:ok, %{user: user}} = Github.callback(config, params)
+      assert user == @user
     end
   end
 end

@@ -1,7 +1,6 @@
 defmodule PowAssent.Strategy.SlackTest do
-  use PowAssent.Test.Phoenix.ConnCase
+  use PowAssent.Test.OAuth2TestCase
 
-  import PowAssent.OAuthHelpers
   alias PowAssent.Strategy.Slack
 
   @user_response %{
@@ -22,35 +21,24 @@ defmodule PowAssent.Strategy.SlackTest do
       "name" => "Captain Fabian's Naval Supply"
     }
   }
+  @user %{
+    "uid" => "U0G9QF9C6-T0G9PQBBK",
+    "image" => "https://secure.gravatar.com/avatar/e3b51ca72dee4ef87916ae2b9240df50.jpg?s=48&d=https%3A%2F%2Fdev.slack.com%2Fimg%2Favatars%2Fava_0010-48.v1441146555.png",
+    "name" => "Sonny Whether",
+    "team_name" => "Captain Fabian's Naval Supply",
+    "email" => "sonny@captain-fabian.com"
+  }
 
-  setup :setup_bypass
-
-  test "authorize_url/2", %{conn: conn, config: config} do
-    assert {:ok, %{conn: _conn, url: url}} = Slack.authorize_url(config, conn)
+  test "authorize_url/2", %{config: config} do
+    assert {:ok, %{url: url}} = Slack.authorize_url(config)
     assert url =~ "/oauth/authorize?client_id="
   end
 
-  describe "callback/2" do
-    setup %{conn: conn, config: config, bypass: bypass} do
-      params = %{"code" => "test", "redirect_uri" => "test"}
+  test "callback/2", %{config: config, callback_params: params, bypass: bypass} do
+    expect_oauth2_access_token_request(bypass, uri: "/api/oauth.access")
+    expect_oauth2_user_request(bypass, @user_response, uri: "/api/users.identity")
 
-      {:ok, conn: conn, config: config, params: params, bypass: bypass}
-    end
-
-    test "normalizes data", %{conn: conn, config: config, params: params, bypass: bypass} do
-      expect_oauth2_access_token_request(bypass, uri: "/api/oauth.access")
-      expect_oauth2_user_request(bypass, @user_response, uri: "/api/users.identity")
-
-      expected = %{
-        "uid" => "U0G9QF9C6-T0G9PQBBK",
-        "image" => "https://secure.gravatar.com/avatar/e3b51ca72dee4ef87916ae2b9240df50.jpg?s=48&d=https%3A%2F%2Fdev.slack.com%2Fimg%2Favatars%2Fava_0010-48.v1441146555.png",
-        "name" => "Sonny Whether",
-        "team_name" => "Captain Fabian's Naval Supply",
-        "email" => "sonny@captain-fabian.com"
-      }
-
-      {:ok, %{user: user}} = Slack.callback(config, conn, params)
-      assert expected == user
-    end
+    assert {:ok, %{user: user}} = Slack.callback(config, params)
+    assert user == @user
   end
 end

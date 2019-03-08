@@ -54,7 +54,7 @@ defmodule PowAssent.Strategy.Facebook do
     "#{config[:site]}/#{user["id"]}/picture"
   end
 
-  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, any()}
+  @spec get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
   def get_user(config, access_token) do
     params = [
       appsecret_proof: appsecret_proof(config, access_token),

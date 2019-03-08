@@ -14,34 +14,29 @@ defmodule PowAssent.Strategy.OAuth do
           ]
         ]
   """
-  use PowAssent.Strategy
+  @behaviour PowAssent.Strategy
 
   alias PowAssent.Strategy, as: Helpers
   alias PowAssent.{HTTPAdapter.HTTPResponse, RequestError}
-  alias Plug.Conn
 
   @doc false
-  @spec authorize_url(Keyword.t(), Conn.t()) :: {:ok, %{conn: Conn.t(), url: binary()}} | {:error, %{conn: Conn.t(), error: any()}}
-  def authorize_url(config, conn) do
+  @spec authorize_url(Keyword.t()) :: {:ok, %{url: binary()}} | {:error, term()}
+  def authorize_url(config) do
     config
     |> get_request_token([{"oauth_callback", config[:redirect_uri]}])
     |> build_authorize_url(config)
     |> case do
-      {:ok, url}     -> {:ok, %{conn: conn, url: url}}
-      {:error, term} -> {:error, %{conn: conn, error: term}}
+      {:ok, url}      -> {:ok, %{url: url}}
+      {:error, error} -> {:error, error}
     end
   end
 
   @doc false
-  @spec callback(Keyword.t(), Conn.t(), map(), atom()) :: {:ok, %{conn: Conn.t(), user: map()}} | {:error, %{conn: Conn.t(), error: any()}}
-  def callback(config, conn, %{"oauth_token" => oauth_token, "oauth_verifier" => oauth_verifier}, strategy \\ __MODULE__) do
+  @spec callback(Keyword.t(), map(), atom()) :: {:ok, %{user: map(), token: map()}} | {:error, term()}
+  def callback(config, %{"oauth_token" => oauth_token, "oauth_verifier" => oauth_verifier}, strategy \\ __MODULE__) do
     config
     |> get_access_token(oauth_token, oauth_verifier)
     |> fetch_user(config, strategy)
-    |> case do
-      {:ok, user}    -> {:ok, %{conn: conn, user: user}}
-      {:error, error} -> {:error, %{conn: conn, error: error}}
-    end
   end
 
   defp get_request_token(config, params) do
@@ -104,8 +99,14 @@ defmodule PowAssent.Strategy.OAuth do
   defp process_response({:error, %HTTPResponse{} = response}), do: {:error, RequestError.invalid(response)}
   defp process_response({:error, error}), do: {:error, error}
 
-  defp fetch_user({:ok, token}, config, strategy),
-    do: strategy.get_user(config, token)
+  defp fetch_user({:ok, token}, config, strategy) do
+    config
+    |> strategy.get_user(token)
+    |> case do
+      {:ok, user}     -> {:ok, %{user: user, token: token}}
+      {:error, error} -> {:error, error}
+    end
+  end
   defp fetch_user({:error, error}, _config, _strategy),
     do: {:error, error}
 
