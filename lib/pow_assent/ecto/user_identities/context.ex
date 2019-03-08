@@ -36,7 +36,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   alias Ecto.Changeset
   alias PowAssent.Config
-  # import Ecto.Query, only: [where: 3, join: 3, select: 3]
+  alias Pow.Ecto.Context
   import Ecto.Query
 
   @type user :: map()
@@ -120,7 +120,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
     user_identity
     |> user_identity.__struct__.changeset(%{provider: provider, uid: uid})
-    |> repo(config).insert()
+    |> Context.do_insert(config)
     |> case do
       {:error, %{errors: [uid_provider: _]} = changeset} ->
         {:error, {:bound_to_different_user, changeset}}
@@ -144,7 +144,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     user_mod
     |> struct()
     |> user_mod.user_identity_changeset(user_identity, params, user_id_params)
-    |> repo(config).insert()
+    |> Context.do_insert(config)
     |> case do
       {:error, %{changes: %{user_identities: [%{errors: [uid_provider: _]}]}} = changeset} ->
         {:error, {:bound_to_different_user, changeset}}

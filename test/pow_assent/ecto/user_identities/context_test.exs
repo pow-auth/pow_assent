@@ -78,6 +78,8 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
 
     test "with valid params" do
       assert {:ok, user} = Context.create_user("test_provider", "1", @valid_params, %{}, @config)
+      user = Repo.preload(user, :user_identities, force: true)
+
       assert user.name == "John Doe"
       assert user.email == "test@example.com"
       assert [user_identity] = user.user_identities
