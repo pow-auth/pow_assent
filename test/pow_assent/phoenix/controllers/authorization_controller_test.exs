@@ -147,7 +147,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
   end
 
-  alias PowAssent.Test.Phoenix.EndpointConfirmEmail
+  alias PowAssent.Test.EmailConfirmation.Phoenix.Endpoint, as: EmailConfirmationEndpoint
   describe "GET /auth/:provider/callback as authentication with email confirmation" do
     test "with missing e-mail confirmation", %{conn: conn, bypass: bypass} do
       expect_oauth2_flow(bypass, user: %{uid: "new_user-missing_email_confirmation"})
@@ -155,7 +155,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn =
         conn
         |> Plug.Conn.put_session(:pow_assent_state, "token")
-        |> Phoenix.ConnTest.dispatch(EndpointConfirmEmail, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+        |> Phoenix.ConnTest.dispatch(EmailConfirmationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       refute Pow.Plug.current_user(conn)
 

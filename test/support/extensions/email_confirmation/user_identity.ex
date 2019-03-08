@@ -1,8 +1,8 @@
-defmodule PowAssent.Test.Ecto.UserIdentities.UserIdentityConfirmEmail do
+defmodule PowAssent.Test.EmailConfirmation.UserIdentities.UserIdentity do
   @moduledoc false
   use Ecto.Schema
   use PowAssent.Ecto.UserIdentities.Schema,
-    user: PowAssent.Test.Ecto.Users.UserConfirmEmail
+    user: PowAssent.Test.EmailConfirmation.Users.User
 
   schema "user_identities" do
     pow_assent_user_identity_fields()

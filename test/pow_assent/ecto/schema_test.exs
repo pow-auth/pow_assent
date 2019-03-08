@@ -18,7 +18,8 @@ defmodule PowAssent.Ecto.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.Schema
 
-  alias PowAssent.Test.Ecto.{Repo, Users.UserConfirmEmail, Users.User}
+  alias PowAssent.Test.Ecto.{Repo, Users.User}
+  alias PowAssent.Test.EmailConfirmation.Users.User, as: UserConfirmEmail
 
   test "user_schema/1" do
     user = %User{}
@@ -65,11 +66,9 @@ defmodule PowAssent.Ecto.SchemaTest do
       refute changeset.changes[:email_confirmed_at]
 
       changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{email: "test@example.com"}, %{})
-
       assert changeset.changes[:email_confirmed_at]
 
       changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com"}, %{})
-
       refute changeset.changes[:email_confirmed_at]
     end
   end
