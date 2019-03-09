@@ -9,6 +9,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
 
   plug :require_authenticated when action in [:delete]
   plug :assign_callback_url when action in [:new, :callback]
+  plug :load_user_by_invitation_token when action in [:callback]
 
   @spec process_new(Conn.t(), map()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
   def process_new(conn, %{"provider" => provider}) do
@@ -19,12 +20,16 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   def respond_new({:ok, url, conn}) do
     conn
     |> maybe_store_state()
+    |> maybe_store_invitation_token()
     |> redirect(external: url)
   end
   def respond_new({:error, error, _conn}), do: handle_strategy_error(error)
 
   defp maybe_store_state(%{private: %{pow_assent_state: state}} = conn), do: store_state(conn, state)
   defp maybe_store_state(conn), do: conn
+
+  defp maybe_store_invitation_token(%{params: %{"invitation_token" => token}} = conn), do: store_invitation_token(conn, token)
+  defp maybe_store_invitation_token(conn), do: conn
 
   @spec process_callback(Conn.t(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()} | {:error, {atom(), map()} | map(), Conn.t()}
   def process_callback(conn, %{"provider" => provider} = params) do
@@ -41,10 +46,13 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     end
   end
 
-  defp handle_callback({:ok, user, conn}, provider) do
+  defp handle_callback({:ok, user_params, %{assigns: %{invited_user: invited_user}} = conn}, provider) do
+    authenticate_or_create_identity(invited_user, provider, user_params, conn)
+  end
+  defp handle_callback({:ok, user_params, conn}, provider) do
     conn
     |> Pow.Plug.current_user()
-    |> authenticate_or_create_identity(provider, user, conn)
+    |> authenticate_or_create_identity(provider, user_params, conn)
   end
   defp handle_callback({:error, error, _conn}, _provider), do: handle_strategy_error(error)
 
@@ -154,14 +162,26 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     assign(conn, :callback_url, url)
   end
 
-  defp store_state(conn, state) do
-    Conn.put_session(conn, :pow_assent_state, state)
-  end
+  defp store_state(conn, state), do: Conn.put_session(conn, :pow_assent_state, state)
 
   defp fetch_state(%{private: %{plug_session: %{"pow_assent_state" => state}}} = conn) do
     {state, Conn.put_session(conn, :pow_assent_state, nil)}
   end
   defp fetch_state(conn), do: conn
+
+  defp store_invitation_token(conn, token), do: Conn.put_session(conn, :pow_assent_invitation_token, token)
+
+  defp load_user_by_invitation_token(%{private: %{plug_session: %{"pow_assent_invitation_token" => token}}} = conn, _opts) do
+    conn = Conn.delete_session(conn,:pow_assent_invitation_token)
+
+    conn
+    |> PowInvitation.Plug.invited_user_from_token(token)
+    |> case do
+      nil  -> conn
+      user -> PowInvitation.Plug.assign_invited_user(conn, user)
+    end
+  end
+  defp load_user_by_invitation_token(conn, _opts), do: conn
 
   defp handle_strategy_error(error), do: raise error
 end
