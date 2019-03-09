@@ -167,6 +167,24 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
   end
 
+  alias PowAssent.Test.NoRegistration.Phoenix.Endpoint, as: NoRegistrationEndpoint
+  describe "GET /auth/:provider/callback as authentication with missing registration routes" do
+    test "can't register", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{uid: "new_user"})
+
+      conn =
+        conn
+        |> Plug.Conn.put_session(:pow_assent_state, "token")
+        |> Phoenix.ConnTest.dispatch(NoRegistrationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      refute Pow.Plug.current_user(conn)
+      refute Plug.Conn.get_session(conn, :pow_assent_state)
+
+      assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+      assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
+    end
+  end
+
   describe "DELETE /auth/:provider" do
     test "when requires a user password set", %{conn: conn} do
       conn =

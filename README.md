@@ -256,6 +256,30 @@ end
 
 The fields available can be found in the `normalize/2` method of [the strategy](lib/pow_assent/strategies/).
 
+## Disable registration
+
+You can disable registration by only using `pow_assent_authorization_routes/0` in `router.ex`:
+
+```elixir
+defmodule MyAppWeb.Router do
+  use MyAppWeb, :router
+  use Pow.Phoenix.Router
+  use PowAssent.Phoenix.Router
+
+  # ...
+
+  scope "/" do
+    pipe_through [:browser]
+    pow_routes()
+    pow_assent_authorization_routes()
+  end
+
+  # ...
+end
+```
+
+PowAssent will pick it up in the authorization flow, and prevent creating a user if the registration path is missing.
+
 ## HTTP Adapter
 
 By default Erlangs built-in `:httpc` is used for requests. SSL verification is automatically enabled when `:certifi` and `:ssl_verify_fun` packages are available. `:httpc` only supports HTTP/1.1.

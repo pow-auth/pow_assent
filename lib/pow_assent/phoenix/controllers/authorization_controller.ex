@@ -65,6 +65,19 @@ defmodule PowAssent.Phoenix.AuthorizationController do
 
   defp maybe_create_user({:ok, conn}, _provider, _user), do: {:ok, conn}
   defp maybe_create_user({:error, conn}, provider, user) do
+    case registration_path?(conn) do
+      true  -> create_user(conn, provider, user)
+      false -> {:error, conn}
+    end
+  end
+
+  defp registration_path?(conn) do
+    [conn.private.phoenix_router, Helpers]
+    |> Module.concat()
+    |> function_exported?(:pow_assent_registration_path, 3)
+  end
+
+  defp create_user(conn, provider, user) do
     case Plug.create_user(conn, provider, user) do
       {:ok, _user, conn}    -> {:ok, Conn.put_private(conn, :pow_assent_action, :registration)}
       {:error, error, conn} -> {:error, error, Conn.put_private(conn, :pow_assent_params, user)}

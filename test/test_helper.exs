@@ -19,3 +19,4 @@ Ecto.Adapters.SQL.Sandbox.mode(PowAssent.Test.Ecto.Repo, :manual)
 
 {:ok, _pid} = PowAssent.Test.Phoenix.Endpoint.start_link()
 {:ok, _pid} = PowAssent.Test.EmailConfirmation.Phoenix.Endpoint.start_link()
+{:ok, _pid} = PowAssent.Test.NoRegistration.Phoenix.Endpoint.start_link()
