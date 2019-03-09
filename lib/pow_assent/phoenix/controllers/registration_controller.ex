@@ -58,9 +58,9 @@ defmodule PowAssent.Phoenix.RegistrationController do
     ControllerCallbacks.before_respond(Pow.Phoenix.RegistrationController, :create, {:ok, user, conn}, [])
   end
 
-  defp load_params_from_session(%{private: %{plug_session: plug_session}} = conn, _opts) do
+  defp load_params_from_session(%{params: %{"provider" => provider}, private: %{plug_session: plug_session}} = conn, _opts) do
     case plug_session do
-      %{"pow_assent_params" => params} ->
+      %{"pow_assent_params" => %{^provider => params}} ->
         Conn.put_private(conn, :pow_assent_params, params)
 
       _ ->

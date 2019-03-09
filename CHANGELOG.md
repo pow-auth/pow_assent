@@ -7,6 +7,7 @@
 * Detached `Plug` from strategies
 * Moved callback registration/session logic from plug to controllers
 * Allow for disabling registration by setting just `pow_assent_authorize_routes/0` macro in router
+* Ensure only `:pow_assent_params` session value only can be read with the same provider param used for the callback
 * `token` now included in `PowAssent.Strategy.OAuth.callback/2` response
 * Use `account_already_bound_to_other_user/1` message for already taken user identity in `PowAssent.Phoenix.RegistrationController`
 

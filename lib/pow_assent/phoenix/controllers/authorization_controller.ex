@@ -110,9 +110,9 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> put_flash(:error, messages(conn).account_already_bound_to_other_user(conn))
     |> redirect(to: routes(conn).session_path(conn, :new))
   end
-  def respond_callback({:error, {:invalid_user_id_field, _changeset}, %{private: %{pow_assent_params: params}} = conn}) do
+  def respond_callback({:error, {:invalid_user_id_field, _changeset}, %{params: %{"provider" => provider}, private: %{pow_assent_params: params}} = conn}) do
     conn
-    |> Conn.put_session(:pow_assent_params, params)
+    |> Conn.put_session(:pow_assent_params, %{provider => params})
     |> redirect(to: routes(conn).path_for(conn, RegistrationController, :add_user_id, [conn.params["provider"]]))
   end
   def respond_callback({:error, _changeset, conn}),
