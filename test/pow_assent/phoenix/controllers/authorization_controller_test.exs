@@ -25,6 +25,12 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert Plug.Conn.get_session(conn, :pow_assent_state)
     end
 
+    test "redirects with invitation_token saved", %{conn: conn} do
+      conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider, invitation_token: "token")
+
+      assert Plug.Conn.get_session(conn, :pow_assent_invitation_token) == "token"
+    end
+
     test "with error", %{conn: conn, bypass: bypass} do
       put_oauth2_env(bypass, fail_authorize_url: true)
 
@@ -86,7 +92,6 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == "/session_created"
       assert get_flash(conn, :info) == "signed_in_test_provider"
-      assert Pow.Plug.current_user(conn) == user
       refute Plug.Conn.get_session(conn, :pow_assent_state)
     end
 
@@ -164,6 +169,24 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert_received {:mail_mock, mail}
       mail.html =~ "http://example.com/confirm-email/"
+    end
+  end
+
+  alias PowAssent.Test.Invitation.Phoenix.Endpoint, as: InvitationEndpoint
+  describe "GET /auth/:provider/callback as authentication with invitation" do
+    test "with invitation_token updates user as accepted invtation", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{uid: "new_identity"})
+
+      conn =
+        conn
+        |> Plug.Conn.put_session(:pow_assent_state, "token")
+        |> Plug.Conn.put_session(:pow_assent_invitation_token, "token")
+        |> Phoenix.ConnTest.dispatch(InvitationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      assert redirected_to(conn) == "/session_created"
+      assert get_flash(conn, :info) == "signed_in_test_provider"
+      refute Plug.Conn.get_session(conn, :pow_assent_invitation_token)
+      refute Plug.Conn.get_session(conn, :pow_assent_state)
     end
   end
 
