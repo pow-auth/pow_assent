@@ -62,7 +62,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     test "with identity already bound to another user", %{conn: conn} do
       conn =
         conn
-        |> Plug.Conn.put_session(:pow_assent_params, %{"uid" => "different_user", "name" => "John Doe"})
+        |> Plug.Conn.put_session(:pow_assent_params, %{"uid" => "identity_taken", "name" => "John Doe"})
         |> post(Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :new)
@@ -73,14 +73,15 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   alias PowAssent.Test.EmailConfirmation.Phoenix.Endpoint, as: EmailConfirmationEndpoint
   describe "GET /auth/:provider/create with PowEmailConfirmation" do
     test "with user email", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch conn, EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}}
+      conn =
+        conn
+        |> Plug.Conn.put_session(:pow_assent_params, %{"uid" => "new_user"})
+        |> Phoenix.ConnTest.dispatch(EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
 
-      assert redirected_to(conn) == "/registration_created"
-      assert get_flash(conn, :info) == "user_created_test_provider"
+      refute Pow.Plug.current_user(conn)
 
-      assert user = Pow.Plug.current_user(conn)
-      assert user.email == "foo@example.com"
-      assert user.email_confirmation_token
+      assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+      assert get_flash(conn, :error) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
 
       assert_received {:mail_mock, mail}
       mail.html =~ "http://example.com/confirm-email/"

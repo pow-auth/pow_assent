@@ -12,18 +12,18 @@ defmodule PowAssent.Test.UserIdentitiesMock do
   def get_user_by_provider_uid("test_provider", "existing_user"), do: @user
   def get_user_by_provider_uid("test_provider", "new_user"), do: nil
 
-  def create(%User{id: :loaded}, "test_provider", "new_identity"), do: {:ok, :new_identity}
-  def create(%User{id: :bound_to_different_user}, "test_provider", "new_identity"), do: {:error, {:bound_to_different_user, %{}}}
+  def create(_user, "test_provider", "new_identity"), do: {:ok, %UserIdentity{id: :new_identity}}
+  def create(_user, "test_provider", "identity_taken"), do: {:error, {:bound_to_different_user, Ecto.Changeset.change(%UserIdentity{})}}
 
+  def create_user("test_provider", "identity_taken", _params, _user_id_params), do: {:error, {:bound_to_different_user, Ecto.Changeset.change(%UserIdentity{})}}
   def create_user("test_provider", "new_user", %{"name" => ""}, _user_id_params), do: {:error, @changeset_invalid_name}
   def create_user("test_provider", "new_user", %{"email" => ""}, _user_id_params), do: {:error, {:invalid_user_id_field, %{}}}
   def create_user("test_provider", "new_user", %{"email" => "taken@example.com"}, _user_id_params), do: {:error, {:invalid_user_id_field, @changeset_taken_email}}
   def create_user("test_provider", "new_user", _params, %{"email" => "foo@example.com"}), do: {:ok, %{@created_user_with_identity | email: "foo@example.com"}}
   def create_user("test_provider", "new_user", _params, %{"email" => "taken@example.com"}), do: {:error, {:invalid_user_id_field, @changeset_taken_email}}
   def create_user("test_provider", "new_user", _params, _user_id_params), do: {:ok, @created_user_with_identity}
-  def create_user("test_provider", "different_user", _params, _user_id_params), do: {:error, {:bound_to_different_user, %{}}}
 
-  def delete(@user, "test_provider"), do: {:ok, {1, nil}}
+  def delete(%User{}, "test_provider"), do: {:ok, {1, nil}}
   def delete(:error, "test_provider"), do: {:error, :error}
   def delete(:no_password, "test_provider"), do: {:error, {:no_password, nil}}
 

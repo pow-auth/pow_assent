@@ -18,16 +18,18 @@ defmodule PowAssent.Plug do
   alias PowAssent.{Config, Operations}
 
   @doc """
-  Calls the authentication method for the strategy provider.
+  Calls the authorize_url method for the provider strategy.
 
-  A generated redirection URL will be returned.
+  A generated authorization URL will be returned. If `:state` is returned from
+  the provider, it'll be added to the connection as private key
+  `:pow_assent_state`.
   """
-  @spec authenticate(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error. any(), Conn.t()}
-  def authenticate(conn, provider, callback_url) do
+  @spec authorize_url(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error. any(), Conn.t()}
+  def authorize_url(conn, provider, redirect_uri) do
     {strategy, provider_config} = get_provider_config(conn, provider)
 
     provider_config
-    |> Config.put(:redirect_uri, callback_url)
+    |> Config.put(:redirect_uri, redirect_uri)
     |> strategy.authorize_url()
     |> maybe_put_state(conn)
   end
@@ -39,85 +41,86 @@ defmodule PowAssent.Plug do
   defp maybe_put_state({:error, error}, conn), do: {:error, error, conn}
 
   @doc """
-  Calls the callback method for the strategy provider.
+  Calls the callback method for the provider strategy.
 
-  A user will be created if a user doesn't already exists in connection or for
-  the associated user identity. If a matching user identity association doesn't
-  exist for the current user, a new user identity is created. Otherwise user is
-  authenticated.
+  Returns the user params fetched from the provider.
+
+  `:state` will be added to the provider config if `:pow_assent_state` is
+  present as a private key in the connection.
   """
-  @spec callback(Conn.t(), binary(), map()) :: {:ok, map(), Conn.t()} |
-                                               {:error, {:bound_to_different_user | :invalid_user_id_field, map()}, Conn.t()} |
-                                               {:error, {:strategy, any()}, Conn.t()} |
-                                               {:error, map(), Conn.t()}
-  def callback(conn, provider, params) do
-    config                      = fetch_config(conn)
-    {strategy, provider_config} = get_provider_config(config, provider)
+  @spec callback(Conn.t(), binary(), map(), binary()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
+  def callback(conn, provider, params, redirect_uri) do
+    {strategy, provider_config} = get_provider_config(conn, provider)
+    params                      = Map.put(params, "redirect_uri", redirect_uri)
 
     provider_config
     |> maybe_set_state_config(conn)
     |> strategy.callback(params)
-    |> get_or_create_identity(provider, conn, config)
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user, conn}
+      {:error, error}      -> {:error, error, conn}
+    end
   end
 
-  defp maybe_set_state_config(config, %{private: %{pow_assent_state: state}}) do
-    Config.put(config, :state, state)
-  end
+  defp maybe_set_state_config(config, %{private: %{pow_assent_state: state}}), do: Config.put(config, :state, state)
   defp maybe_set_state_config(config, _conn), do: config
 
-  defp get_or_create_identity({:ok, %{user: user_params}}, provider, conn, config) do
-    conn
-    |> Pow.Plug.current_user()
-    |> case do
-      nil  -> get_or_create_user(conn, provider, user_params, config)
-      user -> create_identity(conn, user, provider, user_params, config)
-    end
-    |> maybe_assign_params(user_params)
-  end
-  defp get_or_create_identity({:error, error}, _provider, conn, _config), do: {:error, {:strategy, error}, conn}
-
-  defp get_or_create_user(conn, provider, %{"uid" => uid} = user_params, config) do
-    provider
-    |> Operations.get_user_by_provider_uid(uid, config)
-    |> case do
-      nil  -> create_user(conn, provider, user_params)
-      user -> {:ok, user, get_mod(config).do_create(conn, user, config)}
-    end
-  end
-
-  defp create_identity(conn, user, provider, %{"uid" => uid}, config) do
-    user
-    |> Operations.create(provider, uid, config)
-    |> case do
-      {:ok, _user_identity} -> {:ok, user, conn}
-      {:error, changeset}   -> {:error, changeset, conn}
-    end
-  end
-
-  defp maybe_assign_params({:ok, user, conn}, _params), do: {:ok, user, conn}
-  defp maybe_assign_params({:error, {:bound_to_different_user, changeset}, conn}, _params), do: {:error, {:bound_to_different_user, changeset}, conn}
-  defp maybe_assign_params({:error, error, conn}, params), do: {:error, error, Conn.put_private(conn, :pow_assent_params, params)}
-
   @doc """
-  Create a user with user identity.
+  Authenticates a user with provider and provider user params.
+
+  If successful, a new session will be created.
   """
-  @spec create_user(Conn.t(), binary(), map(), map() | nil) :: {:ok, map(), Conn.t()} | {:error, map(), Conn.t()}
-  def create_user(conn, provider, params, user_id_params \\ nil) do
+  @spec authenticate(Conn.t(), binary(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()}
+  def authenticate(conn, provider, user_params) do
     config = fetch_config(conn)
-    uid    = params["uid"]
 
     provider
-    |> Operations.create_user(uid, params, user_id_params, config)
+    |> Operations.get_user_by_provider_uid(user_params["uid"], config)
     |> case do
-      {:ok, user}         -> {:ok, {:new, user}, get_mod(config).do_create(conn, user, config)}
-      {:error, changeset} -> {:error, changeset, conn}
+      nil  -> {:error, conn}
+      user -> {:ok, get_mod(config).do_create(conn, user, config)}
     end
   end
 
   @doc """
-  Deletes the associated user identity for the current user and strategy.
+  Creates an identity for a user with provider and provider user params.
+
+  If successful, a new session will be created.
   """
-  @spec delete_identity(Conn.t(), binary()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
+  @spec create_identity(Conn.t(), binary(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
+  def create_identity(conn, provider, user_params) do
+    config = fetch_config(conn)
+    user   = Pow.Plug.current_user(conn)
+
+    user
+    |> Operations.create(provider, user_params["uid"], config)
+    |> case do
+      {:ok, user_identity} -> {:ok, user_identity, get_mod(config).do_create(conn, user, config)}
+      {:error, error}      -> {:error, error, conn}
+    end
+  end
+
+  @doc """
+  Create a user with the provider and provider user params.
+
+  If successful, a new session will be created.
+  """
+  @spec create_user(Conn.t(), binary(), map(), map() | nil) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()} | map(), Conn.t()}
+  def create_user(conn, provider, user_params, user_id_params \\ nil) do
+    config = fetch_config(conn)
+
+    provider
+    |> Operations.create_user(user_params["uid"], user_params, user_id_params, config)
+    |> case do
+      {:ok, user}     -> {:ok, user, get_mod(config).do_create(conn, user, config)}
+      {:error, error} -> {:error, error, conn}
+    end
+  end
+
+  @doc """
+  Deletes the associated user identity for the current user and provider.
+  """
+  @spec delete_identity(Conn.t(), binary()) :: {:ok, map(), Conn.t()} | {:error, {:no_password, map()}, Conn.t()}
   def delete_identity(conn, provider) do
     config = fetch_config(conn)
 
@@ -131,7 +134,7 @@ defmodule PowAssent.Plug do
   end
 
   @doc """
-  Lists associated strategy providers for the user.
+  Lists associated providers for the user.
   """
   @spec providers_for_current_user(Conn.t()) :: [atom()]
   def providers_for_current_user(conn) do
@@ -147,7 +150,7 @@ defmodule PowAssent.Plug do
   defp get_all_providers_for_user(user, config), do: Operations.all(user, config)
 
   @doc """
-  Lists available strategy providers for connection.
+  Lists available providers for connection.
   """
   @spec available_providers(Conn.t() | Config.t()) :: [atom()]
   def available_providers(%Conn{} = conn) do
