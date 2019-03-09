@@ -4,23 +4,23 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Fields do
   """
   alias PowAssent.Config
 
-  @attrs [
-    {:provider, :string, null: false},
-    {:uid, :string, null: false}
-  ]
-
   @doc """
   List of attributes for the ecto schema.
-
-  ## Configuration options
-
-    * `:users_table` - users table, defaults to "users".
   """
   @spec attrs(Config.t()) :: [tuple()]
-  def attrs(config) do
-    users_table = Config.get(config, :users_table, "users")
+  def attrs(_config) do
+    [
+      {:provider, :string, null: false},
+      {:uid, :string, null: false}
+    ]
+  end
 
-    [{:user_id, {:references, users_table}}] ++ @attrs
+  @doc """
+  List of associations for the ecto schema.
+  """
+  @spec assocs(Config.t()) :: [tuple()]
+  def assocs(_config) do
+    [{:belongs_to, :user, :users}]
   end
 
   @doc """

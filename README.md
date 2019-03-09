@@ -75,10 +75,6 @@ defmodule MyApp.Users.User do
   use PowAssent.Ecto.Schema
 
   schema "users" do
-    has_many :user_identities,
-      MyApp.UserIdentities.UserIdentity,
-      on_delete: :delete_all
-
     pow_user_fields()
 
     # ...

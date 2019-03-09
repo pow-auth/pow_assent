@@ -159,7 +159,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       refute Pow.Plug.current_user(conn)
 
-      assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+      assert redirected_to(conn) == "/session_created"
       assert get_flash(conn, :error) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
 
       assert_received {:mail_mock, mail}

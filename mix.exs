@@ -33,7 +33,7 @@ defmodule PowAssent.MixProject do
 
   defp deps do
     [
-      {:pow, "~> 1.0.0"},
+      {:pow, "~> 1.0.3"},
 
       {:oauther, "~> 1.1"},
 
