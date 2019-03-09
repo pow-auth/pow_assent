@@ -33,9 +33,14 @@ defmodule PowAssent.Phoenix.ViewHelpers do
     end
   end
 
-  defp oauth_signin_link(conn, provider) do
+  defp oauth_signin_link(%{assigns: %{invited_user: %{invitation_token: token}}} = conn, provider) when not is_nil(token) do
+    do_oauth_signin_link(conn, provider, invitation_token: token)
+  end
+  defp oauth_signin_link(conn, provider), do: do_oauth_signin_link(conn, provider)
+
+  defp do_oauth_signin_link(conn, provider, query_params \\[]) do
     msg  = AuthorizationController.messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
-    path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider])
+    path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider], query_params)
 
     Link.link(msg, to: path)
   end

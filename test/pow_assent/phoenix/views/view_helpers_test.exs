@@ -35,4 +35,11 @@ defmodule PowAssent.ViewHelpersTest do
     [safe: iodata] = ViewHelpers.provider_links(conn)
     assert {:safe, iodata} == Link.link("Remove Test provider authentication", to: "/auth/test_provider", method: "delete")
   end
+
+  test "provider_links/1 with invited_user", %{conn: conn} do
+    conn = PowInvitation.Plug.assign_invited_user(conn, %PowAssent.Test.Invitation.Users.User{invitation_token: "token"})
+
+    [safe: iodata] = ViewHelpers.provider_links(conn)
+    assert {:safe, iodata} == Link.link("Sign in with Test provider", to: "/auth/test_provider/new?invitation_token=token")
+  end
 end
