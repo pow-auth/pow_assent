@@ -302,6 +302,12 @@ config :my_app, :pow_assent,
   http_adapter: PowAssent.HTTPAdapter.Mint
 ```
 
+## Pow Extensions
+
+### PowEmailConfirmation
+
+The e-mail fetched from the provider is assumed already confirmed, and the user will have `:email_confirmed_at` set when inserted. If a user enters an e-mail then the user will have to confirm their e-mail before they can sign in.
+
 ## Security concerns
 
 All sessions created through PowAssent provider authentication are temporary. However, it's a good idea to do some housekeeping in your app and make sure that you have the level of security as warranted by the scope of your app. That may include requiring users to re-authenticate before viewing or editing their user details.
