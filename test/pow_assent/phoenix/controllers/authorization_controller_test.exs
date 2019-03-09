@@ -76,7 +76,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute Plug.Conn.get_session(conn, :pow_assent_state)
     end
 
-    test "when identity doesn't exist and current user session creates identity", %{conn: conn, bypass: bypass, user: user} do
+    test "with current user session when identity doesn't exist creates identity", %{conn: conn, bypass: bypass, user: user} do
       expect_oauth2_flow(bypass, user: %{uid: "new_identity"})
 
       conn =
@@ -90,15 +90,15 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute Plug.Conn.get_session(conn, :pow_assent_state)
     end
 
-    test "when identity identity already bound to another user and current user session", %{conn: conn, bypass: bypass, user: user} do
-      expect_oauth2_flow(bypass, user: %{uid: "new_identity"})
+    test "with current user session when identity identity already bound to another user", %{conn: conn, bypass: bypass, user: user} do
+      expect_oauth2_flow(bypass, user: %{uid: "identity_taken"})
 
       conn =
         conn
-        |> Pow.Plug.assign_current_user(%{user | id: :bound_to_different_user}, [])
+        |> Pow.Plug.assign_current_user(user, [])
         |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
-      assert redirected_to(conn) == Routes.pow_registration_path(conn, :new)
+      assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
       assert get_flash(conn, :error) == "The Test provider account is already bound to another user."
       refute Plug.Conn.get_session(conn, :pow_assent_state)
     end
@@ -132,7 +132,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert Plug.Conn.get_session(conn, :pow_assent_params) == %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => ""}
+      assert Plug.Conn.get_session(conn, :pow_assent_params) == %{"test_provider" => %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => ""}}
       refute Plug.Conn.get_session(conn, :pow_assent_state)
     end
 
@@ -142,7 +142,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert Plug.Conn.get_session(conn, :pow_assent_params) == %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => "taken@example.com"}
+      assert Plug.Conn.get_session(conn, :pow_assent_params) == %{"test_provider" => %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => "taken@example.com"}}
       refute Plug.Conn.get_session(conn, :pow_assent_state)
     end
   end
@@ -164,6 +164,24 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert_received {:mail_mock, mail}
       mail.html =~ "http://example.com/confirm-email/"
+    end
+  end
+
+  alias PowAssent.Test.NoRegistration.Phoenix.Endpoint, as: NoRegistrationEndpoint
+  describe "GET /auth/:provider/callback as authentication with missing registration routes" do
+    test "can't register", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{uid: "new_user"})
+
+      conn =
+        conn
+        |> Plug.Conn.put_session(:pow_assent_state, "token")
+        |> Phoenix.ConnTest.dispatch(NoRegistrationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      refute Pow.Plug.current_user(conn)
+      refute Plug.Conn.get_session(conn, :pow_assent_state)
+
+      assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+      assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
     end
   end
 

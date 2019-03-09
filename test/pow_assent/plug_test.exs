@@ -6,7 +6,7 @@ defmodule PowAssent.PlugTest do
   alias PowAssent.Plug
   alias PowAssent.Test.{UserIdentitiesMock, Ecto.Users.User}
 
-  import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1]
+  import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 1, put_oauth2_env: 1]
 
   @default_config [
     mod: Pow.Plug.Session,
@@ -18,23 +18,22 @@ defmodule PowAssent.PlugTest do
   ]
 
   setup do
-    conn = Pow.Plug.put_config(%Conn{}, @default_config)
+    conn =
+      %Conn{}
+      |> Pow.Plug.put_config(@default_config)
+      |> init_session()
 
     {:ok, conn: conn}
   end
 
-  describe "authenticate/3" do
-    test "returns redirect url and sets state", %{conn: conn} do
-      put_oauth2_env(%Bypass{port: 8888})
+  test "authorize_url/3", %{conn: conn} do
+    put_oauth2_env(%Bypass{port: 8888})
 
-      assert {:ok, url, conn} = Plug.authenticate(conn, "test_provider", "https://example.com/")
+    assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
-      assert url =~ "http://localhost:8888/oauth/authorize?client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&state="
-      assert Map.has_key?(conn.private, :pow_assent_state)
-    end
+    assert url =~ "http://localhost:8888/oauth/authorize?client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&state="
+    assert Map.has_key?(conn.private, :pow_assent_state)
   end
-
-  @callback_params %{"code" => "access_token", "redirect_uri" => ""}
 
   describe "callback/3" do
     setup %{conn: conn} do
@@ -46,95 +45,68 @@ defmodule PowAssent.PlugTest do
       {:ok, conn: conn, bypass: bypass}
     end
 
-    test "signs in user", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{uid: "existing_user"})
+    test "returns user params", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass)
 
-      {:ok, user, conn} = Plug.callback(conn, "test_provider", @callback_params)
-
-      refute Map.has_key?(conn.private, :pow_assent_params)
-      assert Pow.Plug.current_user(conn) == user
-      assert_pow_session conn
-    end
-
-    test "with current assigned user creates user identity", %{conn: conn, bypass: bypass} do
-      assigned_user = %{UserIdentitiesMock.user() | id: :loaded}
-      conn          = Pow.Plug.assign_current_user(conn, assigned_user, @default_config)
-
-      expect_oauth2_flow(bypass, user: %{uid: "new_identity"})
-
-      {:ok, user, conn} = Plug.callback(conn, "test_provider", @callback_params)
-
-      assert user == assigned_user
-      refute Map.has_key?(conn.private, :pow_assent_params)
-      refute_pow_session conn
-    end
-
-    test "with current assigned user and identity bound to other user", %{conn: conn, bypass: bypass} do
-      assigned_user = %{UserIdentitiesMock.user() | id: :bound_to_different_user}
-      conn          = Pow.Plug.assign_current_user(conn, assigned_user, @default_config)
-
-      expect_oauth2_flow(bypass, user: %{uid: "new_identity"})
-
-      {:error, {:bound_to_different_user, _changeset}, conn} = Plug.callback(conn, "test_provider", @callback_params)
-
-      refute Map.has_key?(conn.private, :pow_assent_params)
-      refute_pow_session conn
-    end
-
-    test "creates user", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{uid: "new_user"})
-
-      {:ok, {:new, user}, conn} = Plug.callback(conn, "test_provider", @callback_params)
-
-      assert Pow.Plug.current_user(conn) == user
-      assert_pow_session conn
-    end
-
-    test "missing user id", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{uid: "new_user", email: ""})
-
-      {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.callback(conn, "test_provider", @callback_params)
-
-      assert Map.has_key?(conn.private, :pow_assent_params)
-      refute_pow_session conn
+      assert {:ok, user, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "")
+      assert user == %{"name" => "Dan Schultzer", "uid" => "new_user"}
     end
   end
 
-  describe "create_user/4" do
-    @user_id_params %{"email" => "test@example.com"}
+  test "authenticate/3", %{conn: conn} do
+    {:error, conn} = Plug.authenticate(conn, "test_provider", %{"uid" => "new_user"})
 
-    setup %{conn: conn} do
-      conn = init_session(conn)
+    {:ok, conn} = Plug.authenticate(conn, "test_provider", %{"uid" => "existing_user"})
+
+    assert Pow.Plug.current_user(conn) == UserIdentitiesMock.user()
+    assert_pow_session conn
+  end
+
+  describe "create_identity/3" do
+    setup %{conn: conn,} do
+      conn = Pow.Plug.assign_current_user(conn, %User{}, @default_config)
 
       {:ok, conn: conn}
     end
 
-    test "creates user", %{conn: conn} do
-      assert {:ok, {:new, user}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "new_user"}, @user_id_params)
+    test "creates user identity", %{conn: conn} do
+      {:ok, user_identity, conn} = Plug.create_identity(conn, "test_provider", %{"uid" => "new_identity"})
 
-      assert Pow.Plug.current_user(conn) == user
+      assert user_identity.id == :new_identity
       assert_pow_session conn
     end
 
-    test "identity bound to other user", %{conn: conn} do
-      {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "different_user"}, @user_id_params)
+    test "with identity already taken", %{conn: conn} do
+      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_identity(conn, "test_provider", %{"uid" => "identity_taken"})
 
+      assert Pow.Plug.current_user(conn) == %User{}
+      refute_pow_session conn
+    end
+  end
+
+  describe "create_user/3" do
+    test "creates user", %{conn: conn} do
+      {:ok, user, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "new_user", "email" => "test@example.com"})
+
+      assert user.id == :new_user
+      assert_pow_session conn
+    end
+
+    test "with missing user id", %{conn: conn} do
+      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "new_user", "email" => ""})
+      refute_pow_session conn
+    end
+
+    test "with identity already taken", %{conn: conn} do
+      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "identity_taken"})
       refute_pow_session conn
     end
   end
 
   describe "delete_identity/3" do
-    setup %{conn: conn} do
-      user = UserIdentitiesMock.user()
-      conn =
-        conn
-        |> init_session()
-        |> Pow.Plug.assign_current_user(user, @default_config)
-
-      {:ok, conn: conn, user: user}
-    end
-
     test "deletes", %{conn: conn} do
+      conn = Pow.Plug.assign_current_user(conn, %User{}, @default_config)
+
       assert {:ok, {1, nil}, _conn} = Plug.delete_identity(conn, "test_provider")
     end
 
