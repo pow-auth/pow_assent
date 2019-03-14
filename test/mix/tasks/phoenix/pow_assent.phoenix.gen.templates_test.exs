@@ -8,7 +8,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.TemplatesTest do
   @expected_template_files %{
     "registration" => ["add_user_id.html.eex"]
   }
-  @expected_views @expected_template_files |> Map.keys()
+  @expected_views Map.keys(@expected_template_files)
 
   setup do
     File.rm_rf!(@tmp_path)
@@ -38,39 +38,6 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.TemplatesTest do
       assert ls(views_path) == expected_view_files
       assert view_content =~ "defmodule PowAssentWeb.PowAssent.RegistrationView do"
       assert view_content =~ "use PowAssentWeb, :view"
-
-      assert_received {:mix_shell, :info, ["PowAssent Phoenix templates and views has been generated." <> msg]}
-      assert msg =~ "defmodule PowAssentWeb.Endpoint"
-      assert msg =~ "otp_app: :pow"
-      assert msg =~ "repo: PowAssent.Repo"
-      assert msg =~ "user: PowAssent.Users.User"
-      assert msg =~ "web_module: PowAssentWeb"
-    end)
-  end
-
-  test "generates with :context_app" do
-    options = ~w(--context-app test)
-
-    File.cd!(@tmp_path, fn ->
-      Templates.run(options)
-
-      templates_path = Path.join(["lib", "test_web", "templates", "pow_assent"])
-      dirs           = templates_path |> File.ls!() |> Enum.sort()
-
-      assert dirs == Map.keys(@expected_template_files)
-
-      views_path   = Path.join(["lib", "test_web", "views", "pow_assent"])
-      view_content = views_path |> Path.join("registration_view.ex") |> File.read!()
-
-      assert view_content =~ "defmodule TestWeb.PowAssent.RegistrationView do"
-      assert view_content =~ "use TestWeb, :view"
-
-      assert_received {:mix_shell, :info, ["PowAssent Phoenix templates and views has been generated." <> msg]}
-      assert msg =~ "defmodule TestWeb.Endpoint"
-      assert msg =~ "otp_app: :test"
-      assert msg =~ "repo: Test.Repo"
-      assert msg =~ "user: Test.Users.User"
-      assert msg =~ "web_module: TestWeb"
     end)
   end
 

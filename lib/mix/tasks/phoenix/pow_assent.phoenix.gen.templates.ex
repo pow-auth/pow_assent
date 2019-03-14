@@ -6,9 +6,11 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.Templates do
 
       mix pow_assent.phoenix.gen.templates
 
+      mix pow_assent.phoenix.gen.templates --context-app my_app
+
   ## Arguments
 
-    * `--context-app MyApp` app to use for path and module names
+    * `--context-app` app to use for path and module names
   """
   use Mix.Task
 
@@ -17,14 +19,13 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.Templates do
   @switches [context_app: :string]
   @default_opts []
 
-  @doc false
+  @impl true
   def run(args) do
     Pow.no_umbrella!("pow_assent.phoenix.gen.templates")
 
     args
     |> Pow.parse_options(@switches, @default_opts)
     |> create_template_files()
-    |> print_shell_instructions()
   end
 
   @templates [
@@ -33,7 +34,6 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.Templates do
 
   defp create_template_files({config, _parsed, _invalid}) do
     structure    = Phoenix.parse_structure(config)
-    context_base = structure[:context_base]
     web_module   = structure[:web_module]
     web_prefix   = structure[:web_prefix]
 
@@ -42,27 +42,6 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.Templates do
       Phoenix.create_templates(Elixir.PowAssent, name, web_prefix, actions)
     end)
 
-    %{context_base: context_base, web_module: web_module}
-  end
-
-  defp print_shell_instructions(%{context_base: context_base, web_module: web_base}) do
-    Mix.shell.info("""
-    PowAssent Phoenix templates and views has been generated.
-
-    Please set `web_module: #{inspect(web_base)}` in your configuration.
-
-        defmodule #{inspect(web_base)}.Endpoint do
-          use #{inspect(web_base)}.Endpoint, otp_app: :#{Macro.underscore(context_base)}
-
-          # ...
-
-          plug #{inspect(web_base)}.Pow.Plug.Session,
-            repo: #{inspect(context_base)}.Repo,
-            user: #{inspect(context_base)}.Users.User,
-            web_module: #{inspect(web_base)}
-
-          # ...
-        end
-    """)
+    %{structure: structure}
   end
 end
