@@ -27,16 +27,6 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
     end)
   end
 
-  test "generates with :context_app" do
-    options = ~w(--context-app pow_assent)
-
-    File.cd!(@tmp_path, fn ->
-      Schema.run(options)
-
-      assert File.exists?(@expected_file)
-    end)
-  end
-
   test "generates with :binary_id" do
     options = ~w(--binary-id)
 
