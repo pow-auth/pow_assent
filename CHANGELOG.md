@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.1 (TBA)
+## v0.2.1 (2019-03-16)
 
 * Improve mix task instructions
 
