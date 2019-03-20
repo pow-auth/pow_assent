@@ -24,13 +24,13 @@ defmodule PowAssent.Ecto.Schema do
         def changeset(user_or_changeset, attrs) do
           user_or_changeset
           |> Ecto.Changeset.cast(attrs, [:custom_field])
-          |> pow_changeset(user, attrs)
+          |> pow_changeset(attrs)
         end
 
         def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
           user_or_changeset
           |> Ecto.Changeset.cast(attrs, [:custom_field])
-          |> pow_assent_user_identity_changeset(user, user_identity, attrs, user_id_attrs)
+          |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
         end
       end
   """
