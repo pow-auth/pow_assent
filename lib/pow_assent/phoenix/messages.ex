@@ -1,5 +1,25 @@
 defmodule PowAssent.Phoenix.Messages do
-  @moduledoc false
+  @moduledoc """
+  Module that handles messages for Powassent.
+
+  ## Usage
+
+      defmodule MyAppWeb.Pow.Messages do
+        use Pow.Phoenix.Messages
+        use Pow.Extension.Phoenix.Messages,
+          extensions: [PowAssent]
+
+        import MyAppWeb.Gettext
+
+        def pow_assent_signed_in(conn) do
+          provider = Phoenix.Naming.humanize(conn.params["provider"])
+
+          gettext("You've been signed in with %{provider}.")
+        end
+      end
+
+    Remember to update configuration with `messages_backend: MyAppWeb.Pow.Messages`.
+  """
 
   alias Phoenix.Naming
   alias Plug.Conn
