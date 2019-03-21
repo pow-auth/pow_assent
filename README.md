@@ -168,7 +168,7 @@ Now start (or restart) your Phoenix app, and visit `http://localhost:4000/auth/g
 
 You can add your own custom strategy.
 
-Here's an example of an OAuth 2.0 implementation using `PowAssent.Strategy.OAuth2.Base`:
+Here's an example of an OAuth 2.0 implementation using [`PowAssent.Strategy.OAuth2.Base`](lib/pow_assent/strategies/oauth2/base.ex):
 
 ```elixir
 defmodule TestProvider do
@@ -194,7 +194,7 @@ defmodule TestProvider do
 end
 ```
 
-You can also use `PowAssent.Strategy`:
+You can also use [`PowAssent.Strategy`](lib/pow_assent/strategy.ex):
 
 ```elixir
 defmodule TestProvider do
@@ -214,7 +214,7 @@ end
 
 ## I18n
 
-The template can be generated and modified to use your Gettext module with `mix pow.extension.phoenix.gen.templates --extension PowAssent`
+The template can be generated and modified to use your Gettext module with `mix pow_assent.phoenix.gen.templates`
 
 For flash messages, you should add them to your `Pow.Phoenix.Messages` module the same way as all Pow extension flash messages:
 
@@ -232,7 +232,7 @@ defmodule MyAppWeb.Pow.Messages do
 end
 ```
 
-You can find all messages in `PowAssent.Phoenix.Messages`.
+Add `messages_backend: MyAppWeb.Pow.Messages` to your configuration. You can find all messages in [`PowAssent.Phoenix.Messages`](lib/pow_assent/phoenix/messages.ex).
 
 ## Populate fields
 
