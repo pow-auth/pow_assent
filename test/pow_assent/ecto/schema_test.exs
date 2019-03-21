@@ -38,6 +38,11 @@ defmodule PowAssent.Ecto.SchemaTest do
       assert [user_identity] = changeset.changes.user_identities
       assert user_identity.errors[:uid] == {"can't be blank", [validation: :required]}
       assert user_identity.errors[:provider] == {"can't be blank", [validation: :required]}
+      assert changeset.errors[:name] == {"can't be blank", [validation: :required]}
+
+      changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com", name: "John Doe"}, nil)
+      assert changeset.valid?
+      assert changeset.changes[:name] == "John Doe"
     end
 
     test "validates unique" do
