@@ -228,7 +228,7 @@ defmodule MyAppWeb.Pow.Messages do
 
   # ...
 
-  def pow_assent_signed_in(_conn, provider), do: gettext("You've been signed in with %{provider}.", provider: provider)
+  def pow_assent_signed_in(conn), do: gettext("You've been signed in with %{provider}.", provider: Phoenix.Naming.humanize(conn.params["provider"]))
 end
 ```
 
