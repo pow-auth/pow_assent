@@ -33,7 +33,7 @@ Add PowAssent to your list of dependencies in `mix.exs`:
 def deps do
   [
     # ...
-    {:pow_assent, "~> 0.2.1"},
+    {:pow_assent, "~> 0.2.2"},
 
     # Optional, but recommended for SSL validation with :httpc adapter
     {:certifi, "~> 2.4"},

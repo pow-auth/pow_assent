@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.2 (TBA)
+## v0.2.2 (2019-03-25)
 
 * Fixed issue where user couldn't be created when PowEmailConfirmation was enabled
 
