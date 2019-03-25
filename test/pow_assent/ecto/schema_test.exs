@@ -43,6 +43,12 @@ defmodule PowAssent.Ecto.SchemaTest do
       changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com", name: "John Doe"}, nil)
       assert changeset.valid?
       assert changeset.changes[:name] == "John Doe"
+
+      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{email: "test@example.com", name: "John Doe"}, nil)
+      assert changeset.valid?
+      assert changeset.changes[:email]
+      assert changeset.changes[:email_confirmed_at]
+      assert changeset.changes[:name] == "John Doe"
     end
 
     test "validates unique" do

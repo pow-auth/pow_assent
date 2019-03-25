@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.2 (TBA)
+
+* Fixed issue where user couldn't be created when PowEmailConfirmation was enabled
+
 ## v0.2.1 (2019-03-16)
 
 * Improve mix task instructions

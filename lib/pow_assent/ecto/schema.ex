@@ -110,10 +110,15 @@ defmodule PowAssent.Ecto.Schema do
     changeset.data.__struct__.pow_user_id_field_changeset(changeset, user_id_attrs)
   end
 
-  defp maybe_set_confirmed_at(changeset) do
+  defp maybe_set_confirmed_at(%Changeset{data: %user_mod{}} = changeset) do
     case confirmable?(changeset) do
-      true  -> PowEmailConfirmation.Ecto.Schema.confirm_email_changeset(changeset)
-      false -> changeset
+      true  ->
+        confirmed_at = Pow.Ecto.Schema.__timestamp_for__(user_mod, :email_confirmed_at)
+
+        Changeset.change(changeset, email_confirmed_at: confirmed_at)
+
+      false ->
+        changeset
     end
   end
 
