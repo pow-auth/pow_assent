@@ -43,12 +43,6 @@ defmodule PowAssent.Ecto.SchemaTest do
       changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com", name: "John Doe"}, nil)
       assert changeset.valid?
       assert changeset.changes[:name] == "John Doe"
-
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{email: "test@example.com", name: "John Doe"}, nil)
-      assert changeset.valid?
-      assert changeset.changes[:email]
-      assert changeset.changes[:email_confirmed_at]
-      assert changeset.changes[:name] == "John Doe"
     end
 
     test "validates unique" do
@@ -69,12 +63,16 @@ defmodule PowAssent.Ecto.SchemaTest do
 
     test "sets :email_confirmed_at when provided as attrs" do
       changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{}, %{email: "test@example.com"})
+      assert changeset.changes[:email]
       refute changeset.changes[:email_confirmed_at]
 
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{email: "test@example.com"}, nil)
+      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{email: "test@example.com", name: "John Doe"}, nil)
+      assert changeset.changes[:email]
+      assert changeset.changes[:name] == "John Doe"
       assert changeset.changes[:email_confirmed_at]
 
       changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com"}, nil)
+      assert changeset.changes[:email]
       refute changeset.changes[:email_confirmed_at]
     end
 
