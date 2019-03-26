@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.3 (TBA)
+
+* Added `:authorization_params` config option to `PowAssent.Strategy.OAuth`
+
 ## v0.2.2 (2019-03-25)
 
 * Fixed issue where user couldn't be created when PowEmailConfirmation was enabled
