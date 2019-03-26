@@ -11,7 +11,8 @@ defmodule PowAssent.Strategy.OAuth.Base do
           [
             site: "https://api.example.com",
             authorize_url: "/authorization/new",
-            token_url: "/authorization/token",
+            access_token_url: "/authorization/access_token"
+            request_token_url: "/authorization/request_token",
             user_url: "/authorization.json",
             authorization_params: [scope: "default"]
           ]
