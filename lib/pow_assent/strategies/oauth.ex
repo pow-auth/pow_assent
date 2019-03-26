@@ -10,7 +10,8 @@ defmodule PowAssent.Strategy.OAuth do
             consumer_key: "REPLACE_WITH_CONSUMER_KEY",
             consumer_secret: "REPLACE_WITH_CONSUMER_SECRET",
             strategy: PowAssent.Strategy.OAuth,
-            site: "https://auth.example.com"
+            site: "https://auth.example.com",
+            authorization_params: [scope: "user:read user:write"]
           ]
         ]
   """
@@ -53,12 +54,20 @@ defmodule PowAssent.Strategy.OAuth do
   end
 
   defp build_authorize_url({:ok, token}, config) do
-    url = process_url(config, config[:authorize_url] || "/oauth/authenticate")
-    url = url <> "?" <> URI.encode_query(%{oauth_token: token["oauth_token"]})
+    authorization_url = config[:authorize_url] || "/oauth/authenticate"
+    params            = authorization_params(config, oauth_token: token["oauth_token"])
+    url               = Helpers.to_url(config[:site], authorization_url, params)
 
     {:ok, url}
   end
   defp build_authorize_url({:error, error}, _config), do: {:error, error}
+
+  defp authorization_params(config, params) do
+    config
+    |> Keyword.get(:authorization_params, [])
+    |> Keyword.merge(params)
+    |> List.keysort(0)
+  end
 
   defp get_access_token(config, oauth_token, oauth_verifier) do
     site             = config[:site]

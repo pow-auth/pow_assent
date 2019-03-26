@@ -11,6 +11,15 @@ defmodule PowAssent.Strategy.OAuthTest do
       assert url =~ "http://localhost:#{bypass.port}/oauth/authenticate?oauth_token=token"
     end
 
+    test "parses URI query response with authorization params",%{config: config, bypass: bypass} do
+      authorization_params = [scope: "reading writing", another_param: "param"]
+      config = Keyword.put(config, :authorization_params, authorization_params)
+      expect_oauth_request_token_request(bypass)
+
+      assert {:ok, %{url: url}} = OAuth.authorize_url(config)
+      assert url =~ "http://localhost:#{bypass.port}/oauth/authenticate?another_param=param&oauth_token=token&scope=reading+writing"
+    end
+
     test "parses URI query response", %{config: config, bypass: bypass} do
       expect_oauth_request_token_request(bypass, content_type: "text/html", params: URI.encode_query(%{oauth_token: "token", oauth_token_secret: "token_secret"}))
 
