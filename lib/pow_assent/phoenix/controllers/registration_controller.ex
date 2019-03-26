@@ -36,13 +36,13 @@ defmodule PowAssent.Phoenix.RegistrationController do
         conn
       {:ok, _user, conn} ->
         conn
-        |> put_flash(:info, messages(conn).user_has_been_created(conn))
+        |> put_flash(:info, extension_messages(conn).user_has_been_created(conn))
         |> redirect(to: routes(conn).after_registration_path(conn))
     end
   end
   def respond_create({:error, {:bound_to_different_user, _changeset}, conn}) do
     conn
-    |> put_flash(:error, messages(conn).account_already_bound_to_other_user(conn))
+    |> put_flash(:error, extension_messages(conn).account_already_bound_to_other_user(conn))
     |> redirect(to: routes(conn).registration_path(conn, :new))
   end
   def respond_create({:error, {:invalid_user_id_field, changeset}, conn}),
@@ -64,7 +64,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
 
       _ ->
         conn
-        |> put_flash(:error, messages(conn).invalid_request(conn))
+        |> put_flash(:error, extension_messages(conn).invalid_request(conn))
         |> redirect(to: routes(conn).after_sign_out_path(conn))
         |> halt()
     end

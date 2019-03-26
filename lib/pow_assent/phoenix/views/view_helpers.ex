@@ -39,14 +39,14 @@ defmodule PowAssent.Phoenix.ViewHelpers do
   defp oauth_signin_link(conn, provider), do: do_oauth_signin_link(conn, provider)
 
   defp do_oauth_signin_link(conn, provider, query_params \\[]) do
-    msg  = AuthorizationController.messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
+    msg  = AuthorizationController.extension_messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider], query_params)
 
     Link.link(msg, to: path)
   end
 
   defp oauth_remove_link(conn, provider) do
-    msg  = AuthorizationController.messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
+    msg  = AuthorizationController.extension_messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :delete, [provider])
 
     Link.link(msg, to: path, method: :delete)

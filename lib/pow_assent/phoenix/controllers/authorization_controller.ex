@@ -98,7 +98,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
         conn
       {:ok, _user, conn} ->
         conn
-        |> put_flash(:info, messages(conn).user_has_been_created(conn))
+        |> put_flash(:info, extension_messages(conn).user_has_been_created(conn))
         |> redirect(to: routes(conn).after_registration_path(conn))
     end
   end
@@ -108,13 +108,13 @@ defmodule PowAssent.Phoenix.AuthorizationController do
         conn
       {:ok, conn} ->
         conn
-        |> put_flash(:info, messages(conn).signed_in(conn))
+        |> put_flash(:info, extension_messages(conn).signed_in(conn))
         |> redirect(to: routes(conn).after_sign_in_path(conn))
     end
   end
   def respond_callback({:error, {:bound_to_different_user, _changeset}, conn}) do
     conn
-    |> put_flash(:error, messages(conn).account_already_bound_to_other_user(conn))
+    |> put_flash(:error, extension_messages(conn).account_already_bound_to_other_user(conn))
     |> redirect(to: routes(conn).session_path(conn, :new))
   end
   def respond_callback({:error, {:invalid_user_id_field, _changeset}, %{params: %{"provider" => provider}, private: %{pow_assent_params: params}} = conn}) do
@@ -126,7 +126,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     do: respond_callback({:error, conn})
   def respond_callback({:error, conn}) do
     conn
-    |> put_flash(:error, messages(conn).could_not_sign_in(conn))
+    |> put_flash(:error, extension_messages(conn).could_not_sign_in(conn))
     |> redirect(to: routes(conn).session_path(conn, :new))
   end
 
@@ -145,12 +145,12 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   @spec respond_delete({:ok, map(), Conn.t()}) :: Conn.t()
   def respond_delete({:ok, _deleted, conn}) do
     conn
-    |> put_flash(:info, messages(conn).authentication_has_been_removed(conn))
+    |> put_flash(:info, extension_messages(conn).authentication_has_been_removed(conn))
     |> redirect(to: after_delete_path(conn))
   end
   def respond_delete({:error, {:no_password, _changeset}, conn}) do
     conn
-    |> put_flash(:error, messages(conn).identity_cannot_be_removed_missing_user_password(conn))
+    |> put_flash(:error, extension_messages(conn).identity_cannot_be_removed_missing_user_password(conn))
     |> redirect(to: after_delete_path(conn))
   end
 
