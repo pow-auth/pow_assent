@@ -33,7 +33,7 @@ defmodule PowAssent.PlugTest do
 
     assert url =~ "http://localhost:8888/oauth/authorize?client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&state="
     assert Map.has_key?(conn.private, :pow_assent_session_params)
-    assert conn.private[:pow_assent_session_params][:state]
+    assert %{state: _state} = conn.private[:pow_assent_session_params]
   end
 
   describe "callback/3" do

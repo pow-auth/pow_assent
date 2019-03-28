@@ -7,7 +7,8 @@ defmodule PowAssent.Strategy.OAuthTest do
     test "returns url", %{config: config, bypass: bypass} do
       expect_oauth_request_token_request(bypass)
 
-      assert {:ok, %{url: url}} = OAuth.authorize_url(config)
+      assert {:ok, %{url: url, session_params: %{oauth_token_secret: oauth_token_secret}}} = OAuth.authorize_url(config)
+      refute is_nil(oauth_token_secret)
       assert url =~ "http://localhost:#{bypass.port}/oauth/authenticate?oauth_token=token"
     end
 
@@ -16,14 +17,14 @@ defmodule PowAssent.Strategy.OAuthTest do
       config = Keyword.put(config, :authorization_params, authorization_params)
       expect_oauth_request_token_request(bypass)
 
-      assert {:ok, %{url: url}} = OAuth.authorize_url(config)
+      assert {:ok, %{url: url, session_params: %{oauth_token_secret: _oauth_token_secret}}} = OAuth.authorize_url(config)
       assert url =~ "http://localhost:#{bypass.port}/oauth/authenticate?another_param=param&oauth_token=token&scope=reading+writing"
     end
 
     test "parses URI query response", %{config: config, bypass: bypass} do
       expect_oauth_request_token_request(bypass, content_type: "text/html", params: URI.encode_query(%{oauth_token: "token", oauth_token_secret: "token_secret"}))
 
-      assert {:ok, %{url: url}} = OAuth.authorize_url(config)
+      assert {:ok, %{url: url, session_params: %{oauth_token_secret: "token_secret"}}} = OAuth.authorize_url(config)
       assert url =~ "http://localhost:#{bypass.port}/oauth/authenticate?oauth_token=token"
     end
 

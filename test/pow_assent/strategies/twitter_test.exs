@@ -100,8 +100,9 @@ defmodule PowAssent.Strategy.TwitterTest do
   test "authorize_url/2", %{config: config, bypass: bypass} do
     expect_oauth_request_token_request(bypass)
 
-    assert {:ok, %{url: url}} = Twitter.authorize_url(config)
+    assert {:ok, %{url: url, session_params: %{oauth_token_secret: oauth_token_secret}}} = Twitter.authorize_url(config)
     assert url =~ "http://localhost:#{bypass.port}/oauth/authenticate?oauth_token=token"
+    refute is_nil(oauth_token_secret)
   end
 
   test "callback/2", %{config: config, callback_params: params, bypass: bypass} do
