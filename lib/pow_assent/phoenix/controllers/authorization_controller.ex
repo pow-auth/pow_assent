@@ -19,14 +19,14 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   @spec respond_new({:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}) :: Conn.t()
   def respond_new({:ok, url, conn}) do
     conn
-    |> maybe_store_state()
+    |> maybe_store_session_params()
     |> maybe_store_invitation_token()
     |> redirect(external: url)
   end
   def respond_new({:error, error, _conn}), do: handle_strategy_error(error)
 
-  defp maybe_store_state(%{private: %{pow_assent_state: state}} = conn), do: store_state(conn, state)
-  defp maybe_store_state(conn), do: conn
+  defp maybe_store_session_params(%{private: %{pow_assent_session_params: params}} = conn), do: store_session_params(conn, params)
+  defp maybe_store_session_params(conn), do: conn
 
   defp maybe_store_invitation_token(%{params: %{"invitation_token" => token}} = conn), do: store_invitation_token(conn, token)
   defp maybe_store_invitation_token(conn), do: conn
@@ -34,15 +34,15 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   @spec process_callback(Conn.t(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()} | {:error, {atom(), map()} | map(), Conn.t()}
   def process_callback(conn, %{"provider" => provider} = params) do
     conn
-    |> maybe_load_state()
+    |> maybe_load_session_params()
     |> Plug.callback(provider, params, conn.assigns.callback_url)
     |> handle_callback(provider)
   end
 
-  defp maybe_load_state(conn) do
-    case fetch_state(conn) do
-      {state, conn} -> Conn.put_private(conn, :pow_assent_state, state)
-      conn          -> conn
+  defp maybe_load_session_params(conn) do
+    case fetch_session_params(conn) do
+      {params, conn} -> Conn.put_private(conn, :pow_assent_session_params, params)
+      conn           -> conn
     end
   end
 
@@ -162,12 +162,12 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     assign(conn, :callback_url, url)
   end
 
-  defp store_state(conn, state), do: Conn.put_session(conn, :pow_assent_state, state)
+  defp store_session_params(conn, params), do: Conn.put_session(conn, :pow_assent_session_params, params)
 
-  defp fetch_state(%{private: %{plug_session: %{"pow_assent_state" => state}}} = conn) do
-    {state, Conn.put_session(conn, :pow_assent_state, nil)}
+  defp fetch_session_params(%{private: %{plug_session: %{"pow_assent_session_params" => params}}} = conn) do
+    {params, Conn.put_session(conn, :pow_assent_session_params, nil)}
   end
-  defp fetch_state(conn), do: conn
+  defp fetch_session_params(conn), do: conn
 
   defp store_invitation_token(conn, token), do: Conn.put_session(conn, :pow_assent_invitation_token, token)
 
