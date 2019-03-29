@@ -4,7 +4,7 @@ defmodule PowAssent.Strategy.OAuth2Test do
   alias PowAssent.{ConfigurationError, CallbackCSRFError, CallbackError, RequestError, Strategy.OAuth2}
 
   test "authorize_url/2", %{config: config, bypass: bypass} do
-    assert {:ok, %{url: url, state: state}} = OAuth2.authorize_url(config)
+    assert {:ok, %{url: url, session_params: %{state: state}}} = OAuth2.authorize_url(config)
 
     refute is_nil(state)
     assert url =~ "http://localhost:#{bypass.port}/oauth/authorize?client_id=&redirect_uri=&response_type=code&state=#{state}"

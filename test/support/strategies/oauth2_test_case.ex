@@ -5,7 +5,7 @@ defmodule PowAssent.Test.OAuth2TestCase do
   setup _tags do
     params = %{"code" => "test", "redirect_uri" => "test", "state" => "test"}
     bypass = Bypass.open()
-    config = [client_secret: "secret", site: "http://localhost:#{bypass.port}", state: "test"]
+    config = [client_secret: "secret", site: "http://localhost:#{bypass.port}", session_params: %{state: "test"}]
 
     {:ok, callback_params: params, config: config, bypass: bypass}
   end

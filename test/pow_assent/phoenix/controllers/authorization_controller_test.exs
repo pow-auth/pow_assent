@@ -22,7 +22,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider)
 
       assert redirected_to(conn) =~ "http://localhost:#{bypass.port}/oauth/authorize?client_id=client_id&redirect_uri=http%3A%2F%2Flocalhost%2Fauth%2Ftest_provider%2Fcallback&response_type=code&state="
-      assert Plug.Conn.get_session(conn, :pow_assent_state)
+      assert Plug.Conn.get_session(conn, :pow_assent_session_params)[:state]
     end
 
     test "redirects with invitation_token saved", %{conn: conn} do
@@ -42,7 +42,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback" do
     setup %{conn: conn} do
-      conn = Plug.Conn.put_session(conn, :pow_assent_state, "token")
+      conn = Plug.Conn.put_session(conn, :pow_assent_session_params, %{state: "token"})
 
       {:ok, conn: conn}
     end
@@ -79,7 +79,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == "/session_created"
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
     test "with current user session when identity doesn't exist creates identity", %{conn: conn, bypass: bypass, user: user} do
@@ -92,7 +92,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == "/session_created"
       assert get_flash(conn, :info) == "signed_in_test_provider"
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
     test "with current user session when identity identity already bound to another user", %{conn: conn, bypass: bypass, user: user} do
@@ -105,7 +105,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
       assert get_flash(conn, :error) == "The Test provider account is already bound to another user."
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
     test "when identity doesn't exist creates user", %{conn: conn, bypass: bypass} do
@@ -118,7 +118,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert [user_identity] = user.user_identities
       assert user_identity.uid == "new_user"
       assert user_identity.provider == "test_provider"
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
     test "when identity doesn't exist and missing params", %{conn: conn, bypass: bypass} do
@@ -128,7 +128,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
       assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
     test "when identity doesn't exist and missing user id", %{conn: conn, bypass: bypass} do
@@ -138,7 +138,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
       assert Plug.Conn.get_session(conn, :pow_assent_params) == %{"test_provider" => %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => ""}}
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
     test "when identity doesn't exist and and user id taken by other user", %{conn: conn, bypass: bypass} do
@@ -148,7 +148,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
       assert Plug.Conn.get_session(conn, :pow_assent_params) == %{"test_provider" => %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => "taken@example.com"}}
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
   end
 
@@ -159,7 +159,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       conn =
         conn
-        |> Plug.Conn.put_session(:pow_assent_state, "token")
+        |> Plug.Conn.put_session(:pow_assent_session_params, %{state: "token"})
         |> Phoenix.ConnTest.dispatch(EmailConfirmationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       refute Pow.Plug.current_user(conn)
@@ -179,14 +179,14 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       conn =
         conn
-        |> Plug.Conn.put_session(:pow_assent_state, "token")
+        |> Plug.Conn.put_session(:pow_assent_session_params, %{state: "token"})
         |> Plug.Conn.put_session(:pow_assent_invitation_token, "token")
         |> Phoenix.ConnTest.dispatch(InvitationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/session_created"
       assert get_flash(conn, :info) == "signed_in_test_provider"
       refute Plug.Conn.get_session(conn, :pow_assent_invitation_token)
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
   end
 
@@ -197,11 +197,11 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       conn =
         conn
-        |> Plug.Conn.put_session(:pow_assent_state, "token")
+        |> Plug.Conn.put_session(:pow_assent_session_params, %{state: "token"})
         |> Phoenix.ConnTest.dispatch(NoRegistrationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       refute Pow.Plug.current_user(conn)
-      refute Plug.Conn.get_session(conn, :pow_assent_state)
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
       assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."

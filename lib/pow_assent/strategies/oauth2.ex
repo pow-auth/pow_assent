@@ -22,7 +22,7 @@ defmodule PowAssent.Strategy.OAuth2 do
   alias PowAssent.{CallbackCSRFError, CallbackError, ConfigurationError, HTTPAdapter.HTTPResponse, RequestError}
 
   @doc false
-  @spec authorize_url(Keyword.t()) :: {:ok, %{state: binary(), url: binary()}} | {:error, term()}
+  @spec authorize_url(Keyword.t()) :: {:ok, %{session_params: %{state: binary()}, url: binary()}} | {:error, term()}
   def authorize_url(config) do
     state         = gen_state()
     redirect_uri  = config[:redirect_uri]
@@ -30,7 +30,7 @@ defmodule PowAssent.Strategy.OAuth2 do
     authorize_url = Keyword.get(config, :authorize_url, "/oauth/authorize")
     url           = Helpers.to_url(config[:site], authorize_url, params)
 
-    {:ok, %{url: url, state: state}}
+    {:ok, %{url: url, session_params: %{state: state}}}
   end
 
   defp authorization_params(config, params) do
@@ -48,20 +48,20 @@ defmodule PowAssent.Strategy.OAuth2 do
   @spec callback(Keyword.t(), map(), atom()) :: {:ok, %{user: map(), token: map()}} | {:error, term()}
   def callback(config, params, strategy \\ __MODULE__) do
     config
-    |> Keyword.get(:state)
+    |> Keyword.get(:session_params)
     |> check_state(params)
     |> get_access_token(params, config)
     |> fetch_user(config, strategy)
   end
 
-  defp check_state(_state, %{"error" => _} = params) do
+  defp check_state(_params, %{"error" => _} = params) do
     message   = params["error_description"] || params["error_reason"] || params["error"]
     error     = params["error"]
     error_uri = params["error_uri"]
 
     {:error, %CallbackError{message: message, error: error, error_uri: error_uri}}
   end
-  defp check_state(stored_state, %{"state" => param_state}) when stored_state != param_state,
+  defp check_state(%{state: stored_state}, %{"state" => param_state}) when stored_state != param_state,
     do: {:error, %CallbackCSRFError{}}
   defp check_state(_state, _params), do: :ok
 

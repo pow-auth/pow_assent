@@ -20,9 +20,9 @@ defmodule PowAssent.Plug do
   @doc """
   Calls the authorize_url method for the provider strategy.
 
-  A generated authorization URL will be returned. If `:state` is returned from
-  the provider, it'll be added to the connection as private key
-  `:pow_assent_state`.
+  A generated authorization URL will be returned. If `:session_params` is
+  returned from the provider, it'll be added to the connection as private key
+  `:pow_assent_session_params`.
   """
   @spec authorize_url(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error. any(), Conn.t()}
   def authorize_url(conn, provider, redirect_uri) do
@@ -31,22 +31,22 @@ defmodule PowAssent.Plug do
     provider_config
     |> Config.put(:redirect_uri, redirect_uri)
     |> strategy.authorize_url()
-    |> maybe_put_state(conn)
+    |> maybe_put_session_params(conn)
   end
 
-  defp maybe_put_state({:ok, %{url: url, state: state}}, conn) do
-    {:ok, url, Plug.Conn.put_private(conn, :pow_assent_state, state)}
+  defp maybe_put_session_params({:ok, %{url: url, session_params: params}}, conn) do
+    {:ok, url, Plug.Conn.put_private(conn, :pow_assent_session_params, params)}
   end
-  defp maybe_put_state({:ok, %{url: url}}, conn), do: {:ok, url, conn}
-  defp maybe_put_state({:error, error}, conn), do: {:error, error, conn}
+  defp maybe_put_session_params({:ok, %{url: url}}, conn), do: {:ok, url, conn}
+  defp maybe_put_session_params({:error, error}, conn), do: {:error, error, conn}
 
   @doc """
   Calls the callback method for the provider strategy.
 
   Returns the user params fetched from the provider.
 
-  `:state` will be added to the provider config if `:pow_assent_state` is
-  present as a private key in the connection.
+  `:session_params` will be added to the provider config if
+  `:pow_assent_session_params` is present as a private key in the connection.
   """
   @spec callback(Conn.t(), binary(), map(), binary()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
   def callback(conn, provider, params, redirect_uri) do
@@ -54,7 +54,7 @@ defmodule PowAssent.Plug do
     params                      = Map.put(params, "redirect_uri", redirect_uri)
 
     provider_config
-    |> maybe_set_state_config(conn)
+    |> maybe_set_session_params_config(conn)
     |> strategy.callback(params)
     |> case do
       {:ok, %{user: user}} -> {:ok, user, conn}
@@ -62,8 +62,8 @@ defmodule PowAssent.Plug do
     end
   end
 
-  defp maybe_set_state_config(config, %{private: %{pow_assent_state: state}}), do: Config.put(config, :state, state)
-  defp maybe_set_state_config(config, _conn), do: config
+  defp maybe_set_session_params_config(config, %{private: %{pow_assent_session_params: params}}), do: Config.put(config, :session_params, params)
+  defp maybe_set_session_params_config(config, _conn), do: config
 
   @doc """
   Authenticates a user with provider and provider user params.

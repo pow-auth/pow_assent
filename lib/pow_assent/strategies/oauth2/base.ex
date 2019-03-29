@@ -47,7 +47,7 @@ defmodule PowAssent.Strategy.OAuth2.Base do
     end
   end
 
-  @spec authorize_url(Keyword.t(), module()) :: {:ok, %{state: binary(), url: binary()}}
+  @spec authorize_url(Keyword.t(), module()) :: {:ok, %{session_params: %{state: binary()}, url: binary()}}
   def authorize_url(config, strategy) do
     config
     |> set_config(strategy)
