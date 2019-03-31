@@ -3,9 +3,9 @@ defmodule PowAssent.Test.OAuthTestCase do
   use ExUnit.CaseTemplate
 
   setup _context do
-    params = %{"oauth_token" => "test", "oauth_verifier" => "test"}
+    params = %{"oauth_token" => "request_token", "oauth_verifier" => "verifier"}
     bypass = Bypass.open()
-    config = [site: "http://localhost:#{bypass.port}"]
+    config = [site: "http://localhost:#{bypass.port}", session_params: %{oauth_token_secret: "request_token_secret"}]
 
     {:ok, callback_params: params, config: config, bypass: bypass}
   end
@@ -24,7 +24,7 @@ defmodule PowAssent.Test.OAuthTestCase do
   def expect_oauth_request_token_request(bypass, opts \\ []) do
     status_code    = Keyword.get(opts, :status_code, 200)
     content_type   = Keyword.get(opts, :content_type, "application/x-www-form-urlencoded")
-    params         = Keyword.get(opts, :params, %{oauth_token: "token", oauth_token_secret: "token_secret"})
+    params         = Keyword.get(opts, :params, %{oauth_token: "request_token", oauth_token_secret: "request_token_secret"})
     response       =
       case content_type do
         "application/x-www-form-urlencoded" -> URI.encode_query(params)
@@ -39,6 +39,80 @@ defmodule PowAssent.Test.OAuthTestCase do
     end)
   end
 
+  @spec expect_oauth_access_token_request(Bypass.t(), Keyword.t()) :: :ok
+  def expect_oauth_access_token_request(bypass, _opts \\ []) do
+    Bypass.expect_once(bypass, "POST", "/oauth/access_token", fn conn ->
+      cond do
+        invalid_oauth_access_token_request_signature?(conn) ->
+          conn
+          |> Conn.put_resp_content_type("application/json")
+          |> Conn.send_resp(500, Jason.encode!(%{error: "Invalid signature"}))
+
+        invalid_verifier?(conn) ->
+          conn
+          |> Conn.put_resp_content_type("application/json")
+          |> Conn.send_resp(500, Jason.encode!(%{error: "CSRF"}))
+
+        true ->
+          token = %{
+            oauth_token: "7588892-kagSNqWge8gB1WwE3plnFsJHAZVfxWD7Vb57p0b4&",
+            oauth_token_secret: "PbKfYqSryyeKDWz4ebtY3o5ogNLG11WJuZBc9fQrQo"
+          }
+
+          conn
+          |> Conn.put_resp_content_type("application/x-www-form-urlencoded")
+          |> Conn.resp(200, URI.encode_query(token))
+      end
+    end)
+  end
+
+  defp invalid_oauth_access_token_request_signature?(conn) do
+    %{"oauth_nonce" => nonce,
+      "oauth_timestamp" => timestamp,
+      "oauth_signature" => signature} = parse_auth_header(conn)
+
+    creds =
+      OAuther.credentials([
+        consumer_key: nil,
+        consumer_secret: nil,
+        token: "request_token",
+        token_secret: "request_token_secret"])
+
+    params =
+      [{"oauth_verifier", "verifier"}]
+      |> OAuther.protocol_params(creds)
+      |> Enum.map(fn
+          {"oauth_nonce", _} -> {"oauth_nonce", URI.decode(nonce)}
+          {"oauth_timestamp", _} -> {"oauth_timestamp", timestamp}
+          any -> any
+        end)
+
+    expected = OAuther.signature("post", "http://localhost:#{conn.port}/oauth/access_token", params, creds)
+
+    URI.decode(signature) != expected
+  end
+
+  defp invalid_verifier?(conn) do
+    %{"oauth_verifier" => verifier} = parse_auth_header(conn)
+
+    verifier != "verifier"
+  end
+
+  defp parse_auth_header(conn) do
+    {_, value} = List.keyfind(conn.req_headers, "authorization", 0)
+
+    value
+    |> String.slice(6..-1)
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.map(fn string ->
+      [_, key, value] = Regex.run(~r/^([a-zA-Z_]+)=\"(.*?)\"$/i, string)
+
+      {key, value}
+    end)
+    |> Enum.into(%{})
+  end
+
   @spec expect_oauth_user_request(Bypass.t(), map(), Keyword.t()) :: :ok
   def expect_oauth_user_request(bypass, user_params, opts \\ []) do
     uri          = Keyword.get(opts, :uri, "/api/user")
@@ -48,20 +122,6 @@ defmodule PowAssent.Test.OAuthTestCase do
       conn
       |> Conn.put_resp_content_type("application/json")
       |> Conn.send_resp(status_code, Jason.encode!(user_params))
-    end)
-  end
-
-  @spec expect_oauth_access_token_request(Bypass.t(), Keyword.t()) :: :ok
-  def expect_oauth_access_token_request(bypass, _opts \\ []) do
-    Bypass.expect_once(bypass, "POST", "/oauth/access_token", fn conn ->
-      token = %{
-        oauth_token: "7588892-kagSNqWge8gB1WwE3plnFsJHAZVfxWD7Vb57p0b4&",
-        oauth_token_secret: "PbKfYqSryyeKDWz4ebtY3o5ogNLG11WJuZBc9fQrQo"
-      }
-
-      conn
-      |> Conn.put_resp_content_type("application/x-www-form-urlencoded")
-      |> Conn.resp(200, URI.encode_query(token))
     end)
   end
 end
