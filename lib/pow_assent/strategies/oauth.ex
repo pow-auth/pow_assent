@@ -27,8 +27,8 @@ defmodule PowAssent.Strategy.OAuth do
     |> get_request_token([{"oauth_callback", config[:redirect_uri]}])
     |> build_authorize_url(config)
     |> case do
-      {:ok, url}      -> {:ok, %{url: url}}
-      {:error, error} -> {:error, error}
+      {:ok, url, oauth_token_secret} -> {:ok, %{url: url, session_params: %{oauth_token_secret: oauth_token_secret}}}
+      {:error, error}                -> {:error, error}
     end
   end
 
@@ -58,7 +58,7 @@ defmodule PowAssent.Strategy.OAuth do
     params            = authorization_params(config, oauth_token: token["oauth_token"])
     url               = Helpers.to_url(config[:site], authorization_url, params)
 
-    {:ok, url}
+    {:ok, url, token["oauth_token_secret"]}
   end
   defp build_authorize_url({:error, error}, _config), do: {:error, error}
 
@@ -70,13 +70,15 @@ defmodule PowAssent.Strategy.OAuth do
   end
 
   defp get_access_token(config, oauth_token, oauth_verifier) do
-    site             = config[:site]
-    access_token_url = process_url(config, config[:access_token_url] || "/oauth/access_token")
-    params           = [{"oauth_verifier", oauth_verifier}]
-    credentials      = OAuther.credentials([
+    site               = config[:site]
+    access_token_url   = process_url(config, config[:access_token_url] || "/oauth/access_token")
+    params             = [{"oauth_verifier", oauth_verifier}]
+    oauth_token_secret = Kernel.get_in(config, [:session_params, :oauth_token_secret])
+    credentials        = OAuther.credentials([
       consumer_key: config[:consumer_key],
       consumer_secret: config[:consumer_secret],
-      token: oauth_token])
+      token: oauth_token,
+      token_secret: oauth_token_secret])
 
     config
     |> request(:post, site, access_token_url, credentials, params)
