@@ -48,7 +48,7 @@ defmodule PowAssent.MixProject do
 
       {:ecto, "~> 2.2 or ~> 3.0"},
       {:phoenix, "~> 1.3.0 or ~> 1.4.0"},
-      {:plug, ">= 1.5.0 and < 1.8.0", optional: true},
+      {:plug, ">= 1.5.0 and < 2.0.0", optional: true},
 
       {:credo, "~> 0.10.2", only: [:dev, :test]},
       {:jason, "~> 1.0", only: [:dev, :test]},
