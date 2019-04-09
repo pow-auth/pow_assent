@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.3 (TBA)
+## v0.2.3 (2019-04-09)
 
 * Added `:authorization_params` config option to `PowAssent.Strategy.OAuth`
 * Plug and Phoenix controller now handles `:session_params` rather than `:state` for any params that needs to be stored temporarily during authorization
