@@ -246,6 +246,7 @@ To populate fields in your user struct that are fetched from the provider, you o
 
 ```elixir
 defmodule MyApp.Users.User do
+  use PowAssent.Ecto.Schema
   # ...
 
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
