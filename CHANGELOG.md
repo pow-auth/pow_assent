@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.4 (TBA)
+## v0.2.4 (2019-04-25)
 
 * Fixed so OAuth 2.0 access token request params are in the POST body in accordance with RFC 6749
 
