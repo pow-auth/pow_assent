@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.4 (TBA)
+
+* Fixed so OAuth 2.0 access token request params are in the POST body in accordance with RFC 6749
+
 ## v0.2.3 (2019-04-09)
 
 * Added `:authorization_params` config option to `PowAssent.Strategy.OAuth`
