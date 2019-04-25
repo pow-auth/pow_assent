@@ -19,13 +19,14 @@ defmodule PowAssent.Strategy.OAuth2Test do
 
     test "normalizes data", %{config: config, callback_params: params, bypass: bypass} do
       expect_oauth2_access_token_request(bypass, [], fn conn ->
-        conn = Plug.Conn.fetch_query_params(conn)
+        {:ok, body, _conn} = Plug.Conn.read_body(conn, [])
+        params = URI.decode_query(body)
 
-        assert conn.params["grant_type"] == "authorization_code"
-        assert conn.params["response_type"] == "code"
-        assert conn.params["code"] == "test"
-        assert conn.params["client_secret"] == "secret"
-        assert conn.params["redirect_uri"] == "test"
+        assert params["grant_type"] == "authorization_code"
+        assert params["response_type"] == "code"
+        assert params["code"] == "test"
+        assert params["client_secret"] == "secret"
+        assert params["redirect_uri"] == "test"
       end)
 
       expect_oauth2_user_request(bypass, %{name: "Dan Schultzer", email: "foo@example.com", uid: "1"})

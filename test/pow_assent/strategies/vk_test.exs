@@ -38,7 +38,10 @@ defmodule PowAssent.Strategy.VKTest do
 
     test "normalizes data", %{config: config, callback_params: params, bypass: bypass} do
       expect_oauth2_access_token_request(bypass, [uri: "/access_token", params: %{"access_token" => "access_token", "email" => "lindsay.stirling@example.com"}], fn conn ->
-        assert conn.query_string =~ "scope=email"
+        {:ok, body, _conn} = Plug.Conn.read_body(conn, [])
+        params = URI.decode_query(body)
+
+        assert params["scope"] == "email"
       end)
 
       expect_oauth2_user_request(bypass, %{"response" => @users_response}, [uri: "/method/users.get"], fn conn ->
