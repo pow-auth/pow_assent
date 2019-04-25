@@ -151,7 +151,7 @@ It'll automatically link with "Sign in with PROVIDER" or "Remove PROVIDER authen
 
 PowAssent has [multiple strategies](lib/pow_assent/strategies) that you can use. Let's go through how to set up the Github strategy.
 
-First, register [a new app on Github](https://github.com/settings/applications/new) and add `http://localhost:4000/auth/github/callback` as the callback URL. Then add the following to `config/config.exs` and add the client id and client secret:
+First, register [a new app on Github](https://github.com/settings/applications/new) and add `http://localhost:4000/auth/github/callback` as the callback URL. Then add the following to `config/config.exs` and add the client id and client secret (for production keys you would want to set this in `config/prod.secret.exs`):
 
 ```elixir
 config :my_app, :pow_assent,
