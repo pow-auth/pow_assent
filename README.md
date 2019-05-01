@@ -318,6 +318,39 @@ config :my_app, :pow_assent,
   http_adapter: PowAssent.HTTPAdapter.Mint
 ```
 
+## Different module naming
+
+PowAssent works by the assumption that you name your schema modules in the form of `[App].[Context].[Schema]`. If you have a different module naming, all you have to do is to add the `has_many` association to your user module like so:
+
+```elixir
+defmodule MyApp.Lib.User do
+  use Ecto.Schema
+  use Pow.Ecto.Schema
+  use PowAssent.Ecto.Schema
+
+  schema "users" do
+    has_many :user_identities,
+      MyApp.Lib.UserIdentity,
+      on_delete: :delete_all,
+      foreign_key: :user_id
+
+    pow_user_fields()
+
+    # ...
+
+    timestamps()
+  end
+
+  # ..
+end
+```
+
+Otherwise you'll get an error that reads:
+
+```elixir
+warning: invalid association `user_identities` in schema MyApp.Lib.User: associated schema MyApp.UserIdentities.UserIdentity does not exist
+```
+
 ## Pow Extensions
 
 ### PowEmailConfirmation
