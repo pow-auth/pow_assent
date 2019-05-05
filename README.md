@@ -143,7 +143,9 @@ You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider lin
   do: content_tag(:span, link) %>
 ```
 
-This can be used in the `WEB_PATH/templates/pow/session/new.html.eex`, `WEB_PATH/templates/pow/registration/new.html.eex` and `WEB_PATH/templates/pow/registration/edit.html.eex` templates. By default "Sign in with PROVIDER" link is shown. A "Remove PROVIDER authentication" link will be shown instead if the user is signed in and the user already have authorized with the provider.
+This can be used in the `WEB_PATH/templates/pow/session/new.html.eex`, `WEB_PATH/templates/pow/registration/new.html.eex` and `WEB_PATH/templates/pow/registration/edit.html.eex` templates.
+
+By default "Sign in with PROVIDER" link is shown. A "Remove PROVIDER authentication" link will be shown instead if the user is signed in and the user already have authorized with the provider.
 
 You can also call `PowAssent.Phoenix.ViewHelpers.authorization_link/2` and `PowAssent.Phoenix.ViewHelpers.deauthorization_link/2` to generate a link for a single provider.
 

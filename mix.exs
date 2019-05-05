@@ -78,13 +78,10 @@ defmodule PowAssent.MixProject do
       source_ref: "v#{@version}",
       main: "PowAssent",
       canonical: "http://hexdocs.pm/pow_assent",
-      source_url: "https://github.com/danschultzer/pow_assnet",
+      source_url: "https://github.com/danschultzer/pow_assent",
       extras: [
         "README.md": [filename: "PowAssent", title: "PowAssent"],
-        "guides/POW.md": [
-          filename: "Pow",
-          title: "Setting up Pow"
-        ],
+        "guides/POW.md": [filename: "Pow", title: "Setting up Pow"],
       ],
       groups_for_modules: [
         Ecto: ~r/^PowAssent.Ecto/,
