@@ -139,13 +139,13 @@ Otherwise, Pow will raise an error about missing template when the user id field
 You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider links to your template files:
 
 ```elixir
-<h1>Registration</h1>
-
 <%= for link <- PowAssent.Phoenix.ViewHelpers.provider_links(@conn),
   do: content_tag(:span, link) %>
 ```
 
-It'll automatically link with "Sign in with PROVIDER" or "Remove PROVIDER authentication" depending on if there's an authenticated user in the connection.
+This can be used in the `WEB_PATH/templates/pow/session/new.html.eex`, `WEB_PATH/templates/pow/registration/new.html.eex` and `WEB_PATH/templates/pow/registration/edit.html.eex` templates. By default "Sign in with PROVIDER" link is shown. A "Remove PROVIDER authentication" link will be shown instead if the user is signed in and the user already have authorized with the provider.
+
+You can also call `PowAssent.Phoenix.ViewHelpers.authorization_link/2` and `PowAssent.Phoenix.ViewHelpers.deauthorization_link/2` to generate a link for a single provider.
 
 ### Setting up a provider
 
