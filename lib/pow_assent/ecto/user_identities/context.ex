@@ -39,21 +39,25 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   alias Pow.Ecto.Context
   import Ecto.Query
 
+  @type changeset :: map()
   @type user :: map()
   @type user_identity :: map()
+  @type user_params :: map()
+  @type user_identity_params :: map()
+  @type user_id_params :: map()
 
   @callback get_user_by_provider_uid(binary(), binary()) :: user() | nil
-  @callback create(user(), binary(), binary()) ::
+  @callback create(user(), user_identity_params()) ::
               {:ok, user()}
-              | {:error, {:bound_to_different_user, map()}}
-              | {:error, Changeset.t()}
-  @callback create_user(binary(), binary(), map(), map() | nil) ::
-              {:ok, map()}
-              | {:error, {:bound_to_different_user | :invalid_user_id_field, Changeset.t()}}
-              | {:error, Changeset.t()}
+              | {:error, {:bound_to_different_user, changeset()}}
+              | {:error, changeset()}
+  @callback create_user(user_identity_params(), user_params(), user_id_params() | nil) ::
+              {:ok, user()}
+              | {:error, {:bound_to_different_user | :invalid_user_id_field, changeset()}}
+              | {:error, changeset()}
   @callback delete(user(), binary()) ::
-              {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
-  @callback all(user()) :: [map()]
+              {:ok, {number(), nil}} | {:error, {:no_password, changeset()}}
+  @callback all(user()) :: [user_identity()]
 
   @doc false
   defmacro __using__(config) do
@@ -64,9 +68,9 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
       def get_user_by_provider_uid(provider, uid),
         do: pow_assent_get_user_by_provider_uid(provider, uid)
-      def create(user, provider, uid), do: pow_assent_create(user, provider, uid)
-      def create_user(provider, uid, params, user_id_params),
-        do: pow_assent_create_user(provider, uid, params, user_id_params)
+      def create(user, user_identity_params), do: pow_assent_create(user, user_identity_params)
+      def create_user(user_identity_params, user_params, user_id_params),
+        do: pow_assent_create_user(user_identity_params, user_params, user_id_params)
       def delete(user, provider), do: pow_assent_delete(user, provider)
       def all(user), do: pow_assent_all(user)
 
@@ -74,12 +78,12 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
         unquote(__MODULE__).get_user_by_provider_uid(provider, uid, @pow_config)
       end
 
-      def pow_assent_create(user, provider, uid) do
-        unquote(__MODULE__).create(user, provider, uid, @pow_config)
+      def pow_assent_create(user, user_identity_params) do
+        unquote(__MODULE__).create(user, user_identity_params, @pow_config)
       end
 
-      def pow_assent_create_user(provider, uid, params, user_id_params) do
-        unquote(__MODULE__).create_user(provider, uid, params, user_id_params, @pow_config)
+      def pow_assent_create_user(user_identity_params, user_params, user_id_params) do
+        unquote(__MODULE__).create_user(user_identity_params, user_params, user_id_params, @pow_config)
       end
 
       def pow_assent_delete(user, provider) do
@@ -114,12 +118,12 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec create(user(), binary(), binary(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, map()}} | {:error, Changeset.t()}
-  def create(user, provider, uid, config) do
+  @spec create(user(), user_identity_params(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, changeset()}} | {:error, changeset()}
+  def create(user, user_identity_params, config) do
     user_identity = Ecto.build_assoc(user, :user_identities)
 
     user_identity
-    |> user_identity.__struct__.changeset(%{provider: provider, uid: uid})
+    |> user_identity.__struct__.changeset(user_identity_params)
     |> Context.do_insert(config)
     |> case do
       {:error, %{errors: [uid_provider: _]} = changeset} ->
@@ -135,15 +139,14 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec create_user(binary(), binary(), map(), map() | nil, Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, Changeset.t()}} | {:error, Changeset.t()}
-  def create_user(provider, uid, params, user_id_params, config) do
+  @spec create_user(user_identity_params(), user_params(), user_id_params() | nil, Config.t()) :: {:ok, user()} | {:error, {:bound_to_different_user | :invalid_user_id_field, changeset()}} | {:error, changeset()}
+  def create_user(user_identity_params, user_params, user_id_params, config) do
     user_mod      = user_schema_mod(config)
-    user_identity = %{provider: provider, uid: uid}
     user_id_field = user_mod.pow_user_id_field()
 
     user_mod
     |> struct()
-    |> user_mod.user_identity_changeset(user_identity, params, user_id_params)
+    |> user_mod.user_identity_changeset(user_identity_params, user_params, user_id_params)
     |> Context.do_insert(config)
     |> case do
       {:error, %{changes: %{user_identities: [%{errors: [uid_provider: _]}]}} = changeset} ->
@@ -166,7 +169,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   User schema module and repo module will be fetched from config.
   """
   @spec delete(user(), binary(), Config.t()) ::
-          {:ok, {number(), nil}} | {:error, {:no_password, Changeset.t()}}
+          {:ok, {number(), nil}} | {:error, {:no_password, changeset()}}
   def delete(user, provider, config) do
     repo = repo(config)
     user = repo.preload(user, :user_identities, force: true)
@@ -199,7 +202,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec all(user(), Config.t()) :: [map()]
+  @spec all(user(), Config.t()) :: [user_identity()]
   def all(user, config) do
     user
     |> Ecto.assoc(:user_identities)

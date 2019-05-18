@@ -18,12 +18,13 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
   alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithoutUserIdentities}
 
   @config [repo: Repo, user: User]
+  @user_identity_params %{provider: "test_provider", uid: "1"}
 
   describe "get_user_by_provider_uid/2" do
     setup do
       user =
         %User{}
-        |> Changeset.change(email: "test@example.com", user_identities: [%{provider: "test_provider", uid: "1"}])
+        |> Changeset.change(email: "test@example.com", user_identities: [@user_identity_params])
         |> Repo.insert!()
 
       {:ok, %{user: user}}
@@ -58,7 +59,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "with valid params", %{user: user} do
-      assert {:ok, user_identity} = Context.create(user, "test_provider", "1", @config)
+      assert {:ok, user_identity} = Context.create(user, @user_identity_params, @config)
       assert user_identity.provider == "test_provider"
       assert user_identity.uid == "1"
     end
@@ -66,18 +67,18 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     test "when other user has provider uid", %{user: user} do
       _second_user =
         %User{}
-        |> Changeset.change(email: "test-2@example.com", user_identities: [%{provider: "test_provider", uid: "1"}])
+        |> Changeset.change(email: "test-2@example.com", user_identities: [@user_identity_params])
         |> Repo.insert!()
 
-      assert {:error, {:bound_to_different_user, _changeset}} = Context.create(user, "test_provider", "1", @config)
+      assert {:error, {:bound_to_different_user, _changeset}} = Context.create(user, @user_identity_params, @config)
     end
   end
 
   describe "create_user/5" do
-    @valid_params %{name: "John Doe", email: "test@example.com"}
+    @user_params %{name: "John Doe", email: "test@example.com"}
 
     test "with valid params" do
-      assert {:ok, user} = Context.create_user("test_provider", "1", @valid_params, nil, @config)
+      assert {:ok, user} = Context.create_user(@user_identity_params, @user_params, nil, @config)
       user = Repo.preload(user, :user_identities, force: true)
 
       assert user.name == "John Doe"
@@ -90,14 +91,14 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     test "when other user has provider uid" do
       _second_user =
         %User{}
-        |> Changeset.change(email: "test-2@example.com", user_identities: [%{provider: "test_provider", uid: "1"}])
+        |> Changeset.change(email: "test-2@example.com", user_identities: [@user_identity_params])
         |> Repo.insert!()
 
-      assert {:error, {:bound_to_different_user, _changeset}} = Context.create_user("test_provider", "1", @valid_params, nil, @config)
+      assert {:error, {:bound_to_different_user, _changeset}} = Context.create_user(@user_identity_params, @user_params, nil, @config)
     end
 
     test "when user id field is missing" do
-      assert {:error, {:invalid_user_id_field, _changeset}} =  Context.create_user("test_provider", "1", Map.delete(@valid_params, :email), nil, @config)
+      assert {:error, {:invalid_user_id_field, _changeset}} =  Context.create_user(@user_identity_params, Map.delete(@user_params, :email), nil, @config)
     end
   end
 
@@ -105,7 +106,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     setup do
       user =
         %User{}
-        |> Changeset.change(email: "test@example.com", user_identities: [%{provider: "test_provider", uid: "1"}, %{provider: "test_provider", uid: "2"}])
+        |> Changeset.change(email: "test@example.com", user_identities: [@user_identity_params, %{provider: "test_provider", uid: "2"}])
         |> Repo.insert!()
 
       {:ok, user: user}

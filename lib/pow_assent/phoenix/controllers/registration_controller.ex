@@ -22,8 +22,8 @@ defmodule PowAssent.Phoenix.RegistrationController do
   end
 
   @spec process_create(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, map(), Conn.t()}
-  def process_create(%{private: %{pow_assent_params: user_params}} = conn, %{"provider" => provider, "user" => user_id_params}) do
-    Plug.create_user(conn, provider, user_params, user_id_params)
+  def process_create(%{private: %{pow_assent_params: %{user_identity: user_identity_params, user: user_params}}} = conn, %{"user" => user_id_params}) do
+    Plug.create_user(conn, user_identity_params, user_params, user_id_params)
   end
 
   @spec respond_create({:ok, map(), Conn.t()} | {:error, map(), Conn.t()}) :: Conn.t()
