@@ -1,9 +1,9 @@
 # Changelog
 
-## v0.2.5 (TBA)
+## v0.3.0 (TBA)
 
 * Added `PowAssent.Phoenix.ViewHelpers.authorization_link/2` and  `PowAssent.Phoenix.ViewHelpers.deauthorization_link/2`
-* Deprecated `PowAssent.Phoenix.ViewHelpers.provider_link/3`
+* Removed `PowAssent.Phoenix.ViewHelpers.provider_link/3`
 
 ## v0.2.4 (2019-04-25)
 
