@@ -76,7 +76,7 @@ defmodule PowAssent.MixProject do
   defp docs do
     [
       source_ref: "v#{@version}",
-      main: "PowAssent",
+      main: "readme",
       canonical: "http://hexdocs.pm/pow_assent",
       source_url: "https://github.com/danschultzer/pow_assent",
       extras: [
