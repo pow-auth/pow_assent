@@ -65,7 +65,7 @@ defmodule PowAssent.PlugTest do
   end
 
   describe "create_identity/3" do
-    setup %{conn: conn,} do
+    setup %{conn: conn} do
       conn = Pow.Plug.assign_current_user(conn, %User{}, @default_config)
 
       {:ok, conn: conn}

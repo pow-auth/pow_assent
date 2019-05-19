@@ -172,7 +172,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   defp store_invitation_token(conn, token), do: Conn.put_session(conn, :pow_assent_invitation_token, token)
 
   defp load_user_by_invitation_token(%{private: %{plug_session: %{"pow_assent_invitation_token" => token}}} = conn, _opts) do
-    conn = Conn.delete_session(conn,:pow_assent_invitation_token)
+    conn = Conn.delete_session(conn, :pow_assent_invitation_token)
 
     conn
     |> PowInvitation.Plug.invited_user_from_token(token)

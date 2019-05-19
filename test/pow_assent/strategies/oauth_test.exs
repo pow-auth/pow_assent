@@ -12,7 +12,7 @@ defmodule PowAssent.Strategy.OAuthTest do
       assert url == "http://localhost:#{bypass.port}/oauth/authenticate?oauth_token=request_token"
     end
 
-    test "parses URI query response with authorization params",%{config: config, bypass: bypass} do
+    test "parses URI query response with authorization params", %{config: config, bypass: bypass} do
       authorization_params = [scope: "reading writing", another_param: "param"]
       config = Keyword.put(config, :authorization_params, authorization_params)
       expect_oauth_request_token_request(bypass)
@@ -31,7 +31,7 @@ defmodule PowAssent.Strategy.OAuthTest do
     test "bubbles up unexpected response with HTTP status 200", %{config: config, bypass: bypass} do
       expect_oauth_request_token_request(bypass, params: %{"error_code" => 215, "error_message" => "Bad Authentication data."})
 
-      assert {:error, %RequestError{error: :unexpected_response}} =OAuth.authorize_url(config)
+      assert {:error, %RequestError{error: :unexpected_response}} = OAuth.authorize_url(config)
     end
 
     test "bubbles up error response", %{config: config, bypass: bypass} do

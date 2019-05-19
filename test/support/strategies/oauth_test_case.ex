@@ -104,13 +104,11 @@ defmodule PowAssent.Test.OAuthTestCase do
     value
     |> String.slice(6..-1)
     |> String.split(",")
-    |> Enum.map(&String.trim/1)
-    |> Enum.map(fn string ->
-      [_, key, value] = Regex.run(~r/^([a-zA-Z_]+)=\"(.*?)\"$/i, string)
+    |> Enum.into(%{}, fn string ->
+      [_, key, value] = Regex.run(~r/^([a-zA-Z_]+)=\"(.*?)\"$/i, String.trim(string))
 
       {key, value}
     end)
-    |> Enum.into(%{})
   end
 
   @spec expect_oauth_user_request(Bypass.t(), map(), Keyword.t()) :: :ok
