@@ -2,7 +2,10 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   @provider "test_provider"
-  @provider_params %{"test_provider" => %{"uid" => "new_user", "name" => "John Doe"}}
+  @token_params %{"access_token" => "access_token"}
+  @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}
+  @user_params %{"name" => "John Doe"}
+  @provider_params %{@provider => %{user_identity: @user_identity_params, user: @user_params}}
 
   setup %{conn: conn} do
     conn = Plug.Conn.put_session(conn, :pow_assent_params, @provider_params)
@@ -67,9 +70,10 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "with identity already bound to another user", %{conn: conn} do
+      params = %{@provider => %{user_identity: %{"provider" => @provider, "uid" => "identity_taken", "token" => @token_params}, user: %{"name" => "John Doe"}}}
       conn =
         conn
-        |> Plug.Conn.put_session(:pow_assent_params, %{"test_provider" => %{"uid" => "identity_taken", "name" => "John Doe"}})
+        |> Plug.Conn.put_session(:pow_assent_params, params)
         |> post(Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :new)
@@ -80,9 +84,10 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   alias PowAssent.Test.EmailConfirmation.Phoenix.Endpoint, as: EmailConfirmationEndpoint
   describe "GET /auth/:provider/create with PowEmailConfirmation" do
     test "with user email", %{conn: conn} do
+      params = %{@provider => %{user_identity: %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}, user: %{}}}
       conn =
         conn
-        |> Plug.Conn.put_session(:pow_assent_params, %{"test_provider" => %{"uid" => "new_user"}})
+        |> Plug.Conn.put_session(:pow_assent_params, params)
         |> Phoenix.ConnTest.dispatch(EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
 
       refute Pow.Plug.current_user(conn)
@@ -95,15 +100,35 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "with provider email", %{conn: conn} do
+      params = %{@provider => %{user_identity: %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}, user: %{"name" => "John Doe", "email" => "foo@example.com"}}}
       conn =
         conn
-        |> Plug.Conn.put_session(:pow_assent_params, %{"test_provider" => %{"uid" => "new_user", "name" => "John Doe", "email" => "foo@example.com"}})
+        |> Plug.Conn.put_session(:pow_assent_params, params)
         |> Phoenix.ConnTest.dispatch(EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{}})
 
       assert redirected_to(conn) == "/registration_created"
       assert Pow.Plug.current_user(conn)
 
       refute_received {:mail_mock, _mail}
+    end
+  end
+
+  describe "POST /auth/:provider/create recording strategy params" do
+    setup %{conn: conn} do
+      user_identity_params = %{"provider" => @provider, "uid" => "new_user_with_access_token", "token" => @token_params}
+      provider_params      = %{@provider => %{user_identity: user_identity_params, user: @user_params}}
+      conn                 = Plug.Conn.put_session(conn, :pow_assent_params, provider_params)
+
+      {:ok, conn: conn}
+    end
+
+    test "records", %{conn: conn} do
+      conn = post conn, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}}
+
+      assert redirected_to(conn) == "/registration_created"
+      assert user = Pow.Plug.current_user(conn)
+      assert [user_identity] = user.user_identities
+      assert user_identity.access_token == "access_token"
     end
   end
 end

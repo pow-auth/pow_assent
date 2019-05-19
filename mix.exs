@@ -80,8 +80,9 @@ defmodule PowAssent.MixProject do
       canonical: "http://hexdocs.pm/pow_assent",
       source_url: "https://github.com/danschultzer/pow_assent",
       extras: [
-        "README.md": [filename: "PowAssent", title: "PowAssent"],
-        "guides/POW.md": [filename: "Pow", title: "Setting up Pow"],
+        "README.md": [filename: "readme", title: "PowAssent"],
+        "guides/POW.md": [filename: "setting-up-pow", title: "Setting up Pow"],
+        "guides/CAPTURE_ACCESS_TOKEN.md": [filename: "capture-access-token", title: "Capture access token"],
       ],
       groups_for_modules: [
         Ecto: ~r/^PowAssent.Ecto/,

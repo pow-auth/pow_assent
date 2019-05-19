@@ -62,15 +62,4 @@ defmodule PowAssent.Phoenix.ViewHelpers do
 
     Link.link(msg, to: path, method: :delete)
   end
-
-  # TODO: Remove by 0.3.0
-  @doc false
-  @deprecated "Use `authorization_link/2` and `deauthorization_link/2`"
-  @spec provider_link(Conn.t(), atom(), [atom()]) :: HTML.safe()
-  def provider_link(conn, provider, providers_for_user) do
-    case Enum.member?(providers_for_user, provider) do
-      false -> authorization_link(conn, provider)
-      true  -> deauthorization_link(conn, provider)
-    end
-  end
 end

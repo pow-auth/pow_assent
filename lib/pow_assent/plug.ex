@@ -43,12 +43,12 @@ defmodule PowAssent.Plug do
   @doc """
   Calls the callback method for the provider strategy.
 
-  Returns the user params fetched from the provider.
+  Returns the user identity params and user params fetched from the provider.
 
   `:session_params` will be added to the provider config if
   `:pow_assent_session_params` is present as a private key in the connection.
   """
-  @spec callback(Conn.t(), binary(), map(), binary()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
+  @spec callback(Conn.t(), binary(), map(), binary()) :: {:ok, map(), map(), Conn.t()} | {:error, any(), Conn.t()}
   def callback(conn, provider, params, redirect_uri) do
     {strategy, provider_config} = get_provider_config(conn, provider)
     params                      = Map.put(params, "redirect_uri", redirect_uri)
@@ -56,26 +56,44 @@ defmodule PowAssent.Plug do
     provider_config
     |> maybe_set_session_params_config(conn)
     |> strategy.callback(params)
-    |> case do
-      {:ok, %{user: user}} -> {:ok, user, conn}
-      {:error, error}      -> {:error, error, conn}
-    end
+    |> parse_callback_response(provider, conn)
   end
 
   defp maybe_set_session_params_config(config, %{private: %{pow_assent_session_params: params}}), do: Config.put(config, :session_params, params)
   defp maybe_set_session_params_config(config, _conn), do: config
+
+  defp parse_callback_response({:ok, %{user: user} = response}, provider, conn) do
+    other_params = Map.drop(response, [:user])
+
+    user
+    |> Map.split(["uid"])
+    |> handle_user_identity_params(other_params, provider, conn)
+  end
+  defp parse_callback_response({:error, error}, _provider, conn), do: {:error, error, conn}
+
+  defp handle_user_identity_params({user_identity_params, user_params}, other_params, provider, conn) do
+    user_identity_params = Map.put(user_identity_params, "provider", provider)
+    other_params         = for {key, value} <- other_params, into: %{}, do: {Atom.to_string(key), value}
+
+    user_identity_params =
+      user_identity_params
+      |> Map.put("provider", provider)
+      |> Map.merge(other_params)
+
+    {:ok, user_identity_params, user_params, conn}
+  end
 
   @doc """
   Authenticates a user with provider and provider user params.
 
   If successful, a new session will be created.
   """
-  @spec authenticate(Conn.t(), binary(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()}
-  def authenticate(conn, provider, user_params) do
+  @spec authenticate(Conn.t(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()}
+  def authenticate(conn, %{"provider" => provider, "uid" => uid}) do
     config = fetch_config(conn)
 
     provider
-    |> Operations.get_user_by_provider_uid(user_params["uid"], config)
+    |> Operations.get_user_by_provider_uid(uid, config)
     |> case do
       nil  -> {:error, conn}
       user -> {:ok, get_mod(config).do_create(conn, user, config)}
@@ -87,13 +105,13 @@ defmodule PowAssent.Plug do
 
   If successful, a new session will be created.
   """
-  @spec create_identity(Conn.t(), binary(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
-  def create_identity(conn, provider, user_params) do
+  @spec create_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
+  def create_identity(conn, user_identity_params) do
     config = fetch_config(conn)
     user   = Pow.Plug.current_user(conn)
 
     user
-    |> Operations.create(provider, user_params["uid"], config)
+    |> Operations.create(user_identity_params, config)
     |> case do
       {:ok, user_identity} -> {:ok, user_identity, get_mod(config).do_create(conn, user, config)}
       {:error, error}      -> {:error, error, conn}
@@ -105,12 +123,12 @@ defmodule PowAssent.Plug do
 
   If successful, a new session will be created.
   """
-  @spec create_user(Conn.t(), binary(), map(), map() | nil) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()} | map(), Conn.t()}
-  def create_user(conn, provider, user_params, user_id_params \\ nil) do
+  @spec create_user(Conn.t(), map(), map(), map() | nil) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()} | map(), Conn.t()}
+  def create_user(conn, user_identity_params, user_params, user_id_params \\ nil) do
     config = fetch_config(conn)
 
-    provider
-    |> Operations.create_user(user_params["uid"], user_params, user_id_params, config)
+    user_identity_params
+    |> Operations.create_user(user_params, user_id_params, config)
     |> case do
       {:ok, user}     -> {:ok, user, get_mod(config).do_create(conn, user, config)}
       {:error, error} -> {:error, error, conn}

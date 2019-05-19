@@ -28,11 +28,11 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.create/4` or
   `create/3` on a custom context module.
   """
-  @spec create(map(), binary(), binary(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
-  def create(user, provider, uid, config) do
+  @spec create(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
+  def create(user, user_identity_params, config) do
     case context_module(config) do
-      Context -> Context.create(user, provider, uid, config)
-      module  -> module.create(user, provider, uid)
+      Context -> Context.create(user, user_identity_params, config)
+      module  -> module.create(user, user_identity_params)
     end
   end
 
@@ -42,11 +42,11 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.create_user/5` or
   `create_user/4` on a custom context module.
   """
-  @spec create_user(binary(), binary(), map(), map() | nil, Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()}} | {:error, map()} | no_return
-  def create_user(provider, uid, params, user_id_params, config) do
+  @spec create_user(map(), map(), map() | nil, Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()}} | {:error, map()} | no_return
+  def create_user(user_identity_params, user_params, user_id_params, config) do
     case context_module(config) do
-      Context -> Context.create_user(provider, uid, params, user_id_params, config)
-      module  -> module.create_user(provider, uid, params, user_id_params)
+      Context -> Context.create_user(user_identity_params, user_params, user_id_params, config)
+      module  -> module.create_user(user_identity_params, user_params, user_id_params)
     end
   end
 

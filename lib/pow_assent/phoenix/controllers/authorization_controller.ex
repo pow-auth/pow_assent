@@ -36,7 +36,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     conn
     |> maybe_load_session_params()
     |> Plug.callback(provider, params, conn.assigns.callback_url)
-    |> handle_callback(provider)
+    |> handle_callback()
   end
 
   defp maybe_load_session_params(conn) do
@@ -46,34 +46,34 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     end
   end
 
-  defp handle_callback({:ok, user_params, %{assigns: %{invited_user: invited_user}} = conn}, provider) do
-    authenticate_or_create_identity(invited_user, provider, user_params, conn)
+  defp handle_callback({:ok, user_identity_params, user_params, %{assigns: %{invited_user: invited_user}} = conn}) do
+    authenticate_or_create_identity(invited_user, user_identity_params, user_params, conn)
   end
-  defp handle_callback({:ok, user_params, conn}, provider) do
+  defp handle_callback({:ok, user_identity_params, user_params, conn}) do
     conn
     |> Pow.Plug.current_user()
-    |> authenticate_or_create_identity(provider, user_params, conn)
+    |> authenticate_or_create_identity(user_identity_params, user_params, conn)
   end
-  defp handle_callback({:error, error, _conn}, _provider), do: handle_strategy_error(error)
+  defp handle_callback({:error, error, _conn}), do: handle_strategy_error(error)
 
-  defp authenticate_or_create_identity(nil, provider, user, conn) do
+  defp authenticate_or_create_identity(nil, user_identity_params, user_params, conn) do
     conn
-    |> Plug.authenticate(provider, user)
-    |> maybe_create_user(provider, user)
+    |> Plug.authenticate(user_identity_params)
+    |> maybe_create_user(user_identity_params, user_params)
   end
-  defp authenticate_or_create_identity(_user, provider, user, conn) do
+  defp authenticate_or_create_identity(_user, user_identity_params, _user_params, conn) do
     conn
-    |> Plug.create_identity(provider, user)
+    |> Plug.create_identity(user_identity_params)
     |> case do
       {:ok, _user_identity, conn} -> {:ok, conn}
       {:error, error, conn}       -> {:error, error, conn}
     end
   end
 
-  defp maybe_create_user({:ok, conn}, _provider, _user), do: {:ok, conn}
-  defp maybe_create_user({:error, conn}, provider, user) do
+  defp maybe_create_user({:ok, conn}, _user_identity_params, _user_params), do: {:ok, conn}
+  defp maybe_create_user({:error, conn}, user_identity_params, user_params) do
     case registration_path?(conn) do
-      true  -> create_user(conn, provider, user)
+      true  -> create_user(conn, user_identity_params, user_params)
       false -> {:error, conn}
     end
   end
@@ -84,10 +84,10 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> function_exported?(:pow_assent_registration_path, 3)
   end
 
-  defp create_user(conn, provider, user) do
-    case Plug.create_user(conn, provider, user) do
+  defp create_user(conn, user_identity_params, user_params) do
+    case Plug.create_user(conn, user_identity_params, user_params) do
       {:ok, _user, conn}    -> {:ok, Conn.put_private(conn, :pow_assent_action, :registration)}
-      {:error, error, conn} -> {:error, error, Conn.put_private(conn, :pow_assent_params, user)}
+      {:error, error, conn} -> {:error, error, Conn.put_private(conn, :pow_assent_params, %{user_identity: user_identity_params, user: user_params})}
     end
   end
 

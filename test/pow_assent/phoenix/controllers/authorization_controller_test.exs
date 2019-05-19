@@ -137,7 +137,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert Plug.Conn.get_session(conn, :pow_assent_params) == %{"test_provider" => %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => ""}}
+      assert %{"test_provider" => %{user_identity: user_identity, user: user}} = Plug.Conn.get_session(conn, :pow_assent_params)
+      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user == %{"name" => "Dan Schultzer", "email" => ""}
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
@@ -147,7 +149,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert Plug.Conn.get_session(conn, :pow_assent_params) == %{"test_provider" => %{"name" => "Dan Schultzer", "uid" => "new_user", "email" => "taken@example.com"}}
+      assert %{"test_provider" => %{user_identity: user_identity, user: user}} = Plug.Conn.get_session(conn, :pow_assent_params)
+      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user == %{"name" => "Dan Schultzer", "email" => "taken@example.com"}
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
   end
@@ -205,6 +209,34 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
       assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
+    end
+  end
+
+  describe "GET /auth/:provider/callback recording strategy params" do
+    test "with new identity", %{conn: conn, bypass: bypass, user: user} do
+      expect_oauth2_flow(bypass, user: %{uid: "new_identity_with_access_token"})
+
+      conn =
+        conn
+        |> Pow.Plug.assign_current_user(user, [])
+        |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      assert redirected_to(conn) == "/session_created"
+    end
+
+    test "with new user", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{uid: "new_user_with_access_token"})
+
+      conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+
+      assert redirected_to(conn) == "/registration_created"
+
+      assert user = Pow.Plug.current_user(conn)
+
+
+      assert [user_identity] = user.user_identities
+
+      assert user_identity.access_token == "access_token"
     end
   end
 

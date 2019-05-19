@@ -49,15 +49,16 @@ defmodule PowAssent.PlugTest do
     test "returns user params", %{conn: conn, bypass: bypass} do
       expect_oauth2_flow(bypass)
 
-      assert {:ok, user, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "")
-      assert user == %{"name" => "Dan Schultzer", "uid" => "new_user"}
+      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "")
+      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user_params == %{"name" => "Dan Schultzer"}
     end
   end
 
   test "authenticate/3", %{conn: conn} do
-    {:error, conn} = Plug.authenticate(conn, "test_provider", %{"uid" => "new_user"})
+    {:error, conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "new_user"})
 
-    {:ok, conn} = Plug.authenticate(conn, "test_provider", %{"uid" => "existing_user"})
+    {:ok, conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "existing_user"})
 
     assert Pow.Plug.current_user(conn) == UserIdentitiesMock.user()
     assert_pow_session conn
@@ -71,14 +72,14 @@ defmodule PowAssent.PlugTest do
     end
 
     test "creates user identity", %{conn: conn} do
-      {:ok, user_identity, conn} = Plug.create_identity(conn, "test_provider", %{"uid" => "new_identity"})
+      {:ok, user_identity, conn} = Plug.create_identity(conn, %{"provider" => "test_provider", "uid" => "new_identity"})
 
       assert user_identity.id == :new_identity
       assert_pow_session conn
     end
 
     test "with identity already taken", %{conn: conn} do
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_identity(conn, "test_provider", %{"uid" => "identity_taken"})
+      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_identity(conn, %{"provider" => "test_provider", "uid" => "identity_taken"})
 
       assert Pow.Plug.current_user(conn) == %User{}
       refute_pow_session conn
@@ -87,19 +88,19 @@ defmodule PowAssent.PlugTest do
 
   describe "create_user/3" do
     test "creates user", %{conn: conn} do
-      {:ok, user, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "new_user", "email" => "test@example.com"})
+      {:ok, user, conn} = Plug.create_user(conn, %{"provider" => "test_provider", "uid" => "new_user"}, %{"email" => "test@example.com"})
 
       assert user.id == :new_user
       assert_pow_session conn
     end
 
     test "with missing user id", %{conn: conn} do
-      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "new_user", "email" => ""})
+      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, %{"provider" => "test_provider", "uid" => "new_user"}, %{"email" => ""})
       refute_pow_session conn
     end
 
     test "with identity already taken", %{conn: conn} do
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, "test_provider", %{"uid" => "identity_taken"})
+      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, %{"provider" => "test_provider", "uid" => "identity_taken"}, %{})
       refute_pow_session conn
     end
   end
