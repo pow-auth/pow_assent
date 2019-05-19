@@ -212,6 +212,34 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
   end
 
+  describe "GET /auth/:provider/callback recording strategy params" do
+    test "with new identity", %{conn: conn, bypass: bypass, user: user} do
+      expect_oauth2_flow(bypass, user: %{uid: "new_identity_with_access_token"})
+
+      conn =
+        conn
+        |> Pow.Plug.assign_current_user(user, [])
+        |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      assert redirected_to(conn) == "/session_created"
+    end
+
+    test "with new user", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{uid: "new_user_with_access_token"})
+
+      conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+
+      assert redirected_to(conn) == "/registration_created"
+
+      assert user = Pow.Plug.current_user(conn)
+
+
+      assert [user_identity] = user.user_identities
+
+      assert user_identity.access_token == "access_token"
+    end
+  end
+
   describe "DELETE /auth/:provider" do
     test "when requires a user password set", %{conn: conn} do
       conn =

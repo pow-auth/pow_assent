@@ -112,4 +112,23 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       refute_received {:mail_mock, _mail}
     end
   end
+
+  describe "POST /auth/:provider/create recording strategy params" do
+    setup %{conn: conn} do
+      user_identity_params = %{"provider" => @provider, "uid" => "new_user_with_access_token", "token" => @token_params}
+      provider_params      = %{@provider => %{user_identity: user_identity_params, user: @user_params}}
+      conn                 = Plug.Conn.put_session(conn, :pow_assent_params, provider_params)
+
+      {:ok, conn: conn}
+    end
+
+    test "records", %{conn: conn} do
+      conn = post conn, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}}
+
+      assert redirected_to(conn) == "/registration_created"
+      assert user = Pow.Plug.current_user(conn)
+      assert [user_identity] = user.user_identities
+      assert user_identity.access_token == "access_token"
+    end
+  end
 end
