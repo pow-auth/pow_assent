@@ -15,5 +15,8 @@ jobs:
       script: skip
       deploy:
         provider: script
-        script: mix hex.publish --yes --dry-run
+        script: mix hex.publish --yes
         skip_cleanup: true
+        on:
+          tags: true
+          all_branches: true
