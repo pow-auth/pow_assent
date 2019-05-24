@@ -178,7 +178,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   alias PowAssent.Test.Invitation.Phoenix.Endpoint, as: InvitationEndpoint
   describe "GET /auth/:provider/callback as authentication with invitation" do
-    test "with invitation_token updates user as accepted invtation", %{conn: conn, bypass: bypass} do
+    test "with invitation_token updates user as accepted invitation", %{conn: conn, bypass: bypass} do
       expect_oauth2_flow(bypass, user: %{uid: "new_identity"})
 
       conn =
@@ -189,6 +189,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == "/session_created"
       assert get_flash(conn, :info) == "signed_in_test_provider"
+      assert user = Pow.Plug.current_user(conn)
+      assert user.invitation_token == "token"
       refute Plug.Conn.get_session(conn, :pow_assent_invitation_token)
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end

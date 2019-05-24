@@ -47,6 +47,9 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   end
 
   defp handle_callback({:ok, user_identity_params, user_params, %{assigns: %{invited_user: invited_user}} = conn}) do
+    config = Pow.Plug.fetch_config(conn)
+    conn   = Pow.Plug.assign_current_user(conn, invited_user, config)
+
     authenticate_or_create_identity(invited_user, user_identity_params, user_params, conn)
   end
   defp handle_callback({:ok, user_identity_params, user_params, conn}) do
