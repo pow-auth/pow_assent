@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.1 (TBA)
+
+* Fixed bug where invited user was not signed in after succesful authorization
+
 ## v0.3.0 (2019-05-19)
 
 * Added `PowAssent.Phoenix.ViewHelpers.authorization_link/2` and  `PowAssent.Phoenix.ViewHelpers.deauthorization_link/2`
