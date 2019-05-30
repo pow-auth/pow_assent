@@ -9,7 +9,7 @@ defmodule PowAssent.PlugTest do
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 1, put_oauth2_env: 1]
 
   @default_config [
-    mod: Pow.Plug.Session,
+    plug: Pow.Plug.Session,
     user: User,
     otp_app: :pow_assent,
     pow_assent: [
