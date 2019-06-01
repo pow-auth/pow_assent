@@ -2,6 +2,8 @@
 
 ## v0.3.1 (TBA)
 
+* Added Pow minimum requirement `~> 1.0.9`
+* Added repo `:prefix` support
 * User identities are now upserted on authorization so additional params can be updated on authorization request. Following methods has been deprecated:
   * `PowAssent.Ecto.UserIdentities.Context.create/3` in favor of `PowAssent.Ecto.UserIdentities.Context.upsert/3`
   * `MyApp.UserIdentities.create/2` in favor of `MyApp.UserIdentities.upsert/2`
