@@ -47,7 +47,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   @type user_id_params :: map()
 
   @callback get_user_by_provider_uid(binary(), binary()) :: user() | nil
-  @callback create(user(), user_identity_params()) ::
+  @callback upsert(user(), user_identity_params()) ::
               {:ok, user()}
               | {:error, {:bound_to_different_user, changeset()}}
               | {:error, changeset()}
@@ -59,6 +59,9 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
               {:ok, {number(), nil}} | {:error, {:no_password, changeset()}}
   @callback all(user()) :: [user_identity()]
 
+  # TODO: Remove by 0.4.0
+  @callback create(user(), user_identity_params()) :: any()
+
   @doc false
   defmacro __using__(config) do
     quote do
@@ -68,7 +71,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
       def get_user_by_provider_uid(provider, uid),
         do: pow_assent_get_user_by_provider_uid(provider, uid)
-      def create(user, user_identity_params), do: pow_assent_create(user, user_identity_params)
+      def upsert(user, user_identity_params), do: pow_assent_upsert(user, user_identity_params)
       def create_user(user_identity_params, user_params, user_id_params),
         do: pow_assent_create_user(user_identity_params, user_params, user_id_params)
       def delete(user, provider), do: pow_assent_delete(user, provider)
@@ -78,8 +81,8 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
         unquote(__MODULE__).get_user_by_provider_uid(provider, uid, @pow_config)
       end
 
-      def pow_assent_create(user, user_identity_params) do
-        unquote(__MODULE__).create(user, user_identity_params, @pow_config)
+      def pow_assent_upsert(user, user_identity_params) do
+        unquote(__MODULE__).upsert(user, user_identity_params, @pow_config)
       end
 
       def pow_assent_create_user(user_identity_params, user_params, user_id_params) do
@@ -93,6 +96,14 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
       def pow_assent_all(user) do
         unquote(__MODULE__).all(user, @pow_config)
       end
+
+      # TODO: Remove by 0.4.0
+      @deprecated "Please use `upsert/2` instead"
+      defdelegate create(user, user_identity_params), to: __MODULE__, as: :upsert
+
+      # TODO: Remove by 0.4.0
+      @deprecated "Please use `pow_assent_upsert/2` instead"
+      defdelegate pow_assent_create(user, user_identity_params), to: __MODULE__, as: :pow_assent_upsert
 
       defoverridable unquote(__MODULE__)
     end
@@ -113,18 +124,31 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     |> repo(config).one()
   end
 
-  @doc """
-  Creates a user identity.
-
-  User schema module and repo module will be fetched from config.
-  """
+  # TODO: Remove by 0.4.0
+  @doc false
+  @deprecated "Use `upsert/3` instead"
   @spec create(user(), user_identity_params(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, changeset()}} | {:error, changeset()}
-  def create(user, user_identity_params, config) do
-    user_identity = Ecto.build_assoc(user, :user_identities)
+  def create(user, user_identity_params, config), do: upsert(user, user_identity_params, config)
 
-    user_identity
-    |> user_identity.__struct__.changeset(user_identity_params)
-    |> Context.do_insert(config)
+  @doc """
+  Upserts a user identity.
+
+  If a matching user identity already exists for the user, the identity will be updated,
+  otherwise a new identity is inserted.
+
+  Repo module will be fetched from config.
+  """
+  @spec upsert(user(), user_identity_params(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, changeset()}} | {:error, changeset()}
+  def upsert(user, user_identity_params, config) do
+    params                                   = to_string_params(user_identity_params)
+    {uid_provider_params, additional_params} = Map.split(params, ["uid", "provider"])
+
+    user
+    |> get_for_user(uid_provider_params, config)
+    |> case do
+      nil      -> insert_identity(user, params, config)
+      identity -> update_identity(identity, additional_params, config)
+    end
     |> case do
       {:error, %{errors: [uid_provider: _]} = changeset} ->
         {:error, {:bound_to_different_user, changeset}}
@@ -132,6 +156,36 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
       {:ok, user_identity} ->
         {:ok, user_identity}
     end
+  end
+
+  defp to_string_params(map) when is_map(map) do
+    map
+    |> Map.to_list()
+    |> to_string_params()
+    |> Enum.into(%{})
+  end
+  defp to_string_params(list) when is_list(list), do: Enum.map(list, &to_string_params/1)
+  defp to_string_params({key, value}) when is_atom(key), do: {Atom.to_string(key), value}
+  defp to_string_params({key, value}), do: {key, value}
+
+  defp insert_identity(user, user_identity_params, config) do
+    user_identity = Ecto.build_assoc(user, :user_identities)
+
+    user_identity
+    |> user_identity.__struct__.changeset(user_identity_params)
+    |> Context.do_insert(config)
+  end
+
+  defp update_identity(user_identity, additional_params, config) do
+    user_identity
+    |> user_identity.__struct__.changeset(additional_params)
+    |> Context.do_update(config)
+  end
+
+  defp get_for_user(user, %{"uid" => uid, "provider" => provider}, config) do
+    user_identity = Ecto.build_assoc(user, :user_identities).__struct__
+
+    repo(config).get_by(user_identity, user_id: user.id, provider: provider, uid: uid)
   end
 
   @doc """
@@ -166,7 +220,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   @doc """
   Deletes a user identity for the provider and user.
 
-  User schema module and repo module will be fetched from config.
+  Repo module will be fetched from config.
   """
   @spec delete(user(), binary(), Config.t()) ::
           {:ok, {number(), nil}} | {:error, {:no_password, changeset()}}
@@ -200,7 +254,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   @doc """
   Fetches all user identities for user.
 
-  User schema module and repo module will be fetched from config.
+  Repo module will be fetched from config.
   """
   @spec all(user(), Config.t()) :: [user_identity()]
   def all(user, config) do

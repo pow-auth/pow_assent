@@ -9,13 +9,27 @@ defmodule PowAssent.Test.Ecto.Users.UserWithoutUserIdentities do
   end
 end
 
+defmodule PowAssent.Test.Ecto.Users.UserWithAccessTokenUserIdentities do
+  @moduledoc false
+  use Ecto.Schema
+  use Pow.Ecto.Schema
+  use PowAssent.Ecto.Schema
+
+  schema "users" do
+    has_many :user_identities, PowAssent.Test.Ecto.UserIdentities.UserIdentityWithAccessToken, foreign_key: :user_id, on_delete: :delete_all
+
+    pow_user_fields()
+    timestamps()
+  end
+end
+
 defmodule PowAssent.Ecto.UserIdentities.ContextTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.UserIdentities.Context
 
   alias Ecto.Changeset
   alias PowAssent.Ecto.UserIdentities.Context
-  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithoutUserIdentities}
+  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithoutUserIdentities, Users.UserWithAccessTokenUserIdentities, Users.User}
 
   @config [repo: Repo, user: User]
   @user_identity_params %{provider: "test_provider", uid: "1"}
@@ -48,29 +62,47 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
   end
 
-  describe "create/5" do
+  describe "upsert/3" do
+    @config_with_access_token [repo: Repo, user: UserWithAccessTokenUserIdentities]
+    @user_identity_params_with_access_token Map.put(@user_identity_params, :token, %{access_token: "access_token"})
+
     setup do
       user =
-        %User{}
+        %UserWithAccessTokenUserIdentities{}
         |> Changeset.change(email: "test@example.com")
         |> Repo.insert!()
 
       {:ok, %{user: user}}
     end
 
-    test "with valid params", %{user: user} do
-      assert {:ok, user_identity} = Context.create(user, @user_identity_params, @config)
+    test "inserts with valid params", %{user: user} do
+      assert {:ok, user_identity} = Context.upsert(user, @user_identity_params_with_access_token, @config_with_access_token)
       assert user_identity.provider == "test_provider"
       assert user_identity.uid == "1"
     end
 
+    test "updates with valid params", %{user: user} do
+      assert {:ok, prev_user_identity} = Context.upsert(user, @user_identity_params_with_access_token, @config_with_access_token)
+      assert prev_user_identity.access_token
+      refute prev_user_identity.refresh_token
+
+      params = Map.put(@user_identity_params_with_access_token, :token, %{access_token: "changed_access_token", refresh_token: "refresh_token"})
+
+      assert {:ok, user_identity} = Context.upsert(user, params, @config_with_access_token)
+      assert prev_user_identity.id == user_identity.id
+      assert user_identity.provider == "test_provider"
+      assert user_identity.uid == "1"
+      assert user_identity.access_token == "changed_access_token"
+      assert user_identity.refresh_token == "refresh_token"
+    end
+
     test "when other user has provider uid", %{user: user} do
       _second_user =
-        %User{}
-        |> Changeset.change(email: "test-2@example.com", user_identities: [@user_identity_params])
+        %UserWithAccessTokenUserIdentities{}
+        |> Changeset.change(email: "test-2@example.com", user_identities: [@user_identity_params_with_access_token])
         |> Repo.insert!()
 
-      assert {:error, {:bound_to_different_user, _changeset}} = Context.create(user, @user_identity_params, @config)
+      assert {:error, {:bound_to_different_user, _changeset}} = Context.upsert(user, @user_identity_params_with_access_token, @config_with_access_token)
     end
   end
 

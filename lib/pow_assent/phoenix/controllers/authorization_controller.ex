@@ -34,49 +34,57 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   @spec process_callback(Conn.t(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()} | {:error, {atom(), map()} | map(), Conn.t()}
   def process_callback(conn, %{"provider" => provider} = params) do
     conn
-    |> maybe_load_session_params()
+    |> load_session_params()
+    |> maybe_assign_invited_user()
     |> Plug.callback(provider, params, conn.assigns.callback_url)
-    |> handle_callback()
+    |> upsert_identity_or_authenticate_or_create_user()
   end
 
-  defp maybe_load_session_params(conn) do
+  defp load_session_params(conn) do
     case fetch_session_params(conn) do
       {params, conn} -> Conn.put_private(conn, :pow_assent_session_params, params)
       conn           -> conn
     end
   end
 
-  defp handle_callback({:ok, user_identity_params, user_params, %{assigns: %{invited_user: invited_user}} = conn}) do
+  defp maybe_assign_invited_user(%{assigns: %{invited_user: invited_user}} = conn) do
     config = Pow.Plug.fetch_config(conn)
-    conn   = Pow.Plug.assign_current_user(conn, invited_user, config)
 
-    authenticate_or_create_identity(invited_user, user_identity_params, user_params, conn)
+    Pow.Plug.assign_current_user(conn, invited_user, config)
   end
-  defp handle_callback({:ok, user_identity_params, user_params, conn}) do
-    conn
-    |> Pow.Plug.current_user()
-    |> authenticate_or_create_identity(user_identity_params, user_params, conn)
-  end
-  defp handle_callback({:error, error, _conn}), do: handle_strategy_error(error)
+  defp maybe_assign_invited_user(conn), do: conn
 
-  defp authenticate_or_create_identity(nil, user_identity_params, user_params, conn) do
-    conn
-    |> Plug.authenticate(user_identity_params)
-    |> maybe_create_user(user_identity_params, user_params)
+  defp upsert_identity_or_authenticate_or_create_user({:ok, user_identity_params, user_params, conn}) do
+    case Pow.Plug.current_user(conn) do
+      nil   -> authenticate_or_create_user(conn, user_identity_params, user_params)
+      _user -> upsert_user_identity(conn, user_identity_params)
+    end
   end
-  defp authenticate_or_create_identity(_user, user_identity_params, _user_params, conn) do
+  defp upsert_identity_or_authenticate_or_create_user({:error, error, _conn}), do: handle_strategy_error(error)
+
+  defp upsert_user_identity(conn, user_identity_params) do
     conn
-    |> Plug.create_identity(user_identity_params)
+    |> Plug.upsert_identity(user_identity_params)
     |> case do
-      {:ok, _user_identity, conn} -> {:ok, conn}
-      {:error, error, conn}       -> {:error, error, conn}
+      {:ok, _user, conn}    -> {:ok, conn}
+      {:error, error, conn} -> {:error, error, conn}
     end
   end
 
-  defp maybe_create_user({:ok, conn}, _user_identity_params, _user_params), do: {:ok, conn}
-  defp maybe_create_user({:error, conn}, user_identity_params, user_params) do
-    case registration_path?(conn) do
-      true  -> create_user(conn, user_identity_params, user_params)
+  defp authenticate_or_create_user(conn, user_identity_params, user_params) do
+    case Plug.authenticate(conn, user_identity_params) do
+      {:ok, conn}    -> upsert_user_identity(conn, user_identity_params)
+      {:error, conn} -> create_user(conn, user_identity_params, user_params)
+    end
+  end
+
+  defp create_user(conn, user_identity_params, user_params) do
+    with true <- registration_path?(conn),
+         {:ok, _user, conn} <- Plug.create_user(conn, user_identity_params, user_params)
+    do
+      {:ok, Conn.put_private(conn, :pow_assent_action, :registration)}
+    else
+      {:error, error, conn} -> {:error, error, Conn.put_private(conn, :pow_assent_params, %{user_identity: user_identity_params, user: user_params})}
       false -> {:error, conn}
     end
   end
@@ -85,13 +93,6 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     [conn.private.phoenix_router, Helpers]
     |> Module.concat()
     |> function_exported?(:pow_assent_registration_path, 3)
-  end
-
-  defp create_user(conn, user_identity_params, user_params) do
-    case Plug.create_user(conn, user_identity_params, user_params) do
-      {:ok, _user, conn}    -> {:ok, Conn.put_private(conn, :pow_assent_action, :registration)}
-      {:error, error, conn} -> {:error, error, Conn.put_private(conn, :pow_assent_params, %{user_identity: user_identity_params, user: user_params})}
-    end
   end
 
   @spec respond_callback({:ok, Conn.t()} | {:error, Conn.t()} | {:error, {atom(), map()} | map(), Conn.t()}) :: Conn.t()

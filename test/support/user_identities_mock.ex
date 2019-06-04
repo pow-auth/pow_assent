@@ -17,10 +17,13 @@ defmodule PowAssent.Test.UserIdentitiesMock do
   def get_user_by_provider_uid(@provider, "existing_user"), do: @user
   def get_user_by_provider_uid(@provider, "new_user"), do: nil
   def get_user_by_provider_uid(@provider, "new_user_with_access_token"), do: nil
+  def get_user_by_provider_uid(@provider, "existing_user_with_access_token"), do: @user
 
-  def create(_user, %{"provider" => @provider, "uid" => "new_identity"}), do: {:ok, %{@user_identity | id: :new_identity}}
-  def create(user, @taken_user_identity_params), do: {:error, {:bound_to_different_user, %{User.changeset(user, @taken_user_identity_params) | action: :create}}}
-  def create(_user, %{"provider" => @provider, "uid" => "new_identity_with_access_token"} = params), do: {:ok, Ecto.Changeset.apply_changes(UserIdentityWithAccessToken.changeset(%UserIdentityWithAccessToken{id: :new_identity}, params))}
+  def upsert(_user, %{"provider" => @provider, "uid" => "new_identity"}), do: {:ok, %{@user_identity | id: :new_identity}}
+  def upsert(user, @taken_user_identity_params), do: {:error, {:bound_to_different_user, %{User.changeset(user, @taken_user_identity_params) | action: :create}}}
+  def upsert(_user, %{"provider" => @provider, "uid" => "existing_user"}), do: {:ok, @user_identity}
+  def upsert(_user, %{"provider" => @provider, "uid" => "new_identity_with_access_token"} = params), do: {:ok, Ecto.Changeset.apply_changes(UserIdentityWithAccessToken.changeset(%UserIdentityWithAccessToken{id: :new_identity}, params))}
+  def upsert(_user, %{"provider" => @provider, "uid" => "existing_user_with_access_token"} = params), do: {:ok, Ecto.Changeset.apply_changes(UserIdentityWithAccessToken.changeset(%UserIdentityWithAccessToken{id: :existing_identity}, params))}
 
   def create_user(@taken_user_identity_params, _user_params, _user_id_params), do: {:error, {:bound_to_different_user, UserIdentity.changeset(%UserIdentity{}, @taken_user_identity_params)}}
   def create_user(@new_user_identity_params, %{"name" => ""} = user_params, _user_id_params), do: {:error, %{User.changeset(%User{}, user_params) | action: :create}}
