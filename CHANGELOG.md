@@ -15,6 +15,7 @@
   * `PowAssent.Ecto.UserIdentities.Context.upsert/3`
   * `PowAssent.Ecto.UserIdentities.Context.create_user/4`
 * Fixed bug where invited user was not signed in after succesful authorization
+* Use `Pow.Plug.get_plug/1` instead of pulling `:mod` from the config
 
 ## v0.3.0 (2019-05-19)
 

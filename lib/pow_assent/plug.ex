@@ -16,6 +16,7 @@ defmodule PowAssent.Plug do
   """
   alias Plug.Conn
   alias PowAssent.{Config, Operations}
+  alias Pow.Plug
 
   @doc """
   Calls the authorize_url method for the provider strategy.
@@ -35,7 +36,7 @@ defmodule PowAssent.Plug do
   end
 
   defp maybe_put_session_params({:ok, %{url: url, session_params: params}}, conn) do
-    {:ok, url, Plug.Conn.put_private(conn, :pow_assent_session_params, params)}
+    {:ok, url, Conn.put_private(conn, :pow_assent_session_params, params)}
   end
   defp maybe_put_session_params({:ok, %{url: url}}, conn), do: {:ok, url, conn}
   defp maybe_put_session_params({:error, error}, conn), do: {:error, error, conn}
@@ -96,7 +97,7 @@ defmodule PowAssent.Plug do
     |> Operations.get_user_by_provider_uid(uid, config)
     |> case do
       nil  -> {:error, conn}
-      user -> {:ok, get_mod(config).do_create(conn, user, config)}
+      user -> {:ok, Plug.get_plug(config).do_create(conn, user, config)}
     end
   end
 
@@ -119,7 +120,7 @@ defmodule PowAssent.Plug do
     user
     |> Operations.upsert(user_identity_params, config)
     |> case do
-      {:ok, user_identity} -> {:ok, user_identity, get_mod(config).do_create(conn, user, config)}
+      {:ok, user_identity} -> {:ok, user_identity, Plug.get_plug(config).do_create(conn, user, config)}
       {:error, error}      -> {:error, error, conn}
     end
   end
@@ -136,7 +137,7 @@ defmodule PowAssent.Plug do
     user_identity_params
     |> Operations.create_user(user_params, user_id_params, config)
     |> case do
-      {:ok, user}     -> {:ok, user, get_mod(config).do_create(conn, user, config)}
+      {:ok, user}     -> {:ok, user, Plug.get_plug(config).do_create(conn, user, config)}
       {:error, error} -> {:error, error, conn}
     end
   end
@@ -192,7 +193,7 @@ defmodule PowAssent.Plug do
     config = Pow.Plug.fetch_config(conn)
 
     config
-    |> Keyword.take([:otp_app, :mod, :repo, :user])
+    |> Keyword.take([:otp_app, :plug, :repo, :user])
     |> Keyword.merge(Keyword.get(config, :pow_assent, []))
   end
 
@@ -209,6 +210,4 @@ defmodule PowAssent.Plug do
 
     {strategy, provider_config}
   end
-
-  defp get_mod(config), do: config[:mod]
 end
