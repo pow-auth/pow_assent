@@ -32,7 +32,7 @@ defmodule PowAssent.Strategy.Github do
   @spec normalize(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
   def normalize(_config, user) do
     {:ok, %{
-      "uid"      => Integer.to_string(user["id"]),
+      "uid"      => user["id"],
       "nickname" => user["login"],
       "email"    => user["email"],
       "name"     => user["name"],

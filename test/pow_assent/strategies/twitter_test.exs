@@ -117,7 +117,7 @@ defmodule PowAssent.Strategy.TwitterTest do
       "location" => "San Francisco",
       "name" => "Sean Cook",
       "nickname" => "theSeanCook",
-      "uid" => "38895958",
+      "uid" => 38_895_958,
       "urls" => %{"Twitter" => "https://twitter.com/theSeanCook"}
     }
   end

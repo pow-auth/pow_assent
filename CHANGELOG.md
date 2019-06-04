@@ -2,13 +2,17 @@
 
 ## v0.3.1 (TBA)
 
-* Fixed bug where invited user was not signed in after succesful authorization
 * User identities are now upserted on authorization so additional params can be updated on authorization request. Following methods has been deprecated:
-  * `PowAssent.Ecto.UserIdentities.Context.create/2` in favor of `PowAssent.Ecto.UserIdentities.Context.upsert/2`
+  * `PowAssent.Ecto.UserIdentities.Context.create/3` in favor of `PowAssent.Ecto.UserIdentities.Context.upsert/3`
   * `MyApp.UserIdentities.create/2` in favor of `MyApp.UserIdentities.upsert/2`
   * `MyApp.UserIdentities.pow_assent_create/2` in favor of `MyApp.UserIdentities.upsert/2`
   * `PowAssent.Operations.create/3` in favor of `PowAssent.Operations.upsert/3`
   * `PowAssent.Plug.create_identity/2` in favor of `PowAssent.Plug.upsert_identity/2`
+* Fixed so `uid` can be an integer value in `PowAssent.Ecto.UserIdentities.Context`. Strategies are no longer expected to convert the `uid` value to binary. The following methods will accepts integer `uid`:
+  * `PowAssent.Ecto.UserIdentities.Context.get_user_by_provider_uid/3`
+  * `PowAssent.Ecto.UserIdentities.Context.upsert/3`
+  * `PowAssent.Ecto.UserIdentities.Context.create_user/4`
+* Fixed bug where invited user was not signed in after succesful authorization
 
 ## v0.3.0 (2019-05-19)
 
