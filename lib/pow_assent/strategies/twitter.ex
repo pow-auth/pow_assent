@@ -26,7 +26,7 @@ defmodule PowAssent.Strategy.Twitter do
   @spec normalize(Keyword.t(), map()) :: {:ok, map()}
   def normalize(_config, user) do
     {:ok, %{
-      "uid"         => Integer.to_string(user["id"]),
+      "uid"         => user["id"],
       "nickname"    => user["screen_name"],
       "email"       => user["email"],
       "location"    => user["location"],

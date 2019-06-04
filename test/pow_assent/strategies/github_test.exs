@@ -48,7 +48,7 @@ defmodule PowAssent.Strategy.GithubTest do
     "image" => "https://github.com/images/error/octocat_happy.gif",
     "name" => "monalisa octocat",
     "nickname" => "octocat",
-    "uid" => "1",
+    "uid" => 1,
     "urls" => %{"Blog" => "https://github.com/blog", "GitHub" => "https://github.com/octocat"}
   }
 

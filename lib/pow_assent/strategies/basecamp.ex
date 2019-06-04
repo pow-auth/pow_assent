@@ -29,7 +29,7 @@ defmodule PowAssent.Strategy.Basecamp do
   @spec normalize(Keyword.t(), map()) :: {:ok, map()}
   def normalize(_config, user) do
     {:ok, %{
-      "uid"        => Integer.to_string(user["identity"]["id"]),
+      "uid"        => user["identity"]["id"],
       "name"       => "#{user["identity"]["first_name"]} #{user["identity"]["last_name"]}",
       "first_name" => user["identity"]["first_name"],
       "last_name"  => user["identity"]["last_name"],

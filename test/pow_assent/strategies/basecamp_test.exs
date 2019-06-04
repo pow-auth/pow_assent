@@ -42,7 +42,7 @@ defmodule PowAssent.Strategy.BasecampTest do
     "first_name" => "Jason",
     "last_name" => "Fried",
     "accounts" => @accounts_response,
-    "uid" => "9999999"
+    "uid" => 9_999_999
   }
 
   test "authorize_url/2", %{config: config} do

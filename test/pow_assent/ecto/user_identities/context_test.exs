@@ -41,17 +41,18 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
         |> Changeset.change(email: "test@example.com", user_identities: [@user_identity_params])
         |> Repo.insert!()
 
+      user = Repo.get!(user.__struct__, user.id)
+
       {:ok, %{user: user}}
     end
 
     test "retrieves", %{user: user} do
-      get_user = Context.get_user_by_provider_uid("test_provider", "1", @config)
-
-      assert get_user.id == user.id
+      assert Context.get_user_by_provider_uid("test_provider", "1", @config) == user
+      assert Context.get_user_by_provider_uid("test_provider", 1, @config) == user
 
       refute Context.get_user_by_provider_uid("test_provider", "2", @config)
 
-      {:ok, _user} = Repo.delete(user)
+      Repo.delete!(user)
       refute Context.get_user_by_provider_uid("test_provider", "1", @config)
     end
 
@@ -81,6 +82,13 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
       assert user_identity.uid == "1"
     end
 
+    test "inserts with integer uid param", %{user: user} do
+      params = Map.put(@user_identity_params_with_access_token, :uid, 1)
+
+      assert {:ok, user_identity} = Context.upsert(user, params, @config_with_access_token)
+      assert user_identity.uid == "1"
+    end
+
     test "updates with valid params", %{user: user} do
       assert {:ok, prev_user_identity} = Context.upsert(user, @user_identity_params_with_access_token, @config_with_access_token)
       assert prev_user_identity.access_token
@@ -94,6 +102,12 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
       assert user_identity.uid == "1"
       assert user_identity.access_token == "changed_access_token"
       assert user_identity.refresh_token == "refresh_token"
+
+      params = Map.put(@user_identity_params_with_access_token, :uid, 1)
+
+      assert {:ok, user_identity} = Context.upsert(user, params, @config_with_access_token)
+      assert user_identity.uid == "1"
+      assert user_identity.access_token == "access_token"
     end
 
     test "when other user has provider uid", %{user: user} do
@@ -128,6 +142,16 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
       assert user_identity.provider == "test_provider"
       assert user_identity.uid == "1"
       assert user_identity.access_token == "access_token"
+    end
+
+    test "with integer uid param" do
+      params = Map.put(@user_identity_params, "uid", 1)
+
+      assert {:ok, user} = Context.create_user(params, @user_params, nil, @config)
+      user = Repo.preload(user, :user_identities, force: true)
+
+      assert [user_identity] = user.user_identities
+      assert user_identity.uid == "1"
     end
 
     test "when other user has provider uid" do

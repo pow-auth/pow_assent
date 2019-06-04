@@ -114,7 +114,9 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from the config.
   """
-  @spec get_user_by_provider_uid(binary(), binary(), Config.t()) :: user() | nil
+  @spec get_user_by_provider_uid(binary(), binary() | integer(), Config.t()) :: user() | nil
+  def get_user_by_provider_uid(provider, uid, config) when is_integer(uid),
+    do: get_user_by_provider_uid(provider, Integer.to_string(uid), config)
   def get_user_by_provider_uid(provider, uid, config) do
     config
     |> user_identity_schema_mod()
@@ -164,6 +166,8 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     |> :maps.from_list()
   end
 
+  defp convert_param({:uid, value}), do: convert_param({"uid", value})
+  defp convert_param({"uid", value}) when is_integer(value), do: convert_param({"uid", Integer.to_string(value)})
   defp convert_param({key, value}) when is_atom(key), do: {Atom.to_string(key), value}
   defp convert_param({key, value}) when is_binary(key), do: {key, value}
 
