@@ -22,25 +22,31 @@ defmodule PowAssent.Operations do
     end
   end
 
-  @doc """
-  Creates user identity for the user and strategy provider name and uid.
-
-  This calls `Pow.Ecto.UserIdentities.Context.create/4` or
-  `create/3` on a custom context module.
-  """
+  # TODO: Remove by 0.4.0
+  @doc false
+  @deprecated "Use `upsert/3` instead"
   @spec create(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
-  def create(user, user_identity_params, config) do
+  def create(user, user_identity_params, config), do: upsert(user, user_identity_params, config)
+
+  @doc """
+  Upserts user identity for the user, and strategy provider name and uid.
+
+  This calls `Pow.Ecto.UserIdentities.Context.upsert/3` or
+  `upsert/2` on a custom context module.
+  """
+  @spec upsert(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
+  def upsert(user, user_identity_params, config) do
     case context_module(config) do
-      Context -> Context.create(user, user_identity_params, config)
-      module  -> module.create(user, user_identity_params)
+      Context -> Context.upsert(user, user_identity_params, config)
+      module  -> module.upsert(user, user_identity_params)
     end
   end
 
   @doc """
   Creates user with user identity with the provided user params.
 
-  This calls `Pow.Ecto.UserIdentities.Context.create_user/5` or
-  `create_user/4` on a custom context module.
+  This calls `Pow.Ecto.UserIdentities.Context.create_user/4` or
+  `create_user/3` on a custom context module.
   """
   @spec create_user(map(), map(), map() | nil, Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()}} | {:error, map()} | no_return
   def create_user(user_identity_params, user_params, user_id_params, config) do

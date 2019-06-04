@@ -37,13 +37,6 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Migration do
   end
   defp attr_from_assoc(_assoc, _opts), do: nil
 
-  @doc """
-  Generates migration file content.
-  """
-  @spec gen(map()) :: binary()
-  def gen(schema) do
-    schema
-    |> Migration.gen()
-    |> String.replace("timestamps()", "timestamps(updated_at: false)")
-  end
+  @doc false
+  defdelegate gen(schema), to: Migration
 end

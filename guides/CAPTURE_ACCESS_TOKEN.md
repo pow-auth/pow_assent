@@ -29,7 +29,7 @@ defmodule MyApp.UserIdentities.UserIdentity do
 
     pow_assent_user_identity_fields()
 
-    timestamps(updated_at: false)
+    timestamps()
   end
 
   def changeset(user_identity_or_changeset, attrs) do
@@ -38,6 +38,7 @@ defmodule MyApp.UserIdentities.UserIdentity do
     user_identity_or_changeset
     |> pow_assent_changeset(attrs)
     |> Ecto.Changeset.cast(token_params, [:access_token, :refresh_token])
+    |> Ecto.Changeset.validate_required([:access_token])
   end
 end
 ```

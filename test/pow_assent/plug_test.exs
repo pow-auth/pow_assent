@@ -64,7 +64,7 @@ defmodule PowAssent.PlugTest do
     assert_pow_session conn
   end
 
-  describe "create_identity/3" do
+  describe "upsert_identity/3" do
     setup %{conn: conn} do
       conn = Pow.Plug.assign_current_user(conn, %User{}, @default_config)
 
@@ -72,14 +72,21 @@ defmodule PowAssent.PlugTest do
     end
 
     test "creates user identity", %{conn: conn} do
-      {:ok, user_identity, conn} = Plug.create_identity(conn, %{"provider" => "test_provider", "uid" => "new_identity"})
+      {:ok, user_identity, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "new_identity"})
 
       assert user_identity.id == :new_identity
       assert_pow_session conn
     end
 
+    test "updates user identity", %{conn: conn} do
+      {:ok, user_identity, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "existing_user_with_access_token"})
+
+      assert user_identity.id == :existing_identity
+      assert_pow_session conn
+    end
+
     test "with identity already taken", %{conn: conn} do
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_identity(conn, %{"provider" => "test_provider", "uid" => "identity_taken"})
+      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "identity_taken"})
 
       assert Pow.Plug.current_user(conn) == %User{}
       refute_pow_session conn

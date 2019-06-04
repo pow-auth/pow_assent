@@ -23,7 +23,6 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
     assert Map.has_key?(user, :user)
     assert Map.has_key?(user, :uid)
     assert Map.has_key?(user, :provider)
-    refute Map.has_key?(user, :updated_at)
   end
 
   @valid_params %{user_id: 1, provider: "test_provider", uid: "1"}

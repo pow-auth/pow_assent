@@ -232,13 +232,20 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == "/registration_created"
-
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
       assert user = Pow.Plug.current_user(conn)
-
-
       assert [user_identity] = user.user_identities
-
       assert user_identity.access_token == "access_token"
+    end
+
+    test "when identity exists updates identity", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{uid: "existing_user_with_access_token"})
+
+      conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+
+      assert redirected_to(conn) == "/session_created"
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
+      assert Pow.Plug.current_user(conn)
     end
   end
 

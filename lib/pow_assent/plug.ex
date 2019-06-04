@@ -100,18 +100,24 @@ defmodule PowAssent.Plug do
     end
   end
 
+  # TODO: Remove by 0.4.0
+  @doc false
+  @deprecated "Use `upsert_identity/2` instead"
+  @spec create_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
+  def create_identity(conn, user_identity_params), do: upsert_identity(conn, user_identity_params)
+
   @doc """
-  Creates an identity for a user with provider and provider user params.
+  Will upsert identity for the current user.
 
   If successful, a new session will be created.
   """
-  @spec create_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
-  def create_identity(conn, user_identity_params) do
+  @spec upsert_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
+  def upsert_identity(conn, user_identity_params) do
     config = fetch_config(conn)
     user   = Pow.Plug.current_user(conn)
 
     user
-    |> Operations.create(user_identity_params, config)
+    |> Operations.upsert(user_identity_params, config)
     |> case do
       {:ok, user_identity} -> {:ok, user_identity, get_mod(config).do_create(conn, user, config)}
       {:error, error}      -> {:error, error, conn}
