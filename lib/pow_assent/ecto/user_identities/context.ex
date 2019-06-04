@@ -118,12 +118,14 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   def get_user_by_provider_uid(provider, uid, config) when is_integer(uid),
     do: get_user_by_provider_uid(provider, Integer.to_string(uid), config)
   def get_user_by_provider_uid(provider, uid, config) do
+    opts = repo_opts(config, [:prefix])
+
     config
     |> user_identity_schema_mod()
     |> where([i], i.provider == ^provider and i.uid == ^uid)
     |> join(:left, [i], i in assoc(i, :user))
     |> select([_, u], u)
-    |> repo(config).one()
+    |> repo!(config).one(opts)
   end
 
   # TODO: Remove by 0.4.0
@@ -188,7 +190,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   defp get_for_user(user, %{"uid" => uid, "provider" => provider}, config) do
     user_identity = Ecto.build_assoc(user, :user_identities).__struct__
 
-    repo(config).get_by(user_identity, user_id: user.id, provider: provider, uid: uid)
+    repo!(config).get_by(user_identity, [user_id: user.id, provider: provider, uid: uid], repo_opts(config, [:prefix]))
   end
 
   @doc """
@@ -199,7 +201,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   @spec create_user(user_identity_params(), user_params(), user_id_params() | nil, Config.t()) :: {:ok, user()} | {:error, {:bound_to_different_user | :invalid_user_id_field, changeset()}} | {:error, changeset()}
   def create_user(user_identity_params, user_params, user_id_params, config) do
     params        = convert_params(user_identity_params)
-    user_mod      = user_schema_mod(config)
+    user_mod      = user!(config)
     user_id_field = user_mod.pow_user_id_field()
 
     user_mod
@@ -229,24 +231,24 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   @spec delete(user(), binary(), Config.t()) ::
           {:ok, {number(), nil}} | {:error, {:no_password, changeset()}}
   def delete(user, provider, config) do
-    repo = repo(config)
-    user = repo.preload(user, :user_identities, force: true)
+    user = repo!(config).preload(user, :user_identities, repo_opts(config, [:prefix]) ++ [force: true])
 
     user.user_identities
     |> Enum.split_with(&(&1.provider == provider))
-    |> maybe_delete(user, repo)
+    |> maybe_delete(user, config)
   end
 
-  defp maybe_delete({user_identities, rest}, %{password_hash: password_hash} = user, repo) when length(rest) > 0 or not is_nil(password_hash) do
+  defp maybe_delete({user_identities, rest}, %{password_hash: password_hash} = user, config) when length(rest) > 0 or not is_nil(password_hash) do
+    opts    = repo_opts(config, [:prefix])
     results =
       user
       |> Ecto.assoc(:user_identities)
       |> where([i], i.id in ^Enum.map(user_identities, &(&1.id)))
-      |> repo.delete_all()
+      |> repo!(config).delete_all(opts)
 
     {:ok, results}
   end
-  defp maybe_delete(_any, user, _repo) do
+  defp maybe_delete(_any, user, _config) do
     changeset =
       user
       |> Changeset.change()
@@ -262,14 +264,16 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   @spec all(user(), Config.t()) :: [user_identity()]
   def all(user, config) do
+    opts = repo_opts(config, [:prefix])
+
     user
     |> Ecto.assoc(:user_identities)
-    |> repo(config).all()
+    |> repo!(config).all(opts)
   end
 
   defp user_identity_schema_mod(config) when is_list(config) do
     config
-    |> user_schema_mod()
+    |> user!()
     |> user_identity_schema_mod()
   end
   defp user_identity_schema_mod(user_mod) when is_atom(user_mod) do
@@ -283,6 +287,12 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     Config.raise_error("The `:user` configuration option doesn't have a `:user_identities` association.")
   end
 
-  defdelegate user_schema_mod(config), to: Pow.Ecto.Context
-  defdelegate repo(config), to: Pow.Ecto.Context
+  defp repo_opts(config, opts) do
+    config
+    |> Config.get(:repo_opts, [])
+    |> Keyword.take(opts)
+  end
+
+  defdelegate user!(config), to: Pow.Config
+  defdelegate repo!(config), to: Pow.Config
 end

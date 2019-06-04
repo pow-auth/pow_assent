@@ -33,7 +33,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.Migration do
     args
     |> Pow.parse_options(@switches, @default_opts)
     |> parse()
-    |> create_migrations_files(args)
+    |> create_migration_files(args)
   end
 
   defp parse({config, parsed, _invalid}) do
@@ -42,19 +42,19 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.Migration do
     |> Map.merge(config)
   end
 
-  defp create_migrations_files(config, args) do
+  defp create_migration_files(config, args) do
     args
     |> Ecto.parse_repo()
     |> Enum.map(&Ecto.ensure_repo(&1, args))
     |> Enum.map(&Map.put(config, :repo, &1))
-    |> Enum.each(&create_migration_files/1)
+    |> Enum.each(&create_migration_file/1)
   end
 
-  defp create_migration_files(%{repo: repo, binary_id: binary_id, users_table: users_table, schema_plural: schema_plural}) do
+  defp create_migration_file(%{repo: repo, binary_id: binary_id, users_table: users_table, schema_plural: schema_plural}) do
     context_base  = Pow.app_base(Pow.otp_app())
     schema        = UserIdentitiesMigration.new(context_base, schema_plural, repo: repo, binary_id: binary_id, users_table: users_table)
     content       = UserIdentitiesMigration.gen(schema)
 
-    Migration.create_migration_files(repo, schema.migration_name, content)
+    Migration.create_migration_file(repo, schema.migration_name, content)
   end
 end
