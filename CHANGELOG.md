@@ -10,12 +10,13 @@
   * `MyApp.UserIdentities.pow_assent_create/2` in favor of `MyApp.UserIdentities.upsert/2`
   * `PowAssent.Operations.create/3` in favor of `PowAssent.Operations.upsert/3`
   * `PowAssent.Plug.create_identity/2` in favor of `PowAssent.Plug.upsert_identity/2`
+* Use `Pow.Plug.get_plug/1` instead of pulling `:mod` from the config
 * Fixed so `uid` can be an integer value in `PowAssent.Ecto.UserIdentities.Context`. Strategies are no longer expected to convert the `uid` value to binary. The following methods will accepts integer `uid`:
   * `PowAssent.Ecto.UserIdentities.Context.get_user_by_provider_uid/3`
   * `PowAssent.Ecto.UserIdentities.Context.upsert/3`
   * `PowAssent.Ecto.UserIdentities.Context.create_user/4`
 * Fixed bug where invited user was not signed in after succesful authorization
-* Use `Pow.Plug.get_plug/1` instead of pulling `:mod` from the config
+* Fixed bug where releases with Elixir 1.9.0 didn't have `:httpc` available
 
 ## v0.3.0 (2019-05-19)
 
