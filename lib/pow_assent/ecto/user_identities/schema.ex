@@ -17,7 +17,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
         schema "user_identities" do
           pow_assent_user_identity_fields()
 
-          timestamps(updated_at: false)
+          timestamps()
         end
 
         def changeset(user_identity_or_changeset, attrs) do

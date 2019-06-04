@@ -10,7 +10,7 @@ defmodule PowAssent.Test.Ecto.UserIdentities.UserIdentityWithAccessToken do
 
     pow_assent_user_identity_fields()
 
-    timestamps(updated_at: false)
+    timestamps()
   end
 
   def changeset(user_identity_or_changeset, attrs) do

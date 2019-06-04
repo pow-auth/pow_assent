@@ -18,7 +18,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
     schema <%= inspect schema.table %> do
       pow_assent_user_identity_fields()
 
-      timestamps(updated_at: false)
+      timestamps()
     end
   end
   """

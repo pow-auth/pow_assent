@@ -23,7 +23,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
 
       assert content =~ "defmodule PowAssent.UserIdentities.UserIdentity do"
       assert content =~ "user: PowAssent.Users.User"
-      assert content =~ "timestamps(updated_at: false)"
+      assert content =~ "timestamps()"
     end)
   end
 
