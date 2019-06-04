@@ -140,7 +140,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   @spec upsert(user(), user_identity_params(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, changeset()}} | {:error, changeset()}
   def upsert(user, user_identity_params, config) do
-    params                                   = to_string_params(user_identity_params)
+    params                                   = convert_params(user_identity_params)
     {uid_provider_params, additional_params} = Map.split(params, ["uid", "provider"])
 
     user
@@ -158,15 +158,14 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     end
   end
 
-  defp to_string_params(map) when is_map(map) do
-    map
-    |> Map.to_list()
-    |> to_string_params()
-    |> Enum.into(%{})
+  defp convert_params(params) when is_map(params) do
+    params
+    |> Enum.map(&convert_param/1)
+    |> :maps.from_list()
   end
-  defp to_string_params(list) when is_list(list), do: Enum.map(list, &to_string_params/1)
-  defp to_string_params({key, value}) when is_atom(key), do: {Atom.to_string(key), value}
-  defp to_string_params({key, value}), do: {key, value}
+
+  defp convert_param({key, value}) when is_atom(key), do: {Atom.to_string(key), value}
+  defp convert_param({key, value}) when is_binary(key), do: {key, value}
 
   defp insert_identity(user, user_identity_params, config) do
     user_identity = Ecto.build_assoc(user, :user_identities)
@@ -195,12 +194,13 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   @spec create_user(user_identity_params(), user_params(), user_id_params() | nil, Config.t()) :: {:ok, user()} | {:error, {:bound_to_different_user | :invalid_user_id_field, changeset()}} | {:error, changeset()}
   def create_user(user_identity_params, user_params, user_id_params, config) do
+    params        = convert_params(user_identity_params)
     user_mod      = user_schema_mod(config)
     user_id_field = user_mod.pow_user_id_field()
 
     user_mod
     |> struct()
-    |> user_mod.user_identity_changeset(user_identity_params, user_params, user_id_params)
+    |> user_mod.user_identity_changeset(params, user_params, user_id_params)
     |> Context.do_insert(config)
     |> case do
       {:error, %{changes: %{user_identities: [%{errors: [uid_provider: _]}]}} = changeset} ->

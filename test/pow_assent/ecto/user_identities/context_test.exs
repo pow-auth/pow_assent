@@ -62,10 +62,10 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
   end
 
-  describe "upsert/3" do
-    @config_with_access_token [repo: Repo, user: UserWithAccessTokenUserIdentities]
-    @user_identity_params_with_access_token Map.put(@user_identity_params, :token, %{access_token: "access_token"})
+  @config_with_access_token [repo: Repo, user: UserWithAccessTokenUserIdentities]
+  @user_identity_params_with_access_token Map.put(@user_identity_params, :token, %{access_token: "access_token"})
 
+  describe "upsert/3" do
     setup do
       user =
         %UserWithAccessTokenUserIdentities{}
@@ -106,7 +106,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
   end
 
-  describe "create_user/5" do
+  describe "create_user/4" do
     @user_params %{name: "John Doe", email: "test@example.com"}
 
     test "with valid params" do
@@ -118,6 +118,16 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
       assert [user_identity] = user.user_identities
       assert user_identity.provider == "test_provider"
       assert user_identity.uid == "1"
+    end
+
+    test "with valid params with access token" do
+      assert {:ok, user} = Context.create_user(@user_identity_params_with_access_token, @user_params, nil, @config_with_access_token)
+      user = Repo.preload(user, :user_identities, force: true)
+
+      assert [user_identity] = user.user_identities
+      assert user_identity.provider == "test_provider"
+      assert user_identity.uid == "1"
+      assert user_identity.access_token == "access_token"
     end
 
     test "when other user has provider uid" do
