@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.3.1 (TBA)
+## v0.3.1 (2019-06-05)
 
 * Added Pow minimum requirement `~> 1.0.9`
 * Added repo `:prefix` support
