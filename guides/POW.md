@@ -1,6 +1,20 @@
 # Set up Pow
 
-First install the necessary files:
+Add Pow to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    # ...
+    {:pow, "~> 1.0.11"}
+    # ...
+  ]
+end
+```
+
+Run `mix deps.get` to install it.
+
+Install the necessary files:
 
 ```mix
 mix pow.install
