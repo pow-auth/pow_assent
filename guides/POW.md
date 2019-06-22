@@ -1,6 +1,8 @@
 # Set up Pow
 
-First install the necessary files:
+Be sure that you have [installed PowAssent](../README.md#installation) in `mix.exs` first.
+
+Install the necessary files:
 
 ```mix
 mix pow.install
