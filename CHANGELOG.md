@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.2 (TBA)
+
+* All links in docs generated with `mix docs` and on [hexdocs.pm](http://hexdocs.pm/pow/) now works
+* Generated docs now uses lower case file name except for `README` and `CHANGELOG`
+
 ## v0.3.1 (2019-06-05)
 
 * Added Pow minimum requirement `~> 1.0.9`

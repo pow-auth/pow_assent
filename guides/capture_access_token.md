@@ -1,4 +1,4 @@
-# Capture access tokens
+# Capture access token
 
 By default, access tokens are not recorded. If you wish to capture the access tokens to use for future you can add the field to your user identity table and update the user identity schema:
 

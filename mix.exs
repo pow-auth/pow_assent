@@ -75,14 +75,16 @@ defmodule PowAssent.MixProject do
 
   defp docs do
     [
+      markdown_processor: ExDoc.PowAssent.Markdown,
       source_ref: "v#{@version}",
-      main: "readme",
+      main: "README",
       canonical: "http://hexdocs.pm/pow_assent",
       source_url: "https://github.com/danschultzer/pow_assent",
       extras: [
-        "README.md": [filename: "readme", title: "PowAssent"],
-        "guides/POW.md": [filename: "setting-up-pow", title: "Setting up Pow"],
-        "guides/CAPTURE_ACCESS_TOKEN.md": [filename: "capture-access-token", title: "Capture access token"],
+        "README.md": [filename: "README"],
+        "CHANGELOG.md": [filename: "CHANGELOG"],
+        "guides/set_up_pow.md": [],
+        "guides/capture_access_token.md": [],
       ],
       groups_for_modules: [
         Ecto: ~r/^PowAssent.Ecto/,

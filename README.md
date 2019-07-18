@@ -49,7 +49,7 @@ Run `mix deps.get` to install it.
 
 ### Set up Pow
 
-It's required to set up [Pow](https://github.com/danschultzer/pow#getting-started-phoenix) first. You can [run these quick setup](guides/POW.md) instructions if Pow hasn't already been set up.
+It's required to set up [Pow](https://github.com/danschultzer/pow#getting-started-phoenix) first. You can [run these quick setup](guides/set_up_pow.md) instructions if Pow hasn't already been set up.
 
 If your user schema uses binary id, then run the PowAssent mix task(s) with the `--binary-id` flag.
 
@@ -172,7 +172,7 @@ Now start (or restart) your Phoenix app, and visit `http://localhost:4000/auth/g
 
 You can add your own custom strategy.
 
-Here's an example of an OAuth 2.0 implementation using [`PowAssent.Strategy.OAuth2.Base`](lib/pow_assent/strategies/oauth2/base.ex):
+Here's an example of an OAuth 2.0 implementation using `PowAssent.Strategy.OAuth2.Base`:
 
 ```elixir
 defmodule TestProvider do
@@ -198,7 +198,7 @@ defmodule TestProvider do
 end
 ```
 
-You can also use [`PowAssent.Strategy`](lib/pow_assent/strategy.ex):
+You can also use `PowAssent.Strategy`:
 
 ```elixir
 defmodule TestProvider do
@@ -240,11 +240,11 @@ defmodule MyAppWeb.Pow.Messages do
 end
 ```
 
-Add `messages_backend: MyAppWeb.Pow.Messages` to your configuration. You can find all messages in [`PowAssent.Phoenix.Messages`](lib/pow_assent/phoenix/messages.ex).
+Add `messages_backend: MyAppWeb.Pow.Messages` to your configuration. You can find all messages in `PowAssent.Phoenix.Messages`.
 
 ## Populate fields
 
-To populate fields in your user struct that are fetched from the provider, you only need to cast them in `user_identity_changeset/4` method like so:
+To populate fields in your user struct that are fetched from the provider, you can override the `user_identity_changeset/4` method to cast them:
 
 ```elixir
 defmodule MyApp.Users.User do
@@ -272,7 +272,7 @@ The fields available can be found in the `normalize/2` method of [the strategy](
 
 ## Disable registration
 
-You can disable registration by only using `pow_assent_authorization_routes/0` in `router.ex`:
+You can disable registration by using `pow_assent_authorization_routes/0` instead of `pow_assent_routes/0` in `router.ex`:
 
 ```elixir
 defmodule MyAppWeb.Router do
