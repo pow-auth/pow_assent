@@ -17,9 +17,13 @@ defmodule PowAssent.Config do
   """
   @spec get(t(), atom(), any()) :: any()
   def get(config, key, default \\ nil) do
-    case Keyword.get(config, key, :not_found) do
+    result = case Keyword.get(config, key, :not_found) do
       :not_found -> get_env_config(config, key, default)
       value      -> value
+    end
+    case result do
+      {:system, sys_key} -> System.get_env(sys_key)
+      value -> value
     end
   end
 

@@ -10,5 +10,8 @@ defmodule PowAssent.ConfigTest do
 
     Application.put_env(:test, :pow_assent, key: 2)
     assert Config.get([otp_app: :test], :key) == 2
+
+    System.put_env("KEY", "3")
+    assert Config.get([key: {:system, "KEY"}], :key) == "3"
   end
 end
