@@ -24,9 +24,21 @@ defmodule PowAssent.Strategy.Auth0Test do
     "verified" => true
   }
 
-  test "authorize_url/2", %{config: config} do
-    assert {:ok, %{url: url}} = Auth0.authorize_url(config)
-    assert url =~ "/authorize"
+  describe "authorize_url/2" do
+    test "requires domain or site configuration" do
+      assert_raise PowAssent.Config.ConfigError, "`:domain` or `:site` configuration setting is required for PowAssent.Strategy.Auth0 strategy", fn ->
+        Auth0.authorize_url([])
+      end
+
+      assert {:ok, %{url: url}} = Auth0.authorize_url([site: "https://localhost"])
+      assert url =~ "https://localhost/authorize"
+
+      assert {:ok, %{url: url}} = Auth0.authorize_url([domain: "demo.auth0.com"])
+      assert url =~ "https://demo.auth0.com/authorize"
+
+      assert {:ok, %{url: url}} = Auth0.authorize_url([domain: "http://demo.auth0.com"])
+      assert url =~ "http://demo.auth0.com/authorize"
+    end
   end
 
   test "callback/2", %{config: config, callback_params: params, bypass: bypass} do
