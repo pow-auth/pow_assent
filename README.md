@@ -14,6 +14,7 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
   * [OAuth 1.0](lib/pow_assent/strategies/oauth.ex)
   * [OAuth 2.0](lib/pow_assent/strategies/oauth2.ex)
 * Includes the following provider strategies:
+  * [Auth0](lib/pow_assent/strategies/auth0.ex)
   * [Azure AD](lib/pow_assent/strategies/azure_oauth2.ex)
   * [Basecamp](lib/pow_assent/strategies/basecamp.ex)
   * [Discord](lib/pow_assent/strategies/discord.ex)
