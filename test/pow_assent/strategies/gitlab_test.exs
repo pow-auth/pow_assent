@@ -31,19 +31,11 @@ defmodule PowAssent.Strategy.GitlabTest do
     assert url =~ "/oauth/authorize?client_id="
   end
 
-  describe "callback/2" do
-    test "normalizes data", %{config: config, callback_params: params, bypass: bypass} do
-      expect_oauth2_access_token_request(bypass, uri: "/oauth/token")
-      expect_oauth2_user_request(bypass, @user_response, uri: "/api/v4/user")
+  test "callback/2", %{config: config, callback_params: params, bypass: bypass} do
+    expect_oauth2_access_token_request(bypass, uri: "/oauth/token")
+    expect_oauth2_user_request(bypass, @user_response, uri: "/api/v4/user")
 
-      assert {:ok, %{user: user}} = Gitlab.callback(config, params)
-      assert user == @user
-    end
-
-    test "handles error", %{config: config, callback_params: params, bypass: bypass} do
-      Bypass.down(bypass)
-
-      assert {:error, %PowAssent.RequestError{error: :unreachable}} = Gitlab.callback(config, params)
-    end
+    assert {:ok, %{user: user}} = Gitlab.callback(config, params)
+    assert user == @user
   end
 end

@@ -20,6 +20,7 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
   * [Discord](lib/pow_assent/strategies/discord.ex)
   * [Facebook](lib/pow_assent/strategies/facebook.ex)
   * [Github](lib/pow_assent/strategies/github.ex)
+  * [Gitlab](lib/pow_assent/strategies/gitlab.ex)
   * [Google](lib/pow_assent/strategies/google.ex)
   * [Instagram](lib/pow_assent/strategies/instagram.ex)
   * [Slack](lib/pow_assent/strategies/slack.ex)

@@ -5,6 +5,7 @@
 * All links in docs generated with `mix docs` and on [hexdocs.pm](http://hexdocs.pm/pow/) now works
 * Generated docs now uses lower case file name except for `README` and `CHANGELOG`
 * Added Auth0 strategy
+* Added Gitlab strategy
 
 ## v0.3.1 (2019-06-05)
 
