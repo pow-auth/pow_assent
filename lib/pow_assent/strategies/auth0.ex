@@ -21,7 +21,7 @@ defmodule PowAssent.Strategy.Auth0 do
   @spec default_config(Keyword.t()) :: Keyword.t()
   def default_config(config) do
     [
-      site: domain_base_url(config),
+      site: domain_url(config),
       authorize_url: "/authorize",
       token_url: "/oauth/token",
       user_url: "/userinfo",
@@ -29,7 +29,7 @@ defmodule PowAssent.Strategy.Auth0 do
     ]
   end
 
-  defp domain_base_url(config) do
+  defp domain_url(config) do
     case [config[:domain], config[:site]] do
       [nil, nil]    -> Config.raise_error("`:domain` or `:site` configuration setting is required for #{inspect __MODULE__} strategy")
       [domain, nil] -> prepend_scheme(domain)
