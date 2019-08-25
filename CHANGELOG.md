@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.3.2 (TBA)
+## v0.3.2 (2019-08-25)
 
 * All links in docs generated with `mix docs` and on [hexdocs.pm](http://hexdocs.pm/pow/) now works
 * Generated docs now uses lower case file name except for `README` and `CHANGELOG`
