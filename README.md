@@ -1,4 +1,4 @@
-# PowAssent
+# ![PowAssent](assets/logo-full.svg)
 
 [![Build Status](https://travis-ci.org/danschultzer/pow_assent.svg?branch=master)](https://travis-ci.org/danschultzer/pow_assent) [![hex.pm](http://img.shields.io/hexpm/v/pow_assent.svg?style=flat)](https://hex.pm/packages/pow_assent)
 
