@@ -14,7 +14,7 @@ defmodule PowAssent.Test.Ecto.UserIdentities.UserIdentityWithAccessToken do
   end
 
   def changeset(user_identity_or_changeset, attrs) do
-    token_params = Map.get(attrs, "token", attrs)
+    token_params = Map.get(attrs, "token") || Map.get(attrs, :token) || attrs
 
     user_identity_or_changeset
     |> pow_assent_changeset(attrs)

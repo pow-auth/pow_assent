@@ -113,7 +113,9 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     test "when other user has provider uid", %{user: user} do
       _second_user =
         %UserWithAccessTokenUserIdentities{}
-        |> Changeset.change(email: "test-2@example.com", user_identities: [@user_identity_params_with_access_token])
+        |> Changeset.change(email: "test-2@example.com")
+        |> Changeset.cast(%{user_identities: [@user_identity_params_with_access_token]}, [])
+        |> Changeset.cast_assoc(:user_identities)
         |> Repo.insert!()
 
       assert {:error, {:bound_to_different_user, _changeset}} = Context.upsert(user, @user_identity_params_with_access_token, @config_with_access_token)
