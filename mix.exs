@@ -80,6 +80,8 @@ defmodule PowAssent.MixProject do
       main: "README",
       canonical: "http://hexdocs.pm/pow_assent",
       source_url: "https://github.com/danschultzer/pow_assent",
+      logo: "assets/logo.svg",
+      assets: "assets",
       extras: [
         "README.md": [filename: "README"],
         "CHANGELOG.md": [filename: "CHANGELOG"],
