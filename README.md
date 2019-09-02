@@ -32,7 +32,7 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
 Add PowAssent to your list of dependencies in `mix.exs`:
 
 ```elixir
-def deps do
+defp deps do
   [
     # ...
     {:pow_assent, "~> 0.3.2"},
@@ -305,7 +305,7 @@ If you would like HTTP/2 support, you should consider adding [`Mint`](https://gi
 Update `mix.exs`:
 
 ```elixir
-def deps do
+defp deps do
   [
     # ...
     {:mint, "~> 0.1.0"},
