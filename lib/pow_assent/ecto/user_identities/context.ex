@@ -215,9 +215,6 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
       {:error, %{errors: [{^user_id_field, _}]} = changeset} ->
         {:error, {:invalid_user_id_field, changeset}}
 
-      {:error, %{errors: [{_field, {_desc, [constraint: :unique, constraint_name: _constraint_name]}}]} = changeset} ->
-        {:error, {:invalid_user_id_field, changeset}}
-
       {:error, changeset} ->
         {:error, changeset}
 
