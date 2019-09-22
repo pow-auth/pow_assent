@@ -154,6 +154,20 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert user == %{"name" => "Dan Schultzer", "email" => "taken@example.com"}
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
+
+    test "when identity doesn't exist and there's a general error", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{email: "general_error@example.com"})
+
+      conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+
+      # A general exception will result in a redirect to the login page. Which makes sense, but what if the error
+      # is to do with user identity uniqueness?
+      assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
+      assert %{"test_provider" => %{user_identity: user_identity, user: user}} = Plug.Conn.get_session(conn, :pow_assent_params)
+      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user == %{"name" => "Dan Schultzer", "email" => "taken@example.com"}
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
+    end
   end
 
   alias PowAssent.Test.EmailConfirmation.Phoenix.Endpoint, as: EmailConfirmationEndpoint
