@@ -6,6 +6,7 @@ defmodule PowAssent.Test.Ecto.Users.CustomUser do
 
   schema "users" do
     field :user_name, :string
+    field :email, :string
     field :name, :string
 
     pow_user_fields()
@@ -21,29 +22,31 @@ defmodule PowAssent.Test.Ecto.Users.CustomUser do
 
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset
-    |> put_username(attrs)
-    |> validate_email(attrs, user_id_attrs)
-    |> validate_name(attrs)
+    |> cast_email( attrs, user_id_attrs )
+    |> put_username_from_uid( attrs )
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
-    |> Ecto.Changeset.unique_constraint(:user_name, on: User.Repo)
+    |> validate_name(attrs)
+    |> validate_email()
   end
 
-  defp validate_email(user_or_changeset, attrs, user_id_attrs) do
+  defp cast_email( user_or_changeset, attrs, user_id_attrs ) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:email])
-    |> maybe_cast_user_id_attrs_email( user_id_attrs )
-    |> Ecto.Changeset.validate_required([:email])
-    |> Ecto.Changeset.unique_constraint([:email])
+    |> Ecto.Changeset.cast(user_id_attrs, [:email]) # Make sure that we cast user input last to override the one fetched from Github
   end
-  defp maybe_cast_user_id_attrs_email( user_or_changeset, nil ), do: user_or_changeset
-  defp maybe_cast_user_id_attrs_email( user_or_changeset, user_id_attrs ), do: Ecto.Changeset.cast(user_or_changeset, user_id_attrs, [:email])
 
-  defp put_username(changeset, %{"uid" => user_name}), do: Ecto.Changeset.put_change(changeset, :user_name, user_name)
-  defp put_username(changeset, _attrs), do: changeset
+  defp validate_email( user_or_changeset ) do
+    user_or_changeset
+    |> Ecto.Changeset.validate_required([:email])
+    |> Ecto.Changeset.unique_constraint(:email)
+  end
 
   defp validate_name(user_or_changeset, attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name])
     |> Ecto.Changeset.validate_required([:name])
   end
+
+  defp put_username_from_uid(changeset, %{uid: user_name}), do: Ecto.Changeset.put_change(changeset, :user_name, user_name)
+  defp put_username_from_uid(changeset, _attrs), do: changeset
 end

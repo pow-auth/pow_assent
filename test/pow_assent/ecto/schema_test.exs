@@ -15,7 +15,7 @@ defmodule PowAssent.Ecto.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
   doctest PowAssent.Ecto.Schema
 
-  alias PowAssent.Test.Ecto.{Repo, Users.User}
+  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.CustomUser}
   alias PowAssent.Test.EmailConfirmation.Users.User, as: UserConfirmEmail
   alias PowAssent.Test.Invitation.Users.User, as: InvitationUser
 
@@ -74,6 +74,13 @@ defmodule PowAssent.Ecto.SchemaTest do
       changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com"}, nil)
       assert changeset.changes[:email]
       refute changeset.changes[:email_confirmed_at]
+    end
+
+    test "sets :user_name from provider :uid for custom user" do
+      changeset = CustomUser.user_identity_changeset(%CustomUser{}, @user_identity, %{uid: "1", email: "test@example.com", name: "John Doe"}, %{})
+      assert changeset.changes[:user_name] == "1"
+      assert changeset.changes[:email] == "test@example.com"
+      assert changeset.changes[:name] == "John Doe"
     end
 
     test "sets :invitation_accepted_at when is invited user" do
