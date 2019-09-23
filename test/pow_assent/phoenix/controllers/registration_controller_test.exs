@@ -4,7 +4,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   @provider "test_provider"
   @token_params %{"access_token" => "access_token"}
   @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}
-  @user_params %{"name" => "John Doe"}
+  @user_params %{"name" => "John Doe", "email" => "test@example.com"}
   @provider_params %{@provider => %{user_identity: @user_identity_params, user: @user_params}}
 
   setup %{conn: conn} do
@@ -37,6 +37,18 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert html = html_response(conn, 200)
       assert html =~ "<label for=\"user_email\">Email</label>"
       assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\">"
+      assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\">"
+    end
+
+    test "user data comes from provider", %{conn: conn} do
+      conn = get conn, Routes.pow_assent_registration_path(conn, :add_user_id, @provider)
+
+      changeset = conn.assigns[:changeset]
+
+      if ( changeset != nil ) do
+        assert Ecto.Changeset.get_change( changeset, :email ) != nil
+        assert Ecto.Changeset.get_change( changeset, :email ) == @user_params["email"]
+      end
     end
   end
 

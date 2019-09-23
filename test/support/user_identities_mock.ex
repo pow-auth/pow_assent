@@ -29,7 +29,7 @@ defmodule PowAssent.Test.UserIdentitiesMock do
   def create_user(@new_user_identity_params, %{"name" => ""} = user_params, _user_id_params), do: {:error, %{User.changeset(%User{}, user_params) | action: :create}}
   def create_user(@new_user_identity_params, %{"email" => ""} = user_params, _user_id_params), do: {:error, {:invalid_user_id_field, %{User.changeset(%User{}, user_params) | action: :create}}}
   def create_user(@new_user_identity_params, %{"email" => "taken@example.com"} = user_params, _user_id_params), do: {:error, {:invalid_user_id_field, %{User.changeset(@taken_user_id_changeset, user_params) | action: :create}}}
-  def create_user(@new_user_identity_params, %{"email" => "general_error@example.com"} = user_params, _user_id_params), do:{:error, %{User.changeset(@taken_user_id_changeset, user_params) | action: :create} }
+  def create_user(@new_user_identity_params, %{"email" => "general_error@example.com"} = user_params, _user_id_params), do: {:error, %{User.changeset(@taken_user_id_changeset, user_params) | action: :create} }
   def create_user(@new_user_identity_params, _user_params, %{"email" => "taken@example.com"} = user_id_params), do: {:error, {:invalid_user_id_field, %{User.changeset(@taken_user_id_changeset, user_id_params) | action: :create}}}
   def create_user(@new_user_identity_params, _user_params, %{"email" => "foo@example.com"}), do: {:ok, %{@created_user_with_identity | email: "foo@example.com"}}
   def create_user(@new_user_identity_params, _user_params, _user_id_params), do: {:ok, @created_user_with_identity}
