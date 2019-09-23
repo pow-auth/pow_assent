@@ -38,17 +38,7 @@ defmodule PowAssent.Test.Ecto.Users.CustomUser do
   defp validate_email(user_or_changeset) do
     user_or_changeset
     |> Ecto.Changeset.validate_required([:email])
-    |> validate_email_address()
     |> Ecto.Changeset.unique_constraint(:email)
-  end
-
-  defp validate_email_address(user_or_changeset) do
-    email = Ecto.Changeset.get_change(user_or_changeset, :email)
-    if email && !Pow.Ecto.Schema.Changeset.validate_email( email ) do
-      Ecto.Changeset.add_error( user_or_changeset, :email, "Invalid email address!")
-    else
-      user_or_changeset
-    end
   end
 
   defp validate_name(user_or_changeset, attrs) do
