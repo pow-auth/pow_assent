@@ -45,9 +45,9 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
 
       changeset = conn.assigns[:changeset]
 
-      if ( changeset != nil ) do
-        assert Ecto.Changeset.get_change( changeset, :email ) != nil
-        assert Ecto.Changeset.get_change( changeset, :email ) == @user_params["email"]
+      if changeset != nil do
+        assert Ecto.Changeset.get_change(changeset, :email) != nil
+        assert Ecto.Changeset.get_change(changeset, :email) == @user_params["email"]
       end
     end
   end

@@ -22,23 +22,33 @@ defmodule PowAssent.Test.Ecto.Users.CustomUser do
 
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset
-    |> cast_email( attrs, user_id_attrs )
-    |> put_username_from_uid( attrs )
+    |> cast_email(attrs, user_id_attrs)
+    |> put_username_from_uid(attrs)
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
     |> validate_name(attrs)
     |> validate_email()
   end
 
-  defp cast_email( user_or_changeset, attrs, user_id_attrs ) do
+  defp cast_email(user_or_changeset, attrs, user_id_attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:email])
     |> Ecto.Changeset.cast(user_id_attrs || %{}, [:email]) # Make sure that we cast user input last to override the one fetched from Github
   end
 
-  defp validate_email( user_or_changeset ) do
+  defp validate_email(user_or_changeset) do
     user_or_changeset
     |> Ecto.Changeset.validate_required([:email])
+    |> validate_email_address()
     |> Ecto.Changeset.unique_constraint(:email)
+  end
+
+  defp validate_email_address(user_or_changeset) do
+    email = Ecto.Changeset.get_change(user_or_changeset, :email)
+    if email && !Pow.Ecto.Schema.Changeset.validate_email( email ) do
+      Ecto.Changeset.add_error( user_or_changeset, :email, "Invalid email address!")
+    else
+      user_or_changeset
+    end
   end
 
   defp validate_name(user_or_changeset, attrs) do
