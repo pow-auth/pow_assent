@@ -77,7 +77,7 @@ defmodule PowAssent.Ecto.SchemaTest do
     end
 
     test "sets :user_name from provider :uid for custom user" do
-      changeset = CustomUser.user_identity_changeset(%CustomUser{}, @user_identity, %{uid: "1", email: "test@example.com", name: "John Doe"}, %{})
+      changeset = CustomUser.user_identity_changeset(%CustomUser{}, @user_identity, %{uid: "1", email: "test@example.com", name: "John Doe"}, nil)
       assert changeset.changes[:user_name] == "1"
       assert changeset.changes[:email] == "test@example.com"
       assert changeset.changes[:name] == "John Doe"

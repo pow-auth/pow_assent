@@ -32,7 +32,7 @@ defmodule PowAssent.Test.Ecto.Users.CustomUser do
   defp cast_email( user_or_changeset, attrs, user_id_attrs ) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:email])
-    |> Ecto.Changeset.cast(user_id_attrs, [:email]) # Make sure that we cast user input last to override the one fetched from Github
+    |> Ecto.Changeset.cast(user_id_attrs || %{}, [:email]) # Make sure that we cast user input last to override the one fetched from Github
   end
 
   defp validate_email( user_or_changeset ) do
