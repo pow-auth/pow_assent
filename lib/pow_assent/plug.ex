@@ -25,7 +25,7 @@ defmodule PowAssent.Plug do
   returned from the provider, it'll be added to the connection as private key
   `:pow_assent_session_params`.
   """
-  @spec authorize_url(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error. any(), Conn.t()}
+  @spec authorize_url(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
   def authorize_url(conn, provider, redirect_uri) do
     {strategy, provider_config} = get_provider_config(conn, provider)
 

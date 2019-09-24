@@ -58,7 +58,7 @@ defmodule PowAssent.Config do
     |> Kernel.||(raise_error("No provider configuration available for #{provider}."))
   end
 
- @doc """
+  @doc """
   Raise a ConfigError exception.
   """
   @spec raise_error(binary()) :: no_return
