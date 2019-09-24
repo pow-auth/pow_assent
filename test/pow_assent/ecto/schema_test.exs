@@ -62,16 +62,23 @@ defmodule PowAssent.Ecto.SchemaTest do
     end
 
     test "sets :email_confirmed_at when provided as attrs" do
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{}, %{email: "test@example.com"})
+      provider_params = %{email: "test@example.com", email_verified: true, name: "John Doe"}
+
+      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, provider_params, %{email: "test@example.com"})
       assert changeset.changes[:email]
       refute changeset.changes[:email_confirmed_at]
 
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, %{email: "test@example.com", name: "John Doe"}, nil)
+      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, provider_params, nil)
       assert changeset.changes[:email]
       assert changeset.changes[:name] == "John Doe"
       assert changeset.changes[:email_confirmed_at]
 
-      changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com"}, nil)
+      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity,  Map.delete(provider_params, :email_verified), nil)
+      assert changeset.changes[:email]
+      assert changeset.changes[:name] == "John Doe"
+      refute changeset.changes[:email_confirmed_at]
+
+      changeset = User.user_identity_changeset(%User{}, @user_identity, provider_params, nil)
       assert changeset.changes[:email]
       refute changeset.changes[:email_confirmed_at]
     end

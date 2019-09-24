@@ -19,9 +19,7 @@ defmodule PowAssent.MixProject do
 
       # Docs
       name: "PowAssent",
-      docs: docs(),
-
-      xref: [exclude: [Mint.HTTP, :certifi, :ssl_verify_hostname]]
+      docs: docs()
     ]
   end
 
@@ -34,14 +32,7 @@ defmodule PowAssent.MixProject do
   defp deps do
     [
       {:pow, "~> 1.0.9"},
-
-      {:oauther, "~> 1.1"},
-
-      {:certifi, ">= 0.0.0", optional: true},
-      {:ssl_verify_fun, ">= 0.0.0", optional: true},
-
-      {:mint, "~> 0.1.0", optional: true},
-      {:castore, "~> 0.1.0", optional: true},
+      {:assent, "~> 0.1.0"},
 
       {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},
       {:phoenix_ecto, ">= 3.0.0 and <= 4.0.0"},
@@ -90,8 +81,7 @@ defmodule PowAssent.MixProject do
       ],
       groups_for_modules: [
         Ecto: ~r/^PowAssent.Ecto/,
-        Phoenix: ~r/^PowAssent.Phoenix/,
-        Strategies: ~r/^PowAssent.Strategy/
+        Phoenix: ~r/^PowAssent.Phoenix/
       ]
     ]
   end

@@ -10,22 +10,23 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
 * Multiple providers can be used for accounts
   * When removing authentication, user is validated for password or alternative provider
 * You can add your custom strategy with ease
-* Includes the following base strategies:
-  * [OAuth 1.0](lib/pow_assent/strategies/oauth.ex)
-  * [OAuth 2.0](lib/pow_assent/strategies/oauth2.ex)
-* Includes the following provider strategies:
-  * [Auth0](lib/pow_assent/strategies/auth0.ex)
-  * [Azure AD](lib/pow_assent/strategies/azure_oauth2.ex)
-  * [Basecamp](lib/pow_assent/strategies/basecamp.ex)
-  * [Discord](lib/pow_assent/strategies/discord.ex)
-  * [Facebook](lib/pow_assent/strategies/facebook.ex)
-  * [Github](lib/pow_assent/strategies/github.ex)
-  * [Gitlab](lib/pow_assent/strategies/gitlab.ex)
-  * [Google](lib/pow_assent/strategies/google.ex)
-  * [Instagram](lib/pow_assent/strategies/instagram.ex)
-  * [Slack](lib/pow_assent/strategies/slack.ex)
-  * [Twitter](lib/pow_assent/strategies/twitter.ex)
-  * [VK](lib/pow_assent/strategies/vk.ex)
+* Includes the following strategies from [`Assent`](https://github.com/danschultzer/assent):
+  * OAuth 1.0 - `Assent.Strategy.OAuth`
+  * OAuth 2.0 - `Assent.Strategy.OAuth2`
+  * OIDC - `Assent.Strategy.OIDC`
+  * Apple Sign In - `Assent.Strategy.Apple`
+  * Auth0 - `Assent.Strategy.Auth0`
+  * Azure AD - `Assent.Strategy.AzureOauth2`
+  * Basecamp - `Assent.Strategy.Basecamp`
+  * Discord - `Assent.Strategy.Discord`
+  * Facebook - `Assent.Strategy.Facebook`
+  * Github - `Assent.Strategy.Github`
+  * Gitlab - `Assent.Strategy.Gitlab`
+  * Google - `Assent.Strategy.Google`
+  * Instagram - `Assent.Strategy.Instagram`
+  * Slack - `Assent.Strategy.Slack`
+  * Twitter - `Assent.Strategy.Twitter`
+  * VK - `Assent.Strategy.VK`
 
 ## Installation
 
@@ -153,7 +154,7 @@ You can also call `PowAssent.Phoenix.ViewHelpers.authorization_link/2` and `PowA
 
 ### Setting up a provider
 
-PowAssent has [multiple strategies](lib/pow_assent/strategies) that you can use. Let's go through how to set up the Github strategy.
+[Assent](https://github.com/pow-auth/assent) provides many strategies that you can use. Let's go through how to set up the Github strategy.
 
 First, register [a new app on Github](https://github.com/settings/applications/new) and add `http://localhost:4000/auth/github/callback` as the callback URL. Then add the following to `config/config.exs` and add the client id and client secret (for production keys you would want to set this in `config/prod.secret.exs`):
 
@@ -163,60 +164,31 @@ config :my_app, :pow_assent,
     github: [
       client_id: "REPLACE_WITH_CLIENT_ID",
       client_secret: "REPLACE_WITH_CLIENT_SECRET",
-      strategy: PowAssent.Strategy.Github
+      strategy: Assent.Strategy.Github
     ]
   ]
 ```
 
 Now start (or restart) your Phoenix app, and visit `http://localhost:4000/auth/github/new`.
 
+#### Nonce
+
+For OIDC requests a nonce may be required. PowAssent can automatically generate the nonce if you pass `nonce: true` in the configuration:
+
+```elixir
+config :my_app, :pow_assent,
+  providers: [
+    github: [
+      client_id: "REPLACE_WITH_CLIENT_ID",
+      nonce: true,
+      strategy: Assent.Strategy.AzureAD
+    ]
+  ]
+```
+
 ## Custom provider
 
-You can add your own custom strategy.
-
-Here's an example of an OAuth 2.0 implementation using `PowAssent.Strategy.OAuth2.Base`:
-
-```elixir
-defmodule TestProvider do
-  use PowAssent.Strategy.OAuth2.Base
-
-  def default_config(_config) do
-    [
-      site: "http://localhost:4000/",
-      authorize_url: "http://localhost:4000/oauth/authorize",
-      token_url: "http://localhost:4000/oauth/access_token",
-      user_url: "/user",
-      authorization_params: [scope: "email profile"]
-    ]
-  end
-
-  def normalize(_config, user) do
-    %{
-      "uid"   => user["sub"],
-      "name"  => user["name"],
-      "email" => user["email"]
-    }
-  end
-end
-```
-
-You can also use `PowAssent.Strategy`:
-
-```elixir
-defmodule TestProvider do
-  @behaviour PowAssent.Strategy
-
-  @spec authorize_url(Keyword.t()) :: {:ok, %{url: binary()}} | {:error, term()}
-  def authorize_url(config) do
-    # Generate authorization url
-  end
-
-  @spec callback(Keyword.t(), map()) :: {:ok, %{user: map()}} | {:error, term()}
-  def callback(config, params) do
-    # Handle callback response
-  end
-end
-```
+You can add your own custom strategy. See ["Custom Provider" section of Assent readme](https://github.com/pow-auth/assent#custom-provider) for more.
 
 ## I18n
 
@@ -270,7 +242,7 @@ defmodule MyApp.Users.User do
 end
 ```
 
-The fields available can be found in the `normalize/2` method of [the strategy](lib/pow_assent/strategies/).
+The fields available can be found in the `normalize/2` method of the strategy module.
 
 ## Disable registration
 
@@ -359,13 +331,13 @@ warning: invalid association `user_identities` in schema MyApp.Lib.User: associa
 
 ### PowEmailConfirmation
 
-The e-mail fetched from the provider is assumed already confirmed, and the user will have `:email_confirmed_at` set when inserted. If a user enters an e-mail then the user will have to confirm their e-mail before they can sign in.
+The e-mail fetched from the provider params is assumed confirmed if an `email_verified` key with value `true` also exists in the params. The user will have `:email_confirmed_at` set when inserted. If `email_verified` isn't `true` in the provider params, or the user provides the e-mail, then the user will have to confirm their e-mail before they can sign in.
 
 ### PowInvitation
 
-PowAssent works out of the box with PowInvitation. If a user identity is created, the an invited user will have the `:invitation_accepted_at` set.
+PowAssent works out of the box with PowInvitation.
 
-Provider links will have an `invitation_token` query param if an invited user exists in the connection. This will be used in the authorization callback flow to load the invited user.
+Provider links will have an `invitation_token` query param if an invited user exists in the connection. This will be used in the authorization callback flow to load the invited user. If a user identity is created, the invited user will have the `:invitation_accepted_at` set.
 
 ## Security concerns
 

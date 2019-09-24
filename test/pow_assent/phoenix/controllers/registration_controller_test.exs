@@ -106,6 +106,22 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
         |> Plug.Conn.put_session(:pow_assent_params, params)
         |> Phoenix.ConnTest.dispatch(EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{}})
 
+      refute Pow.Plug.current_user(conn)
+
+      assert redirected_to(conn) == "/registration_created"
+      assert get_flash(conn, :error) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
+
+      assert_received {:mail_mock, mail}
+      mail.html =~ "http://example.com/confirm-email/"
+    end
+
+    test "with verified provider email", %{conn: conn} do
+      params = %{@provider => %{user_identity: %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}, user: %{"name" => "John Doe", "email" => "foo@example.com", "email_verified" => true}}}
+      conn =
+        conn
+        |> Plug.Conn.put_session(:pow_assent_params, params)
+        |> Phoenix.ConnTest.dispatch(EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{}})
+
       assert redirected_to(conn) == "/registration_created"
       assert Pow.Plug.current_user(conn)
 

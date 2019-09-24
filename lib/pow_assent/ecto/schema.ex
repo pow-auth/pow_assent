@@ -104,14 +104,14 @@ defmodule PowAssent.Ecto.Schema do
   defp user_id_field_changeset(changeset, attrs, nil) do
     changeset
     |> changeset.data.__struct__.pow_user_id_field_changeset(attrs)
-    |> maybe_set_confirmed_at()
+    |> maybe_set_confirmed_at(attrs)
   end
   defp user_id_field_changeset(changeset, _attrs, user_id_attrs) do
     changeset.data.__struct__.pow_user_id_field_changeset(changeset, user_id_attrs)
   end
 
-  defp maybe_set_confirmed_at(%Changeset{data: %user_mod{}} = changeset) do
-    case confirmable?(changeset) do
+  defp maybe_set_confirmed_at(%Changeset{data: %user_mod{}} = changeset, attrs) do
+    case confirmable?(changeset) and email_verified?(attrs) do
       true  ->
         confirmed_at = Pow.Ecto.Schema.__timestamp_for__(user_mod, :email_confirmed_at)
 
@@ -121,6 +121,10 @@ defmodule PowAssent.Ecto.Schema do
         changeset
     end
   end
+
+  defp email_verified?(%{"email_verified" => true}), do: true
+  defp email_verified?(%{email_verified: true}), do: true
+  defp email_verified?(_params), do: false
 
   defp confirmable?(changeset) do
     Map.has_key?(changeset.data, :email) and

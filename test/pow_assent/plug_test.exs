@@ -6,7 +6,7 @@ defmodule PowAssent.PlugTest do
   alias PowAssent.Plug
   alias PowAssent.Test.{UserIdentitiesMock, Ecto.Users.User}
 
-  import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 1, put_oauth2_env: 1]
+  import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 1, expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 
   @default_config [
     plug: Pow.Plug.Session,
@@ -26,14 +26,33 @@ defmodule PowAssent.PlugTest do
     {:ok, conn: conn}
   end
 
-  test "authorize_url/3", %{conn: conn} do
-    put_oauth2_env(%Bypass{port: 8888})
+  describe "authorize_url/3" do
+    test "generates state", %{conn: conn} do
+      put_oauth2_env(%Bypass{port: 8888})
 
-    assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
+      assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
-    assert url =~ "http://localhost:8888/oauth/authorize?client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&state="
-    assert Map.has_key?(conn.private, :pow_assent_session_params)
-    assert %{state: _state} = conn.private[:pow_assent_session_params]
+      assert %{private: %{pow_assent_session_params: %{state: state}}} = conn
+      assert url == "http://localhost:8888/oauth/authorize?client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&state=#{state}"
+    end
+
+    test "uses nonce from config", %{conn: conn} do
+      put_oauth2_env(%Bypass{port: 8888}, nonce: "nonce", strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
+
+      assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
+
+      assert %{private: %{pow_assent_session_params: %{state: state, nonce: nonce}}} = conn
+      assert nonce == "nonce"
+      assert url == "http://localhost:8888/oauth/authorize?client_id=client_id&nonce=nonce&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&scope=openid&state=#{state}"
+    end
+
+    test "uses generated nonce when nonce in config set to true", %{conn: conn} do
+      put_oauth2_env(%Bypass{port: 8888}, nonce: true, strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
+
+      assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
+      assert %{private: %{pow_assent_session_params: %{state: state, nonce: nonce}}} = conn
+      assert url == "http://localhost:8888/oauth/authorize?client_id=client_id&#{URI.encode_query(%{nonce: nonce})}&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&scope=openid&state=#{state}"
+    end
   end
 
   describe "callback/3" do
@@ -52,6 +71,14 @@ defmodule PowAssent.PlugTest do
       assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "")
       assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user_params == %{"name" => "Dan Schultzer"}
+    end
+
+    test "returns user params with preferred username as username", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{preferred_username: "john.doe"})
+
+      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "")
+      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user_params == %{"username" => "john.doe", "name" => "Dan Schultzer"}
     end
   end
 
