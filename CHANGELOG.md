@@ -37,7 +37,7 @@ If you have custom built strategies, you should can use `Assent.Strategy.normali
   * `PowAssent.Strategy.VK`
   * `PowAssent.Strategy`
 
-* Callback params now conforms to [OpenID Connect Core 1.0 Standard Claims spec](https://openid.net/specs/openid-connect-core-1_0.html#rfc.section.5.1)]. During the callback phase, the following param keys will be renamed:
+* Callback params now conforms to [OpenID Connect Core 1.0 Standard Claims spec](https://openid.net/specs/openid-connect-core-1_0.html#rfc.section.5.1). During the callback phase, the following param keys will be renamed:
 
   * `sub` to `uid`
   * `preferred_username` to `username`
