@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.0 (TBA)
+## v0.4.0 (2019-10-06)
 
 **This release consists of major breaking changes.**
 
