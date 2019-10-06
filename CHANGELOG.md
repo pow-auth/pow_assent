@@ -1,5 +1,53 @@
 # Changelog
 
+## v0.4.0 (TBA)
+
+**This release consists of major breaking changes.**
+
+You'll have to change the `:strategy` setting in your provider configurations. For the most part it would just consists of renaming `PowAssent.Strategy.STRATEGY` to `Assent.Strategy.STRATEGY`.
+
+If you have custom built strategies, you should can use `Assent.Strategy.normalize_userinfo/2` to conform the userinfo response from the API. `sub` is now expected instead of `uid`.
+
+### Changes
+
+* Use [`:assent` package](https://github.com/pow-auth/assent) for strategies. The following modules has been removed in favor of `Assent` modules:
+
+  * `PowAssent.CallbackError`
+  * `PowAssent.CallbackCSRFError`
+  * `PowAssent.RequestError`
+  * `PowAssent.ConfigurationError`
+  * `PowAssent.HTTPAdapter`
+  * `PowAssent.HTTPAdapter.Httpc`
+  * `PowAssent.HTTPAdapter.Mint`
+  * `PowAssent.Strategy.Auth0`
+  * `PowAssent.Strategy.AzureOAuth2`
+  * `PowAssent.Strategy.Basecamp`
+  * `PowAssent.Strategy.Discord`
+  * `PowAssent.Strategy.Facebook`
+  * `PowAssent.Strategy.Github`
+  * `PowAssent.Strategy.Gitlab`
+  * `PowAssent.Strategy.Google`
+  * `PowAssent.Strategy.Instagram`
+  * `PowAssent.Strategy.OAuth`
+  * `PowAssent.Strategy.OAuth.Base`
+  * `PowAssent.Strategy.OAuth2`
+  * `PowAssent.Strategy.OAuth2.Base`
+  * `PowAssent.Strategy.Slack`
+  * `PowAssent.Strategy.Twitter`
+  * `PowAssent.Strategy.VK`
+  * `PowAssent.Strategy`
+
+* Callback params now conforms to [OpenID Connect Core 1.0 Standard Claims spec](https://openid.net/specs/openid-connect-core-1_0.html#rfc.section.5.1)]. During the callback phase, the following param keys will be renamed:
+
+  * `sub` to `uid`
+  * `preferred_username` to `username`
+
+* The e-mail is no longer considered confirmed unless the callback params has an `email_verified` key set to true
+
+* `PowAssent.Plug.authorize_url/3` generates a random nonce if `nonce: true` is set in the provider configuration
+
+* Support for OpenID Connect and Apple Sign In through Assent
+
 ## v0.3.2 (2019-08-25)
 
 * All links in docs generated with `mix docs` and on [hexdocs.pm](http://hexdocs.pm/pow/) now works

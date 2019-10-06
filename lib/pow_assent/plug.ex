@@ -24,6 +24,9 @@ defmodule PowAssent.Plug do
   A generated authorization URL will be returned. If `:session_params` is
   returned from the provider, it'll be added to the connection as private key
   `:pow_assent_session_params`.
+
+  If `:nonce` is set to `true` in the provider configuration, a randomly
+  generated nonce will be added to the configuration.
   """
   @spec authorize_url(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
   def authorize_url(conn, provider, redirect_uri) do
@@ -31,8 +34,22 @@ defmodule PowAssent.Plug do
 
     provider_config
     |> Config.put(:redirect_uri, redirect_uri)
+    |> maybe_gen_nonce()
     |> strategy.authorize_url()
     |> maybe_put_session_params(conn)
+  end
+
+  defp maybe_gen_nonce(config) do
+    case Config.get(config, :nonce, nil) do
+      true -> Config.put(config, :nonce, gen_nonce())
+      _any -> config
+    end
+  end
+
+  defp gen_nonce() do
+    16
+    |> :crypto.strong_rand_bytes()
+    |> Base.encode64(padding: false)
   end
 
   defp maybe_put_session_params({:ok, %{url: url, session_params: params}}, conn) do
@@ -67,10 +84,24 @@ defmodule PowAssent.Plug do
     other_params = Map.drop(response, [:user])
 
     user
-    |> Map.split(["uid"])
+    |> normalize_username()
+    |> split_user_identity_params()
     |> handle_user_identity_params(other_params, provider, conn)
   end
   defp parse_callback_response({:error, error}, _provider, conn), do: {:error, error, conn}
+
+  defp normalize_username(%{"preferred_username" => username} = params) do
+    params
+    |> Map.delete("preferred_username")
+    |> Map.put("username", username)
+  end
+  defp normalize_username(params), do: params
+
+  defp split_user_identity_params(%{"sub" => uid} = params) do
+    user_params = Map.delete(params, "sub")
+
+    {%{"uid" => uid}, user_params}
+  end
 
   defp handle_user_identity_params({user_identity_params, user_params}, other_params, provider, conn) do
     user_identity_params = Map.put(user_identity_params, "provider", provider)

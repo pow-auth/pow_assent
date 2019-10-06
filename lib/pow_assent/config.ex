@@ -56,6 +56,18 @@ defmodule PowAssent.Config do
     |> get_providers()
     |> get(provider)
     |> Kernel.||(raise_error("No provider configuration available for #{provider}."))
+    |> add_global_config(config)
+  end
+
+  defp add_global_config(provider_config, config) do
+    [
+      :http_adapter,
+      :json_adapter,
+      :jwt_adapter
+    ]
+    |> Enum.map(&{&1, get(config, &1)})
+    |> Enum.reject(&is_nil(elem(&1, 1)))
+    |> Keyword.merge(provider_config)
   end
 
   @doc """
