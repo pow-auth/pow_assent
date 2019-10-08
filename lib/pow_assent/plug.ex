@@ -30,10 +30,9 @@ defmodule PowAssent.Plug do
   """
   @spec authorize_url(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
   def authorize_url(conn, provider, redirect_uri) do
-    {strategy, provider_config} = get_provider_config(conn, provider)
+    {strategy, provider_config} = get_provider_config(conn, provider, redirect_uri)
 
     provider_config
-    |> Config.put(:redirect_uri, redirect_uri)
     |> maybe_gen_nonce()
     |> strategy.authorize_url()
     |> maybe_put_session_params(conn)
@@ -68,8 +67,7 @@ defmodule PowAssent.Plug do
   """
   @spec callback(Conn.t(), binary(), map(), binary()) :: {:ok, map(), map(), Conn.t()} | {:error, any(), Conn.t()}
   def callback(conn, provider, params, redirect_uri) do
-    {strategy, provider_config} = get_provider_config(conn, provider)
-    params                      = Map.put(params, "redirect_uri", redirect_uri)
+    {strategy, provider_config} = get_provider_config(conn, provider, redirect_uri)
 
     provider_config
     |> maybe_set_session_params_config(conn)
@@ -228,16 +226,19 @@ defmodule PowAssent.Plug do
     |> Keyword.merge(Keyword.get(config, :pow_assent, []))
   end
 
-  defp get_provider_config(%Conn{} = conn, provider) do
+  defp get_provider_config(%Conn{} = conn, provider, redirect_uri) do
     conn
     |> fetch_config()
-    |> get_provider_config(provider)
+    |> get_provider_config(provider, redirect_uri)
   end
-  defp get_provider_config(config, provider) do
+  defp get_provider_config(config, provider, redirect_uri) do
     provider        = String.to_atom(provider)
     config          = Config.get_provider_config(config, provider)
     strategy        = config[:strategy]
-    provider_config = Keyword.delete(config, :strategy)
+    provider_config =
+      config
+      |> Keyword.delete(:strategy)
+      |> Config.put(:redirect_uri, redirect_uri)
 
     {strategy, provider_config}
   end
