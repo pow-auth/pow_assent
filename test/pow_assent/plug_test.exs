@@ -6,7 +6,7 @@ defmodule PowAssent.PlugTest do
   alias PowAssent.Plug
   alias PowAssent.Test.{UserIdentitiesMock, Ecto.Users.User}
 
-  import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 1, expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
+  import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 
   @default_config [
     plug: Pow.Plug.Session,
@@ -66,9 +66,14 @@ defmodule PowAssent.PlugTest do
     end
 
     test "returns user params", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass)
+      expect_oauth2_flow(bypass, access_token_assert_fn: fn conn ->
+        {:ok, body, _conn} = Conn.read_body(conn, [])
+        params = URI.decode_query(body)
 
-      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "")
+        assert params["redirect_uri"] == "https://example.com/"
+      end)
+
+      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
       assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user_params == %{"name" => "Dan Schultzer"}
     end
@@ -76,7 +81,7 @@ defmodule PowAssent.PlugTest do
     test "returns user params with preferred username as username", %{conn: conn, bypass: bypass} do
       expect_oauth2_flow(bypass, user: %{preferred_username: "john.doe"})
 
-      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "")
+      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
       assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user_params == %{"username" => "john.doe", "name" => "Dan Schultzer"}
     end

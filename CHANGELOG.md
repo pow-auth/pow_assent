@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.1 (TBA)
+
+* Use Assent `v0.1.2` and set `:redirect_uri` in config for OAuth 2.0 callback phase
+
 ## v0.4.0 (2019-10-06)
 
 **This release consists of major breaking changes.**

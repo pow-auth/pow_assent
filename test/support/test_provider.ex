@@ -22,7 +22,7 @@ defmodule PowAssent.Test.TestProvider do
     token_params = Keyword.get(opts, :token, %{"access_token" => "access_token"})
     user_params  = Map.merge(%{sub: "new_user", name: "Dan Schultzer"}, Keyword.get(opts, :user, %{}))
 
-    PowAssent.Test.OAuth2TestCase.expect_oauth2_access_token_request(bypass, params: token_params)
+    PowAssent.Test.OAuth2TestCase.expect_oauth2_access_token_request(bypass, [params: token_params], opts[:access_token_assert_fn])
     PowAssent.Test.OAuth2TestCase.expect_oauth2_user_request(bypass, user_params)
   end
 
