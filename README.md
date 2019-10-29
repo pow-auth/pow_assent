@@ -1,6 +1,6 @@
 # ![PowAssent](assets/logo-full.svg)
 
-[![Build Status](https://travis-ci.org/danschultzer/pow_assent.svg?branch=master)](https://travis-ci.org/danschultzer/pow_assent) [![hex.pm](http://img.shields.io/hexpm/v/pow_assent.svg?style=flat)](https://hex.pm/packages/pow_assent)
+[![Build Status](https://travis-ci.org/pow-auth/pow_assent.svg?branch=master)](https://travis-ci.org/pow-auth/pow_assent) [![hex.pm](http://img.shields.io/hexpm/v/pow_assent.svg?style=flat)](https://hex.pm/packages/pow_assent)
 
 Use Google, Github, Twitter, Facebook, or add your custom strategy for authorization to your Pow enabled Phoenix app.
 
