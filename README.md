@@ -327,6 +327,16 @@ Otherwise you'll get an error that reads:
 warning: invalid association `user_identities` in schema MyApp.Lib.User: associated schema MyApp.UserIdentities.UserIdentity does not exist
 ```
 
+## Callback URL with HTTPS behind proxy
+
+PowAssent uses the Phoenix URL generator to generate the callback URL used in OAuth and OIDC flows. If you run your Phoenix app behind a proxy, then you should ensure that HTTPS endpoints are generated:
+
+```elixir
+config :my_app, MyAppWeb.Endpoint,
+  # ..,
+  url: [scheme: "https", host: "example.com", port: 443]
+```
+
 ## Pow Extensions
 
 ### PowEmailConfirmation
