@@ -291,7 +291,7 @@ Update the PowAssent configuration with:
 
 ```elixir
 config :my_app, :pow_assent,
-  http_adapter: PowAssent.HTTPAdapter.Mint
+  http_adapter: Assent.HTTPAdapter.Mint
 ```
 
 ## Different module naming
