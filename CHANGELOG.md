@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.2 (TBA)
+
+* Added support for POST callback from provider
+
 ## v0.4.1 (2019-10-08)
 
 * Use Assent `v0.1.2` and set `:redirect_uri` in config for OAuth 2.0 callback phase

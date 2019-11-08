@@ -53,6 +53,7 @@ defmodule PowAssent.Phoenix.Router do
       scope "/auth", PowAssent.Phoenix, as: "pow_assent" do
         resources "/:provider", AuthorizationController, singleton: true, only: [:new, :delete]
         get "/:provider/callback", AuthorizationController, :callback
+        post "/:provider/callback", AuthorizationController, :callback
       end
     end
   end

@@ -161,6 +161,27 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
   end
 
+  describe "POST /auth/:provider/callback" do
+    setup %{conn: conn} do
+      conn = Plug.Conn.put_session(conn, :pow_assent_session_params, %{state: "token"})
+
+      {:ok, conn: conn}
+    end
+
+    test "when identity doesn't exist creates user", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{sub: "new_user"})
+
+      conn = post conn, Routes.pow_assent_authorization_path(conn, :callback, @provider), @callback_params
+
+      assert redirected_to(conn) == "/registration_created"
+      assert user = Pow.Plug.current_user(conn)
+      assert [user_identity] = user.user_identities
+      assert user_identity.uid == "new_user"
+      assert user_identity.provider == "test_provider"
+      refute Plug.Conn.get_session(conn, :pow_assent_session_params)
+    end
+  end
+
   alias PowAssent.Test.EmailConfirmation.Phoenix.Endpoint, as: EmailConfirmationEndpoint
   describe "GET /auth/:provider/callback with PowEmailConfirmation" do
     test "when identity doesn't exist and e-mail from provider isn't verified", %{conn: conn, bypass: bypass} do
