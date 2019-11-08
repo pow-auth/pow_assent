@@ -13,6 +13,19 @@ defmodule PowAssent.Phoenix.Router do
 
         # ...
 
+        pipeline :skip_csrf_protection do
+          plug :accepts, ["html"]
+          plug :fetch_session
+          plug :fetch_flash
+          plug :put_secure_browser_headers
+        end
+
+        scope "/" do
+          pipe_through :skip_csrf_protection
+
+          pow_assent_authorization_post_callback_routes()
+        end
+
         scope "/" do
           pipe_through :browser
 
@@ -22,12 +35,19 @@ defmodule PowAssent.Phoenix.Router do
 
         # ...
       end
+
+  The `:skip_csrf_protection` pipeline and
+  `pow_assent_authorization_post_callback_routes/0` call is only necessary if
+  you have strategies using POST callback such as `Assent.Strategy.Apple`. The default
+  CSRF protection in Phoenix has to be skipped when using POST callback.
   """
   defmacro __using__(_opts \\ []) do
     quote do
-      import unquote(__MODULE__), only: [pow_assent_routes: 0, pow_assent_authorization_routes: 0, pow_assent_registration_routes: 0]
+      import unquote(__MODULE__), only: [pow_assent_routes: 0, pow_assent_authorization_routes: 0, pow_assent_authorization_post_callback_routes: 0, pow_assent_registration_routes: 0, pow_assent_scope: 1]
     end
   end
+
+  alias Pow.Phoenix.Router
 
   @doc """
   PowAssent router macro.
@@ -50,10 +70,20 @@ defmodule PowAssent.Phoenix.Router do
   @doc false
   defmacro pow_assent_authorization_routes do
     quote location: :keep do
-      scope "/auth", PowAssent.Phoenix, as: "pow_assent" do
-        resources "/:provider", AuthorizationController, singleton: true, only: [:new, :delete]
-        get "/:provider/callback", AuthorizationController, :callback
-        post "/:provider/callback", AuthorizationController, :callback
+      pow_assent_scope do
+        Router.pow_resources "/:provider", AuthorizationController, singleton: true, only: [:new, :delete]
+        Router.pow_route :get, "/:provider/callback", AuthorizationController, :callback
+      end
+    end
+  end
+
+  @doc false
+  defmacro pow_assent_authorization_post_callback_routes do
+    quote location: :keep do
+      pow_assent_scope do
+        scope "/", as: "post" do
+          Router.pow_route :post, "/:provider/callback", AuthorizationController, :callback
+        end
       end
     end
   end
@@ -61,9 +91,18 @@ defmodule PowAssent.Phoenix.Router do
   @doc false
   defmacro pow_assent_registration_routes do
     quote location: :keep do
+      pow_assent_scope do
+        Router.pow_route :get, "/:provider/add-user-id", RegistrationController, :add_user_id
+        Router.pow_route :post, "/:provider/create", RegistrationController, :create
+      end
+    end
+  end
+
+  @doc false
+  defmacro pow_assent_scope(do: context) do
+    quote do
       scope "/auth", PowAssent.Phoenix, as: "pow_assent" do
-        get "/:provider/add-user-id", RegistrationController, :add_user_id
-        post "/:provider/create", RegistrationController, :create
+        unquote(context)
       end
     end
   end

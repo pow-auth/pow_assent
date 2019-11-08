@@ -101,6 +101,21 @@ defmodule MyAppWeb.Router do
 
   # ...
 
+  pipeline :skip_csrf_protection do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_secure_browser_headers
+  end
+
+  # ...
+
+  scope "/" do
+    pipe_through :skip_csrf_protection
+
+    pow_assent_authorization_post_callback_routes()
+  end
+
   scope "/" do
     pipe_through [:browser]
     pow_routes()
@@ -114,11 +129,12 @@ end
 The following routes will now be available in your app:
 
 ```elixir
-pow_assent_authorization_path  GET     /auth/:provider/new          PowAssent.Phoenix.AuthorizationController :new
-pow_assent_authorization_path  DELETE  /auth/:provider              PowAssent.Phoenix.AuthorizationController :delete
-pow_assent_authorization_path  GET     /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
-pow_assent_registration_path   GET     /auth/:provider/add-user-id  PowAssent.Phoenix.RegistrationController  :add_user_id
-pow_assent_registration_path   POST    /auth/:provider/create       PowAssent.Phoenix.RegistrationController  :create
+pow_assent_post_authorization_path  POST    /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
+pow_assent_authorization_path       GET     /auth/:provider/new          PowAssent.Phoenix.AuthorizationController :new
+pow_assent_authorization_path       DELETE  /auth/:provider              PowAssent.Phoenix.AuthorizationController :delete
+pow_assent_authorization_path       GET     /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
+pow_assent_registration_path        GET     /auth/:provider/add-user-id  PowAssent.Phoenix.RegistrationController  :add_user_id
+pow_assent_registration_path        POST    /auth/:provider/create       PowAssent.Phoenix.RegistrationController  :create
 ```
 
 Remember to run the new migrations with:
@@ -255,6 +271,21 @@ defmodule MyAppWeb.Router do
   use PowAssent.Phoenix.Router
 
   # ...
+
+  pipeline :skip_csrf_protection do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_secure_browser_headers
+  end
+
+  # ...
+
+  scope "/" do
+    pipe_through :skip_csrf_protection
+
+    pow_assent_authorization_post_callback_routes()
+  end
 
   scope "/" do
     pipe_through [:browser]

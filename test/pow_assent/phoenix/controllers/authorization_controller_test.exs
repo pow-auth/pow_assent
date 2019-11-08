@@ -163,7 +163,10 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "POST /auth/:provider/callback" do
     setup %{conn: conn} do
-      conn = Plug.Conn.put_session(conn, :pow_assent_session_params, %{state: "token"})
+      conn =
+        conn
+        |> Plug.Conn.put_session(:pow_assent_session_params, %{state: "token"})
+        |> Plug.Conn.put_private(:plug_skip_csrf_protection, false)
 
       {:ok, conn: conn}
     end
