@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.2 (TBA)
+
+* Added support for POST callback from provider:
+  * Added `pow_assent_authorization_post_callback_routes/0` macro to `PowAssent.Phoenix.Router`
+  * Added `:skip_csrf_protection` pipeline example and scope with `pow_assent_authorization_post_callback_routes/0` call to the docs
+  * Use `Pow.Phoenix.Router` macros to dynamically filter duplicate routes
+
 ## v0.4.1 (2019-10-08)
 
 * Use Assent `v0.1.2` and set `:redirect_uri` in config for OAuth 2.0 callback phase
