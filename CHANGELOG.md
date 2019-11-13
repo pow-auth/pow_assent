@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.2 (TBA)
+## v0.4.2 (2019-11-13)
 
 * Added support for POST callback from provider:
   * Added `pow_assent_authorization_post_callback_routes/0` macro to `PowAssent.Phoenix.Router`
