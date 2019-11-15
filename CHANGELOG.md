@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.3 (TBA)
+
+* Removed `:phoenix_html` dependency requirement
+
 ## v0.4.2 (2019-11-13)
 
 * Added support for POST callback from provider:
