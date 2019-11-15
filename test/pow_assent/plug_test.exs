@@ -16,6 +16,7 @@ defmodule PowAssent.PlugTest do
       user_identities_context: UserIdentitiesMock
     ]
   ]
+  @user %User{id: 1}
 
   setup do
     conn =
@@ -98,7 +99,7 @@ defmodule PowAssent.PlugTest do
 
   describe "upsert_identity/3" do
     setup %{conn: conn} do
-      conn = Pow.Plug.assign_current_user(conn, %User{}, @default_config)
+      conn = Pow.Plug.assign_current_user(conn, @user, @default_config)
 
       {:ok, conn: conn}
     end
@@ -120,7 +121,7 @@ defmodule PowAssent.PlugTest do
     test "with identity already taken", %{conn: conn} do
       assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "identity_taken"})
 
-      assert Pow.Plug.current_user(conn) == %User{}
+      assert Pow.Plug.current_user(conn) == @user
       refute_pow_session conn
     end
   end
@@ -146,7 +147,7 @@ defmodule PowAssent.PlugTest do
 
   describe "delete_identity/3" do
     test "deletes", %{conn: conn} do
-      conn = Pow.Plug.assign_current_user(conn, %User{}, @default_config)
+      conn = Pow.Plug.assign_current_user(conn, @user, @default_config)
 
       assert {:ok, {1, nil}, _conn} = Plug.delete_identity(conn, "test_provider")
     end
