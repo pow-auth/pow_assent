@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.3 (TBA)
+## v0.4.3 (2019-11-20)
 
 * Removed `:phoenix_html` dependency requirement
 * Added Pow minimum requirement `~> 1.0.15`
