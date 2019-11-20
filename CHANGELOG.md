@@ -3,6 +3,8 @@
 ## v0.4.3 (TBA)
 
 * Removed `:phoenix_html` dependency requirement
+* Added Pow minimum requirement `~> 1.0.15`
+* Use `Pow.Extension.Base` macro for new extension setup
 
 ## v0.4.2 (2019-11-13)
 
