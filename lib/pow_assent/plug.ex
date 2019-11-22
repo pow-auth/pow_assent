@@ -197,7 +197,7 @@ defmodule PowAssent.Plug do
     conn
     |> Pow.Plug.current_user()
     |> get_all_providers_for_user(config)
-    |> Enum.map(&String.to_atom(&1.provider))
+    |> Enum.map(&String.to_existing_atom(&1.provider))
   end
 
   defp get_all_providers_for_user(nil, _config), do: []
@@ -232,7 +232,6 @@ defmodule PowAssent.Plug do
     |> get_provider_config(provider, redirect_uri)
   end
   defp get_provider_config(config, provider, redirect_uri) do
-    provider        = String.to_atom(provider)
     config          = Config.get_provider_config(config, provider)
     strategy        = config[:strategy]
     provider_config =

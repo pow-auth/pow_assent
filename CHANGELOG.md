@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.4 (TBA)
+
+* [`PowAssent.Plug`] Now uses `String.to_existing_atom/1` in `PowAssent.Plug.providers_for_current_user/1`
+* [`PowAssent.Plug`] Fixed security issue by removing `String.to_atom/1` for user provided binary in `PowAssent.Plug.authorize_url/3` and `PowAssent.Plug.callback/4`
+* [`PowAssent.Config`] `PowAssent.Config.get_provider_config/2` now accepts binary provider
+
 ## v0.4.3 (2019-11-20)
 
 * Removed `:phoenix_html` dependency requirement
