@@ -28,4 +28,14 @@ defmodule PowAssent.ConfigTest do
     assert Config.get_provider_config([http_adapter: HTTPAdapater, json_adapter: JSONAdapter, jwt_adapter: JWTAdapter], :provider1) ==
       [http_adapter: HTTPAdapater, json_adapter: JSONAdapter, jwt_adapter: JWTAdapter, a: 1]
   end
+
+  test "get_provider_config/2 with binary provider" do
+    config = [providers: [provider1: [a: 1], provider2: [b: 2]]]
+
+    assert Config.get_provider_config(config, "provider1") == [a: 1]
+
+    assert_raise PowAssent.Config.ConfigError, "No provider configuration available for non_existent.", fn ->
+      refute Config.get_provider_config(config, "non_existent")
+    end
+  end
 end

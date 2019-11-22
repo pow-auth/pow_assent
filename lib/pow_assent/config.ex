@@ -50,13 +50,25 @@ defmodule PowAssent.Config do
   @doc """
   Gets the provider configuration from the provided configuration.
   """
-  @spec get_provider_config(t(), atom()) :: t() | no_return
+  @spec get_provider_config(t(), atom() | binary()) :: t() | no_return
   def get_provider_config(config, provider) do
     config
     |> get_providers()
-    |> get(provider)
+    |> get_for_provider(provider)
     |> Kernel.||(raise_error("No provider configuration available for #{provider}."))
     |> add_global_config(config)
+  end
+
+  defp get_for_provider(providers_config, provider) when is_atom(provider) do
+    get(providers_config, provider)
+  end
+  defp get_for_provider(providers_config, provider) when is_binary(provider) do
+    Enum.find_value(providers_config, fn {key, value} ->
+      case Atom.to_string(key) do
+        ^provider -> value
+        _any      -> false
+      end
+    end)
   end
 
   defp add_global_config(provider_config, config) do
