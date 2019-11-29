@@ -30,7 +30,13 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert Plug.Conn.get_session(conn, :pow_assent_session_params)[:state]
     end
 
-    test "redirects with invitation_token saved", %{conn: conn} do
+    test "redirects with stored request_path", %{conn: conn} do
+      conn = get(conn, Routes.pow_assent_authorization_path(conn, :new, @provider, request_path: "/custom-uri"))
+
+      assert Plug.Conn.get_session(conn, :pow_assent_request_path) == "/custom-uri"
+    end
+
+    test "redirects with stored invitation_token", %{conn: conn} do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider, invitation_token: "token")
 
       assert Plug.Conn.get_session(conn, :pow_assent_invitation_token) == "token"
@@ -158,6 +164,18 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user == %{"name" => "Dan Schultzer", "email" => "taken@example.com"}
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
+    end
+
+    test "with stored request_path assigns to conn", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{sub: "existing_user"})
+
+      conn =
+        conn
+        |> Plug.Conn.put_session(:pow_assent_request_path, "/custom-uri")
+        |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      assert redirected_to(conn) == "/custom-uri"
+      refute Plug.Conn.get_session(conn, :pow_assent_request_path)
     end
   end
 

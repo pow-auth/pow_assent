@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.5 (TBA)
+
+* [`PowAssent.Phoenix.AuthorizationController`] Now supports `:request_path` param so the user will be redirected back to `:request_path` after successful authorization
+* [`PowAssent.Phoenix.ViewHelpers`] `PowAssent.Phoenix.ViewHelpers.authorization_link/2` now adds `:request_path` to the query param if assigned to the conn
+
 ## v0.4.4 (2019-11-22)
 
 **Note:** This release contains an important security fix.

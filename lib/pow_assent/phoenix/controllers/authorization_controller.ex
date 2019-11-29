@@ -9,6 +9,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
 
   plug :require_authenticated when action in [:delete]
   plug :assign_callback_url when action in [:new, :callback]
+  plug :assign_request_path when action in [:callback]
   plug :load_user_by_invitation_token when action in [:callback]
 
   @spec process_new(Conn.t(), map()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
@@ -20,6 +21,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   def respond_new({:ok, url, conn}) do
     conn
     |> maybe_store_session_params()
+    |> maybe_store_request_path()
     |> maybe_store_invitation_token()
     |> redirect(external: url)
   end
@@ -27,6 +29,9 @@ defmodule PowAssent.Phoenix.AuthorizationController do
 
   defp maybe_store_session_params(%{private: %{pow_assent_session_params: params}} = conn), do: store_session_params(conn, params)
   defp maybe_store_session_params(conn), do: conn
+
+  defp maybe_store_request_path(%{params: %{"request_path" => request_path}} = conn), do: store_request_path(conn, request_path)
+  defp maybe_store_request_path(conn), do: conn
 
   defp maybe_store_invitation_token(%{params: %{"invitation_token" => token}} = conn), do: store_invitation_token(conn, token)
   defp maybe_store_invitation_token(conn), do: conn
@@ -173,7 +178,16 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   end
   defp fetch_session_params(conn), do: conn
 
+  defp store_request_path(conn, request_path), do: Conn.put_session(conn, :pow_assent_request_path, request_path)
+
   defp store_invitation_token(conn, token), do: Conn.put_session(conn, :pow_assent_invitation_token, token)
+
+  defp assign_request_path(%{private: %{plug_session: %{"pow_assent_request_path" => request_path}}} = conn, _opts) do
+    conn
+    |> Conn.delete_session(:pow_assent_request_path)
+    |> Conn.assign(:request_path, request_path)
+  end
+  defp assign_request_path(conn, _opts), do: conn
 
   defp load_user_by_invitation_token(%{private: %{plug_session: %{"pow_assent_invitation_token" => token}}} = conn, _opts) do
     conn = Conn.delete_session(conn, :pow_assent_invitation_token)
