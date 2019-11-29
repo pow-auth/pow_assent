@@ -3,7 +3,8 @@
 ## v0.4.5 (TBA)
 
 * [`PowAssent.Phoenix.AuthorizationController`] Now supports `:request_path` param so the user will be redirected back to `:request_path` after successful authorization
-* [`PowAssent.Phoenix.ViewHelpers`] `PowAssent.Phoenix.ViewHelpers.authorization_link/2` now adds `:request_path` to the query param if assigned to the conn
+* [`PowAssent.Phoenix.ViewHelpers`] `PowAssent.Phoenix.ViewHelpers.authorization_link/3` now adds `:request_path` to the query param if assigned to the conn
+* [`PowAssent.Phoenix.ViewHelpers`] `PowAssent.Phoenix.ViewHelpers.authorization_link/3`, `PowAssent.Phoenix.ViewHelpers.deauthorization_link/3`, and `PowAssent.Phoenix.ViewHelpers.provider_links/2` now accepts keyword list with options to be passed on to the link generation
 
 ## v0.4.4 (2019-11-22)
 
