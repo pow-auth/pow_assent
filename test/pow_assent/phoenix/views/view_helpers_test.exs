@@ -36,6 +36,12 @@ defmodule PowAssent.ViewHelpersTest do
     assert {:safe, iodata} == Link.link("Remove Test provider authentication", to: "/auth/test_provider", method: "delete")
   end
 
+  test "provider_links/1 with link opts", %{conn: conn} do
+    [safe: iodata] = ViewHelpers.provider_links(conn, class: "example")
+
+    assert {:safe, iodata} == Link.link("Sign in with Test provider", to: "/auth/test_provider/new", class: "example")
+  end
+
   test "provider_links/1 with request_path", %{conn: conn} do
     [safe: iodata] =
       conn

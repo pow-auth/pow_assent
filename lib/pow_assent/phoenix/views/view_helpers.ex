@@ -17,16 +17,16 @@ defmodule PowAssent.Phoenix.ViewHelpers do
   be looked up with `PowAssent.Plug.providers_for_current_user/1`.
   `deauthorization_link/2` will be used for any already authorized providers.
   """
-  @spec provider_links(Conn.t()) :: [HTML.safe()]
-  def provider_links(conn) do
+  @spec provider_links(Conn.t(), keyword()) :: [HTML.safe()]
+  def provider_links(conn, link_opts \\ []) do
     available_providers = Plug.available_providers(conn)
     providers_for_user  = Plug.providers_for_current_user(conn)
 
     available_providers
     |> Enum.map(&{&1, &1 in providers_for_user})
     |> Enum.map(fn
-      {provider, true} -> deauthorization_link(conn, provider)
-      {provider, false} -> authorization_link(conn, provider)
+      {provider, true} -> deauthorization_link(conn, provider, link_opts)
+      {provider, false} -> authorization_link(conn, provider, link_opts)
     end)
   end
 
@@ -37,14 +37,15 @@ defmodule PowAssent.Phoenix.ViewHelpers do
   `:invited_user` is assigned to the conn, the invitation token will be passed
   on through the URL query params.
   """
-  @spec authorization_link(Conn.t(), atom()) :: HTML.safe()
-  def authorization_link(conn, provider) do
+  @spec authorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
+  def authorization_link(conn, provider, opts \\ []) do
     query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
 
     msg  = AuthorizationController.extension_messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider], query_params)
+    opts = Keyword.merge(opts, to: path)
 
-    Link.link(msg, to: path)
+    Link.link(msg, opts)
   end
 
   defp invitation_token_query_params(%{assigns: %{invited_user: %{invitation_token: token}}}), do: [invitation_token: token]
@@ -58,11 +59,12 @@ defmodule PowAssent.Phoenix.ViewHelpers do
 
   The link is used to remove authorization with the provider.
   """
-  @spec deauthorization_link(Conn.t(), atom()) :: HTML.safe()
-  def deauthorization_link(conn, provider) do
+  @spec deauthorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
+  def deauthorization_link(conn, provider, opts \\ []) do
     msg  = AuthorizationController.extension_messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :delete, [provider])
+    opts = Keyword.merge(opts, to: path, method: :delete)
 
-    Link.link(msg, to: path, method: :delete)
+    Link.link(msg, opts)
   end
 end
