@@ -10,8 +10,8 @@ defmodule PowAssent.Phoenix.RegistrationController do
   plug :assign_create_path
 
   @spec process_add_user_id(Conn.t(), map()) :: {:ok, map(), Conn.t()}
-  def process_add_user_id(conn, _params) do
-    {:ok, Plug.change_user(conn), conn}
+  def process_add_user_id(%{private: %{pow_assent_params: %{user: user_params}}} = conn, _params) do
+    {:ok, Plug.change_user(conn, %{}, user_params), conn}
   end
 
   @spec respond_add_user_id({:ok, map(), Conn.t()}) :: Conn.t()

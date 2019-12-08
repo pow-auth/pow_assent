@@ -6,6 +6,7 @@
 
 * [`PowAssent.Plug`] Added `PowAssent.Plug.change_user/4`
 * [`PowAssent.Operations`] Added `PowAssent.Operations.user_identity_changeset/4`
+* [`PowAssent.Phoenix.RegistrationController`] Now casts the user params fetched from the provider in the changeset in `PowAssent.Phoenix.RegistrationController.process_add_user_id/2`
 
 ## v0.4.5 (2019-12-06)
 

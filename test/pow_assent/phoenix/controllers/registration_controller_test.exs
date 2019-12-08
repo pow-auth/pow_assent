@@ -38,6 +38,18 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert html =~ "<label for=\"user_email\">Email</label>"
       assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\">"
     end
+
+    test "shows with prefill user id", %{conn: conn} do
+      provider_params = %{@provider => %{user_identity: @user_identity_params, user: Map.put(@user_params, "email", "taken@example.com")}}
+      conn =
+        conn
+        |> Plug.Conn.put_session(:pow_assent_params, provider_params)
+        |> get(Routes.pow_assent_registration_path(conn, :add_user_id, @provider))
+
+      assert html = html_response(conn, 200)
+      assert html =~ "<label for=\"user_email\">Email</label>"
+      assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\" value=\"taken@example.com\">"
+    end
   end
 
   describe "POST /auth/:provider/create" do
