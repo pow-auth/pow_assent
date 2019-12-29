@@ -24,7 +24,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   The following Pow methods can be accessed:
 
     * `pow_assent_get_user_by_provider_id/3`
-    * `pow_assent_create/4`
+    * `pow_assent_upsert/2`
     * `pow_assent_create_user/4`
     * `pow_assent_delete/2`
     * `pow_assent_all/1`
