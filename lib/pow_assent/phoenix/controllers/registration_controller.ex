@@ -11,7 +11,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
 
   @spec process_add_user_id(Conn.t(), map()) :: {:ok, map(), Conn.t()}
   def process_add_user_id(conn, _params) do
-    {:ok, Pow.Plug.change_user(conn), conn}
+    {:ok, Plug.change_user(conn), conn}
   end
 
   @spec respond_add_user_id({:ok, map(), Conn.t()}) :: Conn.t()

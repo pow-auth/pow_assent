@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.6 (TBA)
+
+### Enhancements
+
+* [`PowAssent.Plug`] Added `PowAssent.Plug.change_user/2`
+* [`PowAssent.Operations`] Added `PowAssent.Operations.user_identity_changeset/4`
+
 ## v0.4.5 (2019-12-06)
 
 * [`PowAssent.Phoenix.AuthorizationController`] Now supports `:request_path` param so the user will be redirected back to `:request_path` after successful authorization

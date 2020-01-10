@@ -172,6 +172,16 @@ defmodule PowAssent.Plug do
   end
 
   @doc """
+  Creates a changeset.
+  """
+  @spec change_user(Conn.t(), map()) :: map()
+  def change_user(conn, params \\ %{}, user_params \\ %{}, user_id_params \\ %{}) do
+    config = fetch_config(conn)
+
+    Operations.user_identity_changeset(params, user_params, user_id_params, config)
+  end
+
+  @doc """
   Deletes the associated user identity for the current user and provider.
   """
   @spec delete_identity(Conn.t(), binary()) :: {:ok, map(), Conn.t()} | {:error, {:no_password, map()}, Conn.t()}
