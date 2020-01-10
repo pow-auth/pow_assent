@@ -7,6 +7,7 @@ defmodule PowAssent.Operations do
   is passed in the configuration.
   """
   alias PowAssent.{Config, Ecto.UserIdentities.Context}
+  alias Pow.Config, as: PowConfig
 
   @doc """
   Retrieve a user with the strategy provider name and uid.
@@ -54,6 +55,21 @@ defmodule PowAssent.Operations do
       Context -> Context.create_user(user_identity_params, user_params, user_id_params, config)
       module  -> module.create_user(user_identity_params, user_params, user_id_params)
     end
+  end
+
+  @doc """
+  Build a changeset from a blank user struct.
+
+  It'll use the schema module fetched from the config through
+  `Pow.Config.user!/1` and call `user_identity_changeset/4` on it.
+  """
+  @spec user_identity_changeset(map(), map(), map(), Config.t()) :: map() | nil
+  def user_identity_changeset(params, user_params, user_id_params, config) do
+    user_mod = PowConfig.user!(config)
+
+    user_mod
+    |> struct()
+    |> user_mod.user_identity_changeset(params, user_params, user_id_params)
   end
 
   @doc """
