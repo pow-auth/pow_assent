@@ -4,7 +4,7 @@
 
 ### Enhancements
 
-* [`PowAssent.Plug`] Added `PowAssent.Plug.change_user/2`
+* [`PowAssent.Plug`] Added `PowAssent.Plug.change_user/4`
 * [`PowAssent.Operations`] Added `PowAssent.Operations.user_identity_changeset/4`
 
 ## v0.4.5 (2019-12-06)
