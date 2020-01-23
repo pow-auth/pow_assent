@@ -18,7 +18,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
         end
       end
 
-  Remember to update configuration with
+  Remember to update the PowAssent configuration with
   `user_identities_context: MyApp.UserIdentities`.
 
   The following Pow methods can be accessed:

@@ -10,7 +10,7 @@ defmodule PowAssent.Phoenix.ViewHelpers do
   @doc """
   Generates list of authorization links for all configured providers.
 
-  The list of providers will be fetched from the configuration, and
+  The list of providers will be fetched from the PowAssent configuration, and
   `authorization_link/2` will be called on each.
 
   If a user is assigned to the conn, the authorized providers for a user will

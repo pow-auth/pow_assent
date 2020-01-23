@@ -4,7 +4,7 @@ defmodule PowAssent.Operations do
 
   A custom context module can be used instead of the default
   `PowAssent.Ecto.UserIdentities.Context` if a `:user_identities_context` key
-  is passed in the configuration.
+  is passed in the PowAssent configuration.
   """
   alias PowAssent.{Config, Ecto.UserIdentities.Context}
   alias Pow.Config, as: PowConfig

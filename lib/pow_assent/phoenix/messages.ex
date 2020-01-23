@@ -22,7 +22,8 @@ defmodule PowAssent.Phoenix.Messages do
         end
       end
 
-  Remember to update configuration with `messages_backend: MyAppWeb.Pow.Messages`.
+  Remember to update Pow configuration with
+  `messages_backend: MyAppWeb.Pow.Messages`.
 
   See `Pow.Extension.Phoenix.Messages` for more.
   """

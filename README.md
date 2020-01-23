@@ -189,7 +189,7 @@ Now start (or restart) your Phoenix app, and visit `http://localhost:4000/auth/g
 
 #### Nonce
 
-For OIDC requests a nonce may be required. PowAssent can automatically generate the nonce if you pass `nonce: true` in the configuration:
+For OIDC requests a nonce may be required. PowAssent can automatically generate the nonce if you pass `nonce: true` in the PowAssent configuration:
 
 ```elixir
 config :my_app, :pow_assent,
@@ -230,7 +230,7 @@ defmodule MyAppWeb.Pow.Messages do
 end
 ```
 
-Add `messages_backend: MyAppWeb.Pow.Messages` to your configuration. You can find all messages in `PowAssent.Phoenix.Messages`.
+Add `messages_backend: MyAppWeb.Pow.Messages` to your Pow configuration. You can find all messages in `PowAssent.Phoenix.Messages`.
 
 ## Populate fields
 

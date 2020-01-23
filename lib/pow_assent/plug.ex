@@ -25,8 +25,8 @@ defmodule PowAssent.Plug do
   returned from the provider, it'll be added to the connection as private key
   `:pow_assent_session_params`.
 
-  If `:nonce` is set to `true` in the provider configuration, a randomly
-  generated nonce will be added to the configuration.
+  If `:nonce` is set to `true` in the PowAssent provider configuration, a
+  randomly generated nonce will be added to the provider configuration.
   """
   @spec authorize_url(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
   def authorize_url(conn, provider, redirect_uri) do
