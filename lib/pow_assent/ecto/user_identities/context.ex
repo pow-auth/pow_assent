@@ -19,7 +19,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
       end
 
   Remember to update configuration with
-  `user_identities_context: MyApp.UserIdentities`.
+  `config :my_app, :pow_assent, user_identities_context: MyApp.UserIdentities`.
 
   The following Pow methods can be accessed:
 
