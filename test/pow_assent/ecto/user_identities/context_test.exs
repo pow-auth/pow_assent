@@ -16,7 +16,7 @@ defmodule PowAssent.Test.Ecto.Users.UserWithAccessTokenUserIdentities do
   use PowAssent.Ecto.Schema
 
   schema "users" do
-    has_many :user_identities, PowAssent.Test.Ecto.UserIdentities.UserIdentityWithAccessToken, foreign_key: :user_id, on_delete: :delete_all
+    has_many :user_identities, PowAssent.Test.WithAccessToken.UserIdentities.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
 
     pow_user_fields()
     timestamps()

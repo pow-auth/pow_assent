@@ -3,13 +3,13 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 
-  alias PowAssent.Test.{Ecto.Users.User, UserIdentitiesMock}
+  alias PowAssent.Test.Ecto.Users.User
 
   @provider "test_provider"
   @callback_params %{code: "test", redirect_uri: "", state: "token"}
 
   setup _context do
-    user   = %User{id: :loaded}
+    user   = %User{id: 1}
     bypass = Bypass.open()
 
     put_oauth2_env(bypass)
@@ -150,7 +150,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
       assert %{"test_provider" => %{user_identity: user_identity, user: user}} = Plug.Conn.get_session(conn, :pow_assent_params)
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
-      assert user == %{"name" => "Dan Schultzer", "email" => ""}
+      assert user == %{"name" => "John Doe", "email" => ""}
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
@@ -162,7 +162,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
       assert %{"test_provider" => %{user_identity: user_identity, user: user}} = Plug.Conn.get_session(conn, :pow_assent_params)
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
-      assert user == %{"name" => "Dan Schultzer", "email" => "taken@example.com"}
+      assert user == %{"name" => "John Doe", "email" => "taken@example.com"}
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
     end
 
@@ -292,22 +292,30 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
   end
 
+  alias PowAssent.Test.WithAccessToken.Phoenix.Endpoint, as: WithAccessTokenEndpoint
+  alias PowAssent.Test.WithAccessToken.Users.User, as: WithAccessTokenUser
   describe "GET /auth/:provider/callback recording strategy params" do
+    setup context do
+      user = %WithAccessTokenUser{id: 1}
+
+      {:ok, %{context | user: user}}
+    end
+
     test "with new identity", %{conn: conn, bypass: bypass, user: user} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_identity_with_access_token"})
+      expect_oauth2_flow(bypass, user: %{sub: "new_identity"})
 
       conn =
         conn
         |> Pow.Plug.assign_current_user(user, [])
-        |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+        |> Phoenix.ConnTest.dispatch(WithAccessTokenEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/session_created"
     end
 
     test "with new user", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user_with_access_token"})
+      expect_oauth2_flow(bypass, user: %{sub: "new_user"})
 
-      conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+      conn = Phoenix.ConnTest.dispatch(conn, WithAccessTokenEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/registration_created"
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
@@ -317,9 +325,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     end
 
     test "when identity exists updates identity", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "existing_user_with_access_token"})
+      expect_oauth2_flow(bypass, user: %{sub: "existing_user"})
 
-      conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+      conn = Phoenix.ConnTest.dispatch(conn, WithAccessTokenEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/session_created"
       refute Plug.Conn.get_session(conn, :pow_assent_session_params)
@@ -328,20 +336,30 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   end
 
   describe "DELETE /auth/:provider" do
-    test "when requires a user password set", %{conn: conn} do
+    test "when password not set", %{conn: conn} do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(:no_password, [])
+        |> Pow.Plug.assign_current_user(%User{id: 1, password_hash: nil}, [])
         |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)
       assert get_flash(conn, :error) == "Authentication cannot be removed until you've entered a password for your account."
     end
 
+    test "when password not set but has multiple identities", %{conn: conn} do
+      conn =
+        conn
+        |> Pow.Plug.assign_current_user(%User{id: :multiple_identities, password_hash: nil}, [])
+        |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
+
+      assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)
+      assert get_flash(conn, :info) == "Authentication with Test provider has been removed"
+    end
+
     test "when can be deleted", %{conn: conn} do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(UserIdentitiesMock.user(), [])
+        |> Pow.Plug.assign_current_user(%User{id: 1, password_hash: ""}, [])
         |> delete(Routes.pow_assent_authorization_path(conn, :delete, @provider))
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :edit)

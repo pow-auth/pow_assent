@@ -4,12 +4,12 @@ defmodule PowAssent.ViewHelpersTest do
   alias Plug.Conn
   alias Phoenix.HTML.Link
   alias PowAssent.Phoenix.ViewHelpers
-  alias PowAssent.Test.{Phoenix.Router, UserIdentitiesMock}
+  alias PowAssent.Test.{Phoenix.Router, Ecto.Users.User, RepoMock}
 
   setup %{conn: conn} do
     config = [
+      repo: RepoMock,
       pow_assent: [
-        user_identities_context: UserIdentitiesMock,
         providers: [
           test_provider: [
             strategy: TestProvider
@@ -30,7 +30,7 @@ defmodule PowAssent.ViewHelpersTest do
     [safe: iodata] = ViewHelpers.provider_links(conn)
     assert {:safe, iodata} == Link.link("Sign in with Test provider", to: "/auth/test_provider/new")
 
-    conn = Pow.Plug.assign_current_user(conn, UserIdentitiesMock.user(), [])
+    conn = Pow.Plug.assign_current_user(conn, %User{id: 1}, [])
 
     [safe: iodata] = ViewHelpers.provider_links(conn)
     assert {:safe, iodata} == Link.link("Remove Test provider authentication", to: "/auth/test_provider", method: "delete")

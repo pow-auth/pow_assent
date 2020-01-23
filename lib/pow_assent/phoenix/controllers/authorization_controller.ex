@@ -105,6 +105,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     case email_confirmed_controller_callback(:registration, conn) do
       {:halt, conn} ->
         conn
+
       {:ok, _user, conn} ->
         conn
         |> put_flash(:info, extension_messages(conn).user_has_been_created(conn))
@@ -115,6 +116,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     case email_confirmed_controller_callback(:session, conn) do
       {:halt, conn} ->
         conn
+
       {:ok, conn} ->
         conn
         |> put_flash(:info, extension_messages(conn).signed_in(conn))

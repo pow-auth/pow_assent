@@ -23,9 +23,7 @@ defmodule PowAssent.Test.Phoenix.Endpoint do
     routes_backend: PowAssent.Test.Phoenix.Routes,
     messages_backend: PowAssent.Test.Phoenix.Messages,
     otp_app: :pow_assent,
-    pow_assent: [
-      user_identities_context: PowAssent.Test.UserIdentitiesMock
-    ]
+    repo: PowAssent.Test.RepoMock
 
   plug PowAssent.Test.Phoenix.Router
 end
