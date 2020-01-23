@@ -4,7 +4,7 @@ defmodule PowAssent.PlugTest do
 
   alias Plug.{Conn, ProcessStore, Session}
   alias PowAssent.Plug
-  alias PowAssent.Test.{UserIdentitiesMock, Ecto.Users.User}
+  alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, RepoMock}
 
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 
@@ -12,11 +12,8 @@ defmodule PowAssent.PlugTest do
     plug: Pow.Plug.Session,
     user: User,
     otp_app: :pow_assent,
-    pow_assent: [
-      user_identities_context: UserIdentitiesMock
-    ]
+    repo: RepoMock
   ]
-  @user %User{id: 1}
 
   setup do
     conn =
@@ -76,7 +73,7 @@ defmodule PowAssent.PlugTest do
 
       assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
       assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
-      assert user_params == %{"name" => "Dan Schultzer"}
+      assert user_params == %{"name" => "John Doe", "email" => "test@example.com"}
     end
 
     test "returns user params with preferred username as username", %{conn: conn, bypass: bypass} do
@@ -84,20 +81,22 @@ defmodule PowAssent.PlugTest do
 
       assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
       assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
-      assert user_params == %{"username" => "john.doe", "name" => "Dan Schultzer"}
+      assert user_params == %{"username" => "john.doe", "name" => "John Doe", "email" => "test@example.com"}
     end
   end
 
   test "authenticate/3", %{conn: conn} do
-    {:error, conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "new_user"})
+    assert {:error, _conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "new_user"})
 
-    {:ok, conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "existing_user"})
+    assert {:ok, conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "existing_user"})
 
-    assert Pow.Plug.current_user(conn) == UserIdentitiesMock.user()
+    assert Pow.Plug.current_user(conn) == %User{id: 1, email: "test@example.com"}
     assert_pow_session conn
   end
 
   describe "upsert_identity/3" do
+    @user %User{id: 1}
+
     setup %{conn: conn} do
       conn = Pow.Plug.assign_current_user(conn, @user, @default_config)
 
@@ -105,16 +104,16 @@ defmodule PowAssent.PlugTest do
     end
 
     test "creates user identity", %{conn: conn} do
-      {:ok, user_identity, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "new_identity"})
+      assert {:ok, user_identity, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "new_identity"})
 
-      assert user_identity.id == :new_identity
+      assert user_identity.id == :inserted
       assert_pow_session conn
     end
 
     test "updates user identity", %{conn: conn} do
-      {:ok, user_identity, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "existing_user_with_access_token"})
+      assert {:ok, user_identity, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "existing_user"})
 
-      assert user_identity.id == :existing_identity
+      assert user_identity.id == :updated
       assert_pow_session conn
     end
 
@@ -127,25 +126,30 @@ defmodule PowAssent.PlugTest do
   end
 
   describe "create_user/3" do
-    test "creates user", %{conn: conn} do
-      {:ok, user, conn} = Plug.create_user(conn, %{"provider" => "test_provider", "uid" => "new_user"}, %{"email" => "test@example.com"})
+    @user_identity_attrs %{"provider" => "test_provider", "uid" => "new_user"}
+    @user_attrs          %{"name" => "John Doe", "email" => "test@example.com"}
 
-      assert user.id == :new_user
+    test "creates user", %{conn: conn} do
+      assert {:ok, user, conn} = Plug.create_user(conn, @user_identity_attrs, @user_attrs)
+
+      assert user.id == :inserted
       assert_pow_session conn
     end
 
     test "with missing user id", %{conn: conn} do
-      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, %{"provider" => "test_provider", "uid" => "new_user"}, %{"email" => ""})
+      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, @user_identity_attrs, Map.delete(@user_attrs, "email"))
       refute_pow_session conn
     end
 
     test "with identity already taken", %{conn: conn} do
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, %{"provider" => "test_provider", "uid" => "identity_taken"}, %{})
+      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, Map.put(@user_identity_attrs, "uid", "identity_taken"), @user_attrs)
       refute_pow_session conn
     end
   end
 
   describe "delete_identity/3" do
+    @user %User{id: 1, password_hash: "", user_identities: [%UserIdentity{id: 1, provider: "test_provider"}, %UserIdentity{id: 2, provider: "other_provider"}]}
+
     test "deletes", %{conn: conn} do
       conn = Pow.Plug.assign_current_user(conn, @user, @default_config)
 
@@ -153,15 +157,17 @@ defmodule PowAssent.PlugTest do
     end
 
     test "with error", %{conn: conn} do
-      conn = Pow.Plug.assign_current_user(conn, :error, @default_config)
+      conn = Pow.Plug.assign_current_user(conn, Map.put(@user, :password_hash, nil), @default_config)
 
-      assert {:error, :error, _conn} = Plug.delete_identity(conn, "test_provider")
+      assert {:error, {:no_password, _changeset}, _conn} = Plug.delete_identity(conn, "test_provider")
     end
   end
 
   describe "providers_for_current_user/1" do
+    @user %User{id: 1}
+
     test "lists providers for user", %{conn: conn} do
-      conn = Pow.Plug.assign_current_user(conn, UserIdentitiesMock.user(), @default_config)
+      conn = Pow.Plug.assign_current_user(conn, @user, @default_config)
 
       assert Plug.providers_for_current_user(conn) == [:test_provider]
     end

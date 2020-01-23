@@ -35,6 +35,7 @@ defmodule PowAssent.Ecto.Schema do
       end
   """
   alias Ecto.{Changeset, Schema}
+  alias Pow.UUID
 
   @callback user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
 
@@ -90,6 +91,7 @@ defmodule PowAssent.Ecto.Schema do
     |> Changeset.change()
     |> maybe_accept_invitation()
     |> user_id_field_changeset(attrs, user_id_attrs)
+    |> maybe_email_confirmation_changeset(attrs)
     |> Changeset.cast(%{user_identities: [user_identity]}, [])
     |> Changeset.cast_assoc(:user_identities)
   end
@@ -101,34 +103,32 @@ defmodule PowAssent.Ecto.Schema do
   end
   defp maybe_accept_invitation(changeset), do: changeset
 
-  defp user_id_field_changeset(changeset, attrs, nil) do
-    changeset
-    |> changeset.data.__struct__.pow_user_id_field_changeset(attrs)
-    |> maybe_set_confirmed_at(attrs)
-  end
-  defp user_id_field_changeset(changeset, _attrs, user_id_attrs) do
-    changeset.data.__struct__.pow_user_id_field_changeset(changeset, user_id_attrs)
-  end
+  defp user_id_field_changeset(changeset, attrs, nil), do: changeset.data.__struct__.pow_user_id_field_changeset(changeset, attrs)
+  defp user_id_field_changeset(changeset, _attrs, user_id_attrs), do: changeset.data.__struct__.pow_user_id_field_changeset(changeset, user_id_attrs)
 
-  defp maybe_set_confirmed_at(%Changeset{data: %user_mod{}} = changeset, attrs) do
-    case confirmable?(changeset) and email_verified?(attrs) do
-      true  ->
-        confirmed_at = Pow.Ecto.Schema.__timestamp_for__(user_mod, :email_confirmed_at)
+  defp maybe_email_confirmation_changeset(%Changeset{data: %{unconfirmed_email: _any}} = changeset, attrs) do
+    email = Changeset.get_change(changeset, :email)
 
-        Changeset.change(changeset, email_confirmed_at: confirmed_at)
-
-      false ->
-        changeset
+    case email_verified?(email, attrs) do
+      true  -> confirm_email_changeset(changeset)
+      false -> email_confirmation_token_changeset(changeset)
     end
   end
+  defp maybe_email_confirmation_changeset(changeset, _attrs), do: changeset
 
-  defp email_verified?(%{"email_verified" => true}), do: true
-  defp email_verified?(%{email_verified: true}), do: true
-  defp email_verified?(_params), do: false
+  defp confirm_email_changeset(%Changeset{data: %user_mod{}} = changeset) do
+    confirmed_at = Pow.Ecto.Schema.__timestamp_for__(user_mod, :email_confirmed_at)
 
-  defp confirmable?(changeset) do
-    Map.has_key?(changeset.data, :email) and
-    Map.has_key?(changeset.data, :email_confirmed_at) and
-    !Map.get(changeset.data, :unconfirmed_email)
+    Changeset.change(changeset, email_confirmed_at: confirmed_at)
   end
+
+  defp email_confirmation_token_changeset(changeset) do
+    changeset
+    |> Changeset.put_change(:email_confirmation_token, UUID.generate())
+    |> Changeset.unique_constraint(:email_confirmation_token)
+  end
+
+  defp email_verified?(email, %{"email" => email, "email_verified" => true}), do: true
+  defp email_verified?(email, %{email: email, email_verified: true}), do: true
+  defp email_verified?(_email, _attrs), do: false
 end

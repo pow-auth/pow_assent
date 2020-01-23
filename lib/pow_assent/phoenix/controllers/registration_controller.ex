@@ -34,6 +34,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
     |> case do
       {:halt, conn} ->
         conn
+
       {:ok, _user, conn} ->
         conn
         |> put_flash(:info, extension_messages(conn).user_has_been_created(conn))

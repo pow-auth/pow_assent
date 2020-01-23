@@ -1,8 +1,8 @@
-defmodule PowAssent.Test.Ecto.UserIdentities.UserIdentityWithAccessToken do
+defmodule PowAssent.Test.WithAccessToken.UserIdentities.UserIdentity do
   @moduledoc false
   use Ecto.Schema
   use PowAssent.Ecto.UserIdentities.Schema,
-    user: PowAssent.Test.Ecto.Users.User
+    user: PowAssent.Test.WithAccessToken.Users.User
 
   schema "user_identities" do
     field :access_token, :string

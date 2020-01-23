@@ -21,4 +21,8 @@ config :pow_assent, PowAssent.Test.NoRegistration.Phoenix.Endpoint,
   secret_key_base: String.duplicate("abcdefghijklmnopqrstuvxyz0123456789", 2),
   render_errors: [view: PowAssent.Test.Phoenix.ErrorView, accepts: ~w(html json)]
 
+config :pow_assent, PowAssent.Test.WithAccessToken.Phoenix.Endpoint,
+  secret_key_base: String.duplicate("abcdefghijklmnopqrstuvxyz0123456789", 2),
+  render_errors: [view: PowAssent.Test.Phoenix.ErrorView, accepts: ~w(html json)]
+
 config :phoenix, :json_library, Jason

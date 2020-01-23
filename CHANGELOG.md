@@ -7,6 +7,10 @@
 * [`PowAssent.Plug`] Added `PowAssent.Plug.change_user/4`
 * [`PowAssent.Operations`] Added `PowAssent.Operations.user_identity_changeset/4`
 
+## Bug fixes
+
+* [`PowAssent.Ecto.Schema`] Fixed issue in `PowAssent.Ecto.Schema.changeset/2` where confirmation token was not set thus allowing users with unconfirmed email to sign in
+
 ## v0.4.5 (2019-12-06)
 
 * [`PowAssent.Phoenix.AuthorizationController`] Now supports `:request_path` param so the user will be redirected back to `:request_path` after successful authorization

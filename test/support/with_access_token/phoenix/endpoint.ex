@@ -1,4 +1,4 @@
-defmodule PowAssent.Test.Invitation.Phoenix.Endpoint do
+defmodule PowAssent.Test.WithAccessToken.Phoenix.Endpoint do
   @moduledoc false
   use Phoenix.Endpoint, otp_app: :pow_assent
 
@@ -19,13 +19,12 @@ defmodule PowAssent.Test.Invitation.Phoenix.Endpoint do
     signing_salt: "secret"
 
   plug Pow.Plug.Session,
-    user: PowAssent.Test.Invitation.Users.User,
+    user: PowAssent.Test.WithAccessToken.Users.User,
     routes_backend: PowAssent.Test.Phoenix.Routes,
     messages_backend: PowAssent.Test.Phoenix.Messages,
     mailer_backend: PowAssent.Test.Phoenix.MailerMock,
-    repo: PowAssent.Test.Invitation.RepoMock,
-    otp_app: :pow_assent,
-    repo: PowAssent.Test.Invitation.RepoMock
+    repo: PowAssent.Test.WithAccessToken.RepoMock,
+    otp_app: :pow_assent
 
   plug PowAssent.Test.Phoenix.Router
 end
