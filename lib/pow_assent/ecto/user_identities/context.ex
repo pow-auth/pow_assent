@@ -48,7 +48,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   @callback get_user_by_provider_uid(binary(), binary()) :: user() | nil
   @callback upsert(user(), user_identity_params()) ::
-              {:ok, user()}
+              {:ok, user_identity()}
               | {:error, {:bound_to_different_user, changeset()}}
               | {:error, changeset()}
   @callback create_user(user_identity_params(), user_params(), user_id_params() | nil) ::
