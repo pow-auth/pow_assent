@@ -1,6 +1,10 @@
 defmodule PowAssent.Phoenix.Messages do
   @moduledoc """
-  Module that handles messages for Powassent.
+  Module that handles messages for PowAssent.
+
+  To override messages from PowAssent, the method name has to start with the
+  `pow_assent_`. So the `signed_in/1` method, should be written as
+  `pow_assent_signed_in/1`.
 
   ## Usage
 
@@ -18,7 +22,9 @@ defmodule PowAssent.Phoenix.Messages do
         end
       end
 
-    Remember to update configuration with `messages_backend: MyAppWeb.Pow.Messages`.
+  Remember to update configuration with `messages_backend: MyAppWeb.Pow.Messages`.
+
+  See `Pow.Extension.Phoenix.Messages` for more.
   """
 
   alias Phoenix.Naming
