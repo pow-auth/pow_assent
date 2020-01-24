@@ -5,7 +5,9 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   alias Plug.Conn
   alias PowAssent.Plug
   alias PowAssent.Phoenix.{AuthorizationController, RegistrationController}
-  alias PowEmailConfirmation.Phoenix.ControllerCallbacks
+  alias Pow.Extension.Config, as: ExtensionConfig
+  alias Pow.Plug, as: PowPlug
+  alias PowEmailConfirmation.Phoenix.ControllerCallbacks, as: EmailConfirmationCallbacks
 
   plug :require_authenticated when action in [:delete]
   plug :assign_callback_url when action in [:new, :callback]
@@ -84,12 +86,10 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   end
 
   defp create_user(conn, user_identity_params, user_params) do
-    with true <- registration_path?(conn),
-         {:ok, _user, conn} <- Plug.create_user(conn, user_identity_params, user_params)
-    do
-      {:ok, Conn.put_private(conn, :pow_assent_action, :registration)}
-    else
-      {:error, error, conn} -> {:error, error, Conn.put_private(conn, :pow_assent_params, %{user_identity: user_identity_params, user: user_params})}
+    conn = Conn.put_private(conn, :pow_assent_action, :registration)
+
+    case registration_path?(conn) do
+      true  -> do_create_user(conn, user_identity_params, user_params)
       false -> {:error, conn}
     end
   end
@@ -100,38 +100,44 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> function_exported?(:pow_assent_registration_path, 3)
   end
 
-  @spec respond_callback({:ok, Conn.t()} | {:error, Conn.t()} | {:error, {atom(), map()} | map(), Conn.t()}) :: Conn.t()
-  def respond_callback({:ok, %{private: %{pow_assent_action: :registration}} = conn}) do
-    case email_confirmed_controller_callback(:registration, conn) do
-      {:halt, conn} ->
-        conn
-
+  defp do_create_user(conn, user_identity_params, user_params) do
+    case Plug.create_user(conn, user_identity_params, user_params) do
       {:ok, _user, conn} ->
-        conn
-        |> put_flash(:info, extension_messages(conn).user_has_been_created(conn))
-        |> redirect(to: routes(conn).after_registration_path(conn))
+        {:ok, conn}
+
+      {:error, changeset, conn} ->
+        conn = Conn.put_private(conn, :pow_assent_params, %{user_identity: user_identity_params, user: user_params})
+
+        {:error, changeset, conn}
     end
   end
-  def respond_callback({:ok, conn}) do
-    case email_confirmed_controller_callback(:session, conn) do
-      {:halt, conn} ->
-        conn
 
-      {:ok, conn} ->
-        conn
-        |> put_flash(:info, extension_messages(conn).signed_in(conn))
-        |> redirect(to: routes(conn).after_sign_in_path(conn))
-    end
+  @spec respond_callback({:ok, Conn.t()} | {:error, Conn.t()} | {:error, {atom(), map()} | map(), Conn.t()}) :: Conn.t()
+  def respond_callback({:ok, %{private: %{pow_assent_action: :registration}}} = resp) do
+    maybe_trigger_email_confirmed_controller_callback(resp, fn {:ok, conn} ->
+      conn
+      |> put_flash(:info, extension_messages(conn).user_has_been_created(conn))
+      |> redirect(to: routes(conn).after_registration_path(conn))
+    end)
+  end
+  def respond_callback({:ok, _conn} = resp) do
+    maybe_trigger_email_confirmed_controller_callback(resp, fn {:ok, conn} ->
+      conn
+      |> put_flash(:info, extension_messages(conn).signed_in(conn))
+      |> redirect(to: routes(conn).after_sign_in_path(conn))
+    end)
   end
   def respond_callback({:error, {:bound_to_different_user, _changeset}, conn}) do
     conn
     |> put_flash(:error, extension_messages(conn).account_already_bound_to_other_user(conn))
     |> redirect(to: routes(conn).session_path(conn, :new))
   end
-  def respond_callback({:error, {:invalid_user_id_field, _changeset}, %{params: %{"provider" => provider}, private: %{pow_assent_params: params}} = conn}) do
-    conn
-    |> Conn.put_session(:pow_assent_params, %{provider => params})
-    |> redirect(to: routes(conn).path_for(conn, RegistrationController, :add_user_id, [conn.params["provider"]]))
+  def respond_callback({:error, {:invalid_user_id_field, changeset}, %{params: %{"provider" => provider}, private: %{pow_assent_params: params}} = conn}) do
+    maybe_trigger_email_confirmed_controller_callback({:error, changeset, conn}, fn {:error, _changeset, conn} ->
+      conn
+      |> Conn.put_session(:pow_assent_params, %{provider => params})
+      |> redirect(to: routes(conn).path_for(conn, RegistrationController, :add_user_id, [conn.params["provider"]]))
+    end)
   end
   def respond_callback({:error, _changeset, conn}),
     do: respond_callback({:error, conn})
@@ -141,11 +147,55 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> redirect(to: routes(conn).session_path(conn, :new))
   end
 
-  defp email_confirmed_controller_callback(:registration, conn) do
-    ControllerCallbacks.before_respond(Pow.Phoenix.RegistrationController, :create, {:ok, Pow.Plug.current_user(conn), conn}, [])
+  defp maybe_trigger_email_confirmed_controller_callback({:ok, conn} = resp, callback) do
+    config = PowPlug.fetch_config(conn)
+    type   = conn.private[:pow_assent_action]
+
+    maybe_trigger_email_confirmed_controller_callback(resp, type, callback, config)
   end
-  defp email_confirmed_controller_callback(:session, conn) do
-    ControllerCallbacks.before_respond(Pow.Phoenix.SessionController, :create, {:ok, conn}, [])
+  defp maybe_trigger_email_confirmed_controller_callback({:error, _changeset, %{private: %{pow_assent_params: params}} = conn} = resp, callback) do
+    config   = PowPlug.fetch_config(conn)
+    type     = conn.private[:pow_assent_action]
+
+    case email_verified?(params[:user]) do
+      true  -> callback.(resp)
+      false -> maybe_trigger_email_confirmed_controller_callback(resp, type, callback, config)
+    end
+  end
+  defp maybe_trigger_email_confirmed_controller_callback(resp, type, callback, config) do
+    config
+    |> ExtensionConfig.extensions()
+    |> Enum.member?(PowEmailConfirmation)
+    |> case do
+      true  -> trigger_email_confirmed_controller_callback(resp, type, config)
+      false -> resp
+    end
+    |> case do
+      {:halt, conn} -> conn
+      resp          -> callback.(resp)
+    end
+  end
+
+  defp email_verified?(%{"email_verified" => true}), do: true
+  defp email_verified?(%{email_verified: true}), do: true
+  defp email_verified?(_params), do: false
+
+  defp trigger_email_confirmed_controller_callback(resp, :registration, config) do
+    resp =
+      case resp do
+        {:ok, conn} -> {:ok, PowPlug.current_user(conn), conn}
+        resp        -> resp
+      end
+
+    Pow.Phoenix.RegistrationController
+    |> EmailConfirmationCallbacks.before_respond(:create, resp, config)
+    |> case do
+      {:ok, _user, conn} -> {:ok, conn}
+      resp               -> resp
+    end
+  end
+  defp trigger_email_confirmed_controller_callback(resp, _type, config) do
+    EmailConfirmationCallbacks.before_respond(Pow.Phoenix.SessionController, :create, resp, config)
   end
 
   @spec process_delete(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}

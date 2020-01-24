@@ -31,7 +31,7 @@ defmodule PowAssent.MixProject do
 
   defp deps do
     [
-      {:pow, "~> 1.0.15"},
+      {:pow, "~> 1.0.16"},
       {:assent, "~> 0.1.2"},
 
       {:ecto, "~> 2.2 or ~> 3.0"},
