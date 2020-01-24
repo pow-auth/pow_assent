@@ -24,6 +24,7 @@ defmodule PowAssent.Test.EmailConfirmation.Phoenix.Endpoint do
     messages_backend: PowAssent.Test.Phoenix.Messages,
     mailer_backend: PowAssent.Test.Phoenix.MailerMock,
     repo: PowAssent.Test.EmailConfirmation.RepoMock,
+    extensions: [PowEmailConfirmation],
     otp_app: :pow_assent
 
   plug PowAssent.Test.Phoenix.Router

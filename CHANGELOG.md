@@ -6,6 +6,8 @@
 
 * [`PowAssent.Plug`] Added `PowAssent.Plug.change_user/4`
 * [`PowAssent.Operations`] Added `PowAssent.Operations.user_identity_changeset/4`
+* [`PowAssent.Phoenix.AuthorizationController`] Now prevents user enumeration attack using `PowEmailConfirmation.Phoenix.ControllerCallbacks` when `PowEmailConfirmation` extension is enabled
+[`PowAssent.Phoenix.RegistrationController`] Now prevents user enumeration attack using `PowEmailConfirmation.Phoenix.ControllerCallbacks` when `PowEmailConfirmation` extension is enabled
 
 ## Bug fixes
 

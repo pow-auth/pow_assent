@@ -144,7 +144,7 @@ defmodule PowAssent.Plug do
   @spec upsert_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
   def upsert_identity(conn, user_identity_params) do
     config = fetch_config(conn)
-    user   = Pow.Plug.current_user(conn)
+    user   = Plug.current_user(conn)
 
     user
     |> Operations.upsert(user_identity_params, config)
@@ -189,7 +189,7 @@ defmodule PowAssent.Plug do
     config = fetch_config(conn)
 
     conn
-    |> Pow.Plug.current_user()
+    |> Plug.current_user()
     |> Operations.delete(provider, config)
     |> case do
       {:ok, results}  -> {:ok, results, conn}
@@ -205,7 +205,7 @@ defmodule PowAssent.Plug do
     config = fetch_config(conn)
 
     conn
-    |> Pow.Plug.current_user()
+    |> Plug.current_user()
     |> get_all_providers_for_user(config)
     |> Enum.map(&String.to_existing_atom(&1.provider))
   end
@@ -229,7 +229,7 @@ defmodule PowAssent.Plug do
   end
 
   defp fetch_config(conn) do
-    config = Pow.Plug.fetch_config(conn)
+    config = Plug.fetch_config(conn)
 
     config
     |> Keyword.take([:otp_app, :plug, :repo, :user])

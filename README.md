@@ -372,7 +372,9 @@ config :my_app, MyAppWeb.Endpoint,
 
 ### PowEmailConfirmation
 
-The e-mail fetched from the provider params is assumed confirmed if an `email_verified` key with value `true` also exists in the params. The user will have `:email_confirmed_at` set when inserted. If `email_verified` isn't `true` in the provider params, or the user provides the e-mail, then the user will have to confirm their e-mail before they can sign in.
+The e-mail fetched from the provider params is assumed confirmed if an `email_verified` key with value `true` also exists in the params. In that case the user will have `:email_confirmed_at` set. If `email_verified` isn't `true` in the provider params, or the user provides the e-mail, then the user will have to confirm their e-mail before they can sign in.
+
+To prevent user enumeration attacks whenever there is a unique constraint error for e-mail the user will see confirmation required error message. However if `email_verified` is `true` in the provider params they will be see the form with changeset error.
 
 ### PowInvitation
 

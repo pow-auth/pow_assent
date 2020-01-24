@@ -1,6 +1,8 @@
 defmodule PowAssent.Phoenix.RegistrationControllerTest do
   use PowAssent.Test.Phoenix.ConnCase
 
+  alias Plug.Conn
+
   @provider "test_provider"
   @token_params %{"access_token" => "access_token"}
   @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}
@@ -14,7 +16,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   end
 
   setup %{conn: conn} do
-    conn = Plug.Conn.put_session(conn, :pow_assent_params, provider_params())
+    conn = Conn.put_session(conn, :pow_assent_params, provider_params())
 
     {:ok, conn: conn}
   end
@@ -23,7 +25,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     test "with missing session params", %{conn: conn} do
       conn =
         conn
-        |> Plug.Conn.delete_session(:pow_assent_params)
+        |> Conn.delete_session(:pow_assent_params)
         |> get(Routes.pow_assent_registration_path(conn, :add_user_id, @provider))
 
       assert redirected_to(conn) == "/logged-out"
@@ -53,7 +55,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     test "with missing session params", %{conn: conn} do
       conn =
         conn
-        |> Plug.Conn.delete_session(:pow_assent_params)
+        |> Conn.delete_session(:pow_assent_params)
         |> post(Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
 
       assert redirected_to(conn) == "/logged-out"
@@ -82,7 +84,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       params = provider_params(user_identity_params: %{"uid" => "identity_taken"})
       conn   =
         conn
-        |> Plug.Conn.put_session(:pow_assent_params, params)
+        |> Conn.put_session(:pow_assent_params, params)
         |> post(Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :new)
@@ -113,13 +115,15 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       mail.html =~ "http://example.com/confirm-email/"
     end
 
-    test "with already taken email", %{conn: conn} do
+    test "with taken email", %{conn: conn} do
       conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), @taken_params)
 
-      assert html = html_response(conn, 200)
-      assert html =~ "<label for=\"user_email\">Email</label>"
-      assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\" value=\"taken@example.com\">"
-      assert html =~ "<span class=\"help-block\">has already been taken</span>"
+      refute Pow.Plug.current_user(conn)
+
+      assert redirected_to(conn) == "/registration_created"
+      assert get_flash(conn, :error) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
+
+      refute_received {:mail_mock, _mail}
     end
   end
 
