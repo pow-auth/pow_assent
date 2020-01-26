@@ -77,6 +77,7 @@ defmodule PowAssent.MixProject do
         "CHANGELOG.md": [filename: "CHANGELOG"],
         "guides/set_up_pow.md": [],
         "guides/capture_access_token.md": [],
+        "guides/legacy_migration.md": [],
       ],
       groups_for_modules: [
         Ecto: ~r/^PowAssent.Ecto/,
