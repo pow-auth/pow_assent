@@ -16,7 +16,7 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
   * OIDC - `Assent.Strategy.OIDC`
   * Apple Sign In - `Assent.Strategy.Apple`
   * Auth0 - `Assent.Strategy.Auth0`
-  * Azure AD - `Assent.Strategy.AzureOauth2`
+  * Azure AD - `Assent.Strategy.AzureAD`
   * Basecamp - `Assent.Strategy.Basecamp`
   * Discord - `Assent.Strategy.Discord`
   * Facebook - `Assent.Strategy.Facebook`
