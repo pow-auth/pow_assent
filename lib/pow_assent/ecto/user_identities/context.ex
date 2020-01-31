@@ -153,14 +153,16 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
       nil      -> insert_identity(user, params, config)
       identity -> update_identity(identity, additional_params, config)
     end
-    |> case do
-      {:error, %{errors: [uid_provider: _]} = changeset} ->
-        {:error, {:bound_to_different_user, changeset}}
+    |> user_identity_bound_different_user_error()
+  end
 
-      {:ok, user_identity} ->
-        {:ok, user_identity}
+  defp user_identity_bound_different_user_error({:error, %{errors: errors} = changeset}) do
+    case unique_constraint_error?(errors, :uid_provider) do
+      true  -> {:error, {:bound_to_different_user, changeset}}
+      false -> {:error, changeset}
     end
   end
+  defp user_identity_bound_different_user_error(any), do: any
 
   defp convert_params(params) when is_map(params) do
     params
@@ -200,28 +202,42 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   """
   @spec create_user(user_identity_params(), user_params(), user_id_params() | nil, Config.t()) :: {:ok, user()} | {:error, {:bound_to_different_user | :invalid_user_id_field, changeset()}} | {:error, changeset()}
   def create_user(user_identity_params, user_params, user_id_params, config) do
-    params        = convert_params(user_identity_params)
-    user_mod      = user!(config)
-    user_id_field = user_mod.pow_user_id_field()
+    params   = convert_params(user_identity_params)
+    user_mod = user!(config)
 
     user_mod
     |> struct()
     |> user_mod.user_identity_changeset(params, user_params, user_id_params)
     |> Context.do_insert(config)
-    |> case do
-      {:error, %{changes: %{user_identities: [%{errors: [uid_provider: _]}]}} = changeset} ->
-        {:error, {:bound_to_different_user, changeset}}
+    |> user_user_identity_bound_different_user_error()
+    |> invalid_user_id_error(config)
+  end
 
-      {:error, %{errors: [{^user_id_field, _}]} = changeset} ->
-        {:error, {:invalid_user_id_field, changeset}}
-
-      {:error, changeset} ->
-        {:error, changeset}
-
-      {:ok, user} ->
-        {:ok, user}
+  defp user_user_identity_bound_different_user_error({:error, %{changes: %{user_identities: [%{errors: errors}]}} = changeset}) do
+    case unique_constraint_error?(errors, :uid_provider) do
+      true  -> {:error, {:bound_to_different_user, changeset}}
+      false -> {:error, changeset}
     end
   end
+  defp user_user_identity_bound_different_user_error(any), do: any
+
+  defp unique_constraint_error?(errors, field) do
+    Enum.find_value(errors, false, fn
+      {^field, {_msg, [constraint: :unique, constraint_name: _name]}} -> true
+      _any                                                            -> false
+    end)
+  end
+
+  defp invalid_user_id_error({:error, %{errors: errors} = changeset}, config) do
+    user_mod      = user!(config)
+    user_id_field = user_mod.pow_user_id_field()
+
+    Enum.find_value(errors, false, fn
+      {^user_id_field, _error} -> {:error, {:invalid_user_id_field, changeset}}
+      _any                     -> {:error, changeset}
+    end)
+  end
+  defp invalid_user_id_error(any, _config), do: any
 
   @doc """
   Deletes a user identity for the provider and user.
