@@ -39,7 +39,6 @@ defmodule MyApp.Repo.Migrations.FacebookUserToUserIdentities do
       # Or with access token:
       # |> select([u], %{user_id: u.id, provider: "facebook", uid: u.facebook_id, access_token: u.facebook_access_token, inserted_at: u.inserted_at, updated_at: u.inserted_at})
       |> Repo.all()
-      |> IO.inspect()
 
     Repo.insert_all("user_identities", user_identities)
   end
