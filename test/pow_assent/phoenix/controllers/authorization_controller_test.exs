@@ -163,6 +163,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user == %{"name" => "John Doe", "email" => ""}
       refute get_pow_assent_session(conn, :session_params)
+      assert get_pow_assent_session(conn, :callback_params)
+      assert get_pow_assent_session(conn, :changeset)
     end
 
     test "when identity doesn't exist and and user id taken by other user", %{conn: conn, bypass: bypass} do
@@ -176,6 +178,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user == %{"name" => "John Doe", "email" => "taken@example.com"}
       refute get_pow_assent_session(conn, :session_params)
+      assert get_pow_assent_session(conn, :callback_params)
+      assert get_pow_assent_session(conn, :changeset)
     end
 
     test "with stored request_path assigns to conn", %{conn: conn, bypass: bypass} do
@@ -278,6 +282,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user == %{"name" => "John Doe", "email" => "taken@example.com", "email_verified" => true}
       refute get_pow_assent_session(conn, :session_params)
+      assert get_pow_assent_session(conn, :callback_params)
+      assert get_pow_assent_session(conn, :changeset)
     end
 
     test "when user exists with unconfirmed e-mail", %{conn: conn, bypass: bypass} do

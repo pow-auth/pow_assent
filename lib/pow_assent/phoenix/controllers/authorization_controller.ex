@@ -70,13 +70,14 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> put_flash(:error, extension_messages(conn).account_already_bound_to_other_user(conn))
     |> redirect(to: routes(conn).session_path(conn, :new))
   end
-  def respond_callback({:error, %{private: %{pow_assent_callback_error: {:invalid_user_id_field, _changeset}}} = conn}) do
+  def respond_callback({:error, %{private: %{pow_assent_callback_error: {:invalid_user_id_field, changeset}}} = conn}) do
     trigger_registration_email_confirmation_controller_callback(conn, fn conn ->
       params   = Map.fetch!(conn.private, :pow_assent_callback_params)
       provider = Map.fetch!(conn.params, "provider")
 
       conn
       |> Plug.put_session(:callback_params, %{provider => params})
+      |> Plug.put_session(:changeset, changeset)
       |> redirect(to: routes(conn).path_for(conn, RegistrationController, :add_user_id, [provider]))
     end)
   end
