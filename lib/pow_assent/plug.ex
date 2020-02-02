@@ -383,4 +383,50 @@ defmodule PowAssent.Plug do
 
     {strategy, provider_config}
   end
+
+  @private_session_key :pow_assent_session
+
+  @doc """
+  Initializes session.
+  """
+  @spec init_session(Conn.t()) :: Conn.t()
+  def init_session(conn) do
+    session_key = Atom.to_string(@private_session_key)
+    value =
+      case Conn.get_session(conn) do
+        %{^session_key => session} -> session
+        _                          -> Map.get(conn.private, @private_session_key, %{})
+      end
+
+    conn
+    |> Conn.put_private(@private_session_key, value)
+    |> Conn.register_before_send(fn conn ->
+      conn.private
+      |> Map.get(@private_session_key)
+      |> case do
+        nil   -> conn
+        value -> Conn.put_session(conn, session_key, value)
+      end
+    end)
+  end
+
+  @doc """
+  Inserts value for key in session.
+  """
+  @spec put_session(Conn.t(), atom(), any()) :: Conn.t()
+  def put_session(%{private: %{@private_session_key => session}} = conn, key, value) do
+    session = Map.put(session, key, value)
+
+    Conn.put_private(conn, @private_session_key, session)
+  end
+
+  @doc """
+  Deletes key from session.
+  """
+  @spec delete_session(Conn.t(), atom()) :: Conn.t()
+  def delete_session(%{private: %{@private_session_key => session}} = conn, key) do
+    session = Map.delete(session, key)
+
+    Conn.put_private(conn, @private_session_key, session)
+  end
 end

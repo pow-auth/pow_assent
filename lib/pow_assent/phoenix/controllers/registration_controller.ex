@@ -8,6 +8,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
   alias Pow.Plug, as: PowPlug
   alias PowEmailConfirmation.Phoenix.ControllerCallbacks, as: EmailConfirmationCallbacks
 
+  plug :init_session
   plug :load_params_from_session
   plug :assign_create_path
 
@@ -30,7 +31,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
 
   @spec respond_create({:ok, map(), Conn.t()} | {:error, map(), Conn.t()}) :: Conn.t()
   def respond_create({:ok, user, conn}) do
-    conn =  Conn.delete_session(conn, :pow_assent_callback_params)
+    conn = Plug.delete_session(conn, :callback_params)
 
     maybe_trigger_email_confirmed_controller_callback({:ok, user, conn}, fn {:ok, _user, conn} ->
       conn
@@ -76,9 +77,11 @@ defmodule PowAssent.Phoenix.RegistrationController do
     end
   end
 
-  defp load_params_from_session(%{params: %{"provider" => provider}, private: %{plug_session: plug_session}} = conn, _opts) do
-    case plug_session do
-      %{"pow_assent_callback_params" => %{^provider => params}} ->
+  defp init_session(conn, _opts), do: Plug.init_session(conn)
+
+  defp load_params_from_session(%{params: %{"provider" => provider}} = conn, _opts) do
+    case conn.private do
+      %{pow_assent_session: %{callback_params: %{^provider => params}}} ->
         Conn.put_private(conn, :pow_assent_callback_params, params)
 
       _ ->

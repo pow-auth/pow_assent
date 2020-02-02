@@ -3,14 +3,14 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   use Pow.Extension.Phoenix.Controller.Base
 
   alias Plug.Conn
-  alias PowAssent.Plug
-  alias PowAssent.Phoenix.{AuthorizationController, RegistrationController}
+  alias PowAssent.{Phoenix.AuthorizationController, Phoenix.RegistrationController, Plug}
   alias Pow.Extension.Config, as: ExtensionConfig
   alias Pow.Plug, as: PowPlug
   alias PowEmailConfirmation.Phoenix.ControllerCallbacks, as: EmailConfirmationCallbacks
 
   plug :require_authenticated when action in [:delete]
   plug :assign_callback_url when action in [:new, :callback]
+  plug :init_session when action in [:new, :callback]
   plug :assign_request_path when action in [:callback]
   plug :load_session_params when action in [:callback]
   plug :set_registration_option when action in [:callback]
@@ -31,13 +31,16 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   end
   def respond_new({:error, error, _conn}), do: handle_strategy_error(error)
 
-  defp maybe_store_session_params(%{private: %{pow_assent_session_params: params}} = conn), do: store_session_params(conn, params)
+  defp maybe_store_session_params(%{private: %{pow_assent_session_params: params}} = conn),
+    do: Plug.put_session(conn, :session_params, params)
   defp maybe_store_session_params(conn), do: conn
 
-  defp maybe_store_request_path(%{params: %{"request_path" => request_path}} = conn), do: store_request_path(conn, request_path)
+  defp maybe_store_request_path(%{params: %{"request_path" => request_path}} = conn),
+    do: Plug.put_session(conn, :request_path, request_path)
   defp maybe_store_request_path(conn), do: conn
 
-  defp maybe_store_invitation_token(%{params: %{"invitation_token" => token}} = conn), do: store_invitation_token(conn, token)
+  defp maybe_store_invitation_token(%{params: %{"invitation_token" => token}} = conn),
+  do: Plug.put_session(conn, :invitation_token, token)
   defp maybe_store_invitation_token(conn), do: conn
 
   @spec process_callback(Conn.t(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()} | {:error, {atom(), map()} | map(), Conn.t()}
@@ -73,7 +76,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
       provider = Map.fetch!(conn.params, "provider")
 
       conn
-      |> Conn.put_session(:pow_assent_callback_params, %{provider => params})
+      |> Plug.put_session(:callback_params, %{provider => params})
       |> redirect(to: routes(conn).path_for(conn, RegistrationController, :add_user_id, [provider]))
     end)
   end
@@ -158,23 +161,19 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     assign(conn, :callback_url, url)
   end
 
-  defp store_session_params(conn, params), do: Conn.put_session(conn, :pow_assent_session_params, params)
+  defp init_session(conn, _opts), do: Plug.init_session(conn)
 
-  defp store_request_path(conn, request_path), do: Conn.put_session(conn, :pow_assent_request_path, request_path)
-
-  defp store_invitation_token(conn, token), do: Conn.put_session(conn, :pow_assent_invitation_token, token)
-
-  defp assign_request_path(%{private: %{plug_session: %{"pow_assent_request_path" => request_path}}} = conn, _opts) do
+  defp assign_request_path(%{private: %{pow_assent_session: %{request_path: request_path}}} = conn, _opts) do
     conn
-    |> Conn.delete_session(:pow_assent_request_path)
+    |> Plug.delete_session(:request_path)
     |> Conn.assign(:request_path, request_path)
   end
   defp assign_request_path(conn, _opts), do: conn
 
-  defp load_session_params(%{private: %{plug_session: %{"pow_assent_session_params" => params}}} = conn, _opts) do
+  defp load_session_params(%{private: %{pow_assent_session: %{session_params: params}}} = conn, _opts) do
     conn
     |> Conn.put_private(:pow_assent_session_params, params)
-    |> Conn.put_session(:pow_assent_session_params, nil)
+    |> Plug.delete_session(:session_params)
   end
   defp load_session_params(conn, _opts), do: conn
 
@@ -187,8 +186,8 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> function_exported?(:pow_assent_registration_path, 3)
   end
 
-  defp load_user_by_invitation_token(%{private: %{plug_session: %{"pow_assent_invitation_token" => token}}} = conn, _opts) do
-    conn = Conn.delete_session(conn, :pow_assent_invitation_token)
+  defp load_user_by_invitation_token(%{private: %{pow_assent_session: %{invitation_token: token}}} = conn, _opts) do
+    conn = Plug.delete_session(conn, :invitation_token)
 
     conn
     |> PowInvitation.Plug.invited_user_from_token(token)
