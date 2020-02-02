@@ -8,15 +8,8 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}
   @user_params %{"name" => "John Doe"}
 
-  defp provider_params(opts \\ []) do
-    user_identity_params = Map.merge(@user_identity_params, Keyword.get(opts, :user_identity_params, %{}))
-    user_params = Map.merge(@user_params, Keyword.get(opts, :user_params, %{}))
-
-    %{@provider => %{user_identity: user_identity_params, user: user_params}}
-  end
-
   setup %{conn: conn} do
-    conn = Conn.put_session(conn, :pow_assent_callback_params, provider_params())
+    conn = Conn.put_private(conn, :pow_assent_session, %{callback_params: provider_params()})
 
     {:ok, conn: conn}
   end
@@ -25,7 +18,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     test "with missing session params", %{conn: conn} do
       conn =
         conn
-        |> Conn.delete_session(:pow_assent_callback_params)
+        |> Conn.put_private(:pow_assent_session, nil)
         |> get(Routes.pow_assent_registration_path(conn, :add_user_id, @provider))
 
       assert redirected_to(conn) == "/logged-out"
@@ -55,7 +48,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     test "with missing session params", %{conn: conn} do
       conn =
         conn
-        |> Conn.delete_session(:pow_assent_callback_params)
+        |> Conn.put_private(:pow_assent_session, nil)
         |> post(Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
 
       assert redirected_to(conn) == "/logged-out"
@@ -84,7 +77,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       params = provider_params(user_identity_params: %{"uid" => "identity_taken"})
       conn   =
         conn
-        |> Conn.put_session(:pow_assent_callback_params, params)
+        |> Conn.put_private(:pow_assent_session, %{callback_params: params})
         |> post(Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :new)
@@ -137,5 +130,12 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert [user_identity] = user.user_identities
       assert user_identity.access_token == "access_token"
     end
+  end
+
+  defp provider_params(opts \\ []) do
+    user_identity_params = Map.merge(@user_identity_params, Keyword.get(opts, :user_identity_params, %{}))
+    user_params = Map.merge(@user_params, Keyword.get(opts, :user_params, %{}))
+
+    %{@provider => %{user_identity: user_identity_params, user: user_params}}
   end
 end

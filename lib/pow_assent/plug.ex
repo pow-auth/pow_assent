@@ -15,8 +15,8 @@ defmodule PowAssent.Plug do
         ]
   """
   alias Plug.Conn
-  alias PowAssent.{Config, Operations}
-  alias Pow.Plug
+  alias PowAssent.{Config, Operations, Store.Session}
+  alias Pow.{Plug, Store.Backend.EtsCache, UUID}
 
   @doc """
   Calls the authorize_url method for the provider strategy.
@@ -382,5 +382,101 @@ defmodule PowAssent.Plug do
       |> Config.put(:redirect_uri, redirect_uri)
 
     {strategy, provider_config}
+  end
+
+  @private_session_key :pow_assent_session
+  @private_session_info_key :pow_assent_session_info
+
+  @doc """
+  Initializes session.
+
+  Session data will be fetched and deleted from the PowAssent session store if
+  a `pow_assent_session` key was found in the Plug session. The session data is
+  set for the `:pow_assent_session` key in in `conn.private`.
+
+  A `:before_send` callback will be set to store session data. If
+  `:pow_assent_session` key in `conn.private` has been populated, a random UUID
+  is generated and used as the key for the stored session data. The UUID is
+  then stored as `pow_assent_session` key in the Plug session.
+
+  The session store can be changed by setting `:session_store` config option.
+  By default it's
+  `{PowAssent.Store.Session, backend: Pow.Store.Backend.EtsCache}`. The backend
+  store can be changed by setting `:cache_store_backend` for the Pow
+  configuration.
+  """
+  @spec init_session(Conn.t()) :: Conn.t()
+  def init_session(conn) do
+    config     = fetch_config(conn)
+    pow_config = Plug.fetch_config(conn)
+    key        = Conn.get_session(conn, @private_session_key)
+    value      = get_session_value(key, config, pow_config) || default_value(conn)
+
+    conn
+    |> Conn.delete_session(@private_session_key)
+    |> Conn.put_private(@private_session_key, value)
+    |> Conn.register_before_send(& put_session_value(&1, config, pow_config))
+  end
+
+  defp default_value(%{private: %{@private_session_key => session}}), do: session
+  defp default_value(_conn), do: %{}
+
+  defp get_session_value(nil, _config, _pow_config), do: nil
+  defp get_session_value(key, config, pow_config) do
+    {store, store_config} = store(config, pow_config)
+
+    case store.get(store_config, key) do
+      :not_found ->
+        nil
+
+      value ->
+        store.delete(store_config, key)
+        value
+    end
+  end
+
+  defp store(config, pow_config) do
+    case Config.get(config, :session_store, default_store(pow_config)) do
+      {store, store_config} -> {store, store_config}
+      store                 -> {store, []}
+    end
+  end
+
+  defp default_store(pow_config) do
+    backend = Config.get(pow_config, :cache_store_backend, EtsCache)
+
+    {Session, [backend: backend]}
+  end
+
+  defp put_session_value(%{private: %{@private_session_info_key => :write, @private_session_key => session}} = conn, config, pow_config) when session != %{} do
+    {store, store_config} = store(config, pow_config)
+    key                   = UUID.generate()
+
+    store.put(store_config, key, session)
+
+    Conn.put_session(conn, @private_session_key, key)
+  end
+  defp put_session_value(conn, _config, _pow_config), do: conn
+
+  @doc """
+  Inserts value for key in session.
+  """
+  @spec put_session(Conn.t(), atom(), any()) :: Conn.t()
+  def put_session(%{private: %{@private_session_key => session}} = conn, key, value) do
+    session = Map.put(session, key, value)
+
+    conn
+    |> Conn.put_private(@private_session_key, session)
+    |> Conn.put_private(@private_session_info_key, :write)
+  end
+
+  @doc """
+  Deletes key from session.
+  """
+  @spec delete_session(Conn.t(), atom()) :: Conn.t()
+  def delete_session(%{private: %{@private_session_key => session}} = conn, key) do
+    session = Map.delete(session, key)
+
+    Conn.put_private(conn, @private_session_key, session)
   end
 end

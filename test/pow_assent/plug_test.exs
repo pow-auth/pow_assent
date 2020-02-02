@@ -2,9 +2,9 @@ defmodule PowAssent.PlugTest do
   use ExUnit.Case
   doctest PowAssent.Plug
 
-  alias Plug.{Conn, ProcessStore, Session}
+  alias Plug.{Conn, ProcessStore, Session, Test}
   alias PowAssent.Plug
-  alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, RepoMock}
+  alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
 
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 
@@ -16,12 +16,7 @@ defmodule PowAssent.PlugTest do
   ]
 
   setup do
-    conn =
-      %Conn{}
-      |> Pow.Plug.put_config(@default_config)
-      |> init_session()
-
-    {:ok, conn: conn}
+    {:ok, conn: init_session_conn()}
   end
 
   describe "authorize_url/3" do
@@ -191,6 +186,84 @@ defmodule PowAssent.PlugTest do
     end
   end
 
+  describe "init_session/1" do
+    @store_config [namespace: "pow_assent_sessions"]
+    @config [cache_store_backend: EtsCacheMock]
+
+    setup %{conn: conn} do
+      conn = Pow.Plug.put_config(conn, @config)
+
+      EtsCacheMock.init()
+
+      {:ok, conn: conn}
+    end
+
+    test "initializes new sessionn", %{conn: conn} do
+      init_conn = Plug.init_session(conn)
+
+      assert init_conn.private[:pow_assent_session] == %{}
+    end
+
+    test "stores session if not empty and pow_assent_session_info: :write", %{conn: init_conn} do
+      conn =
+        init_conn
+        |> Plug.init_session()
+        |> Conn.put_private(:pow_assent_session_info, :write)
+        |> Conn.send_resp(200, "")
+
+      assert conn.private[:plug_session] == %{}
+      refute_received {:ets, :put, _any, _config}
+
+      conn =
+        init_conn
+        |> Plug.init_session()
+        |> Conn.put_private(:pow_assent_session, %{a: 1})
+        |> Conn.send_resp(200, "")
+
+      assert conn.private[:plug_session] == %{}
+      refute_received {:ets, :put, _any, _config}
+
+      conn =
+        init_conn
+        |> Plug.init_session()
+        |> Conn.put_private(:pow_assent_session, %{a: 1})
+        |> Conn.put_private(:pow_assent_session_info, :write)
+        |> Conn.send_resp(200, "")
+
+      assert key = conn.private[:plug_session]["pow_assent_session"]
+      assert EtsCacheMock.get(@store_config, key) == %{a: 1}
+    end
+
+    test "initializes existing session", %{conn: conn} do
+      key = "test"
+
+      EtsCacheMock.put(@store_config, [{key, %{a: 1}}])
+
+      conn =
+        conn
+        |> Conn.put_session(:pow_assent_session, key)
+        |> Conn.send_resp(200, "")
+        |> recycle_session_conn(@config)
+
+      conn = Plug.init_session(conn)
+
+      refute conn.private[:plug_session]["pow_assent_session"]
+      assert conn.private[:pow_assent_session] == %{a: 1}
+      assert EtsCacheMock.get(@store_config, key) == :not_found
+    end
+  end
+
+  test "put_session/3", %{conn: conn} do
+    conn =
+      conn
+      |> Plug.init_session()
+      |> Plug.put_session(:a, 1)
+      |> Plug.put_session(:b, 2)
+
+    assert conn.private[:pow_assent_session] == %{a: 1, b: 2}
+    assert conn.private[:pow_assent_session_info] == :write
+  end
+
   defp assert_pow_session(conn) do
     assert conn.private[:plug_session]["pow_assent_auth"]
   end
@@ -198,8 +271,25 @@ defmodule PowAssent.PlugTest do
     refute conn.private[:plug_session]["pow_assent_auth"]
   end
 
+  defp init_session_conn() do
+    :get
+    |> Test.conn("/")
+    |> Pow.Plug.put_config(@default_config)
+    |> init_session()
+    |> Conn.fetch_session()
+  end
+
   defp init_session(conn) do
     opts = Session.init(store: ProcessStore, key: "foobar")
     Session.call(conn, opts)
+  end
+
+  defp recycle_session_conn(old_conn, config) do
+    :get
+    |> Test.conn("/")
+    |> Pow.Plug.put_config(config)
+    |> Test.recycle_cookies(old_conn)
+    |> init_session()
+    |> Conn.fetch_session()
   end
 end
