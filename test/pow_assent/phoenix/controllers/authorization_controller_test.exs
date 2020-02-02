@@ -4,7 +4,6 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 
   alias Plug.Conn
-  alias PowAssent.Plug
   alias PowAssent.Test.Ecto.Users.User
 
   @provider "test_provider"
@@ -13,7 +12,6 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   setup %{conn: conn} do
     user   = %User{id: 1}
     bypass = Bypass.open()
-    conn   = Plug.init_session(conn)
 
     put_oauth2_env(bypass)
 
@@ -56,7 +54,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   describe "GET /auth/:provider/callback" do
     setup %{conn: conn} do
-      conn = Plug.put_session(conn, :session_params, %{state: "token"})
+      conn = Conn.put_private(conn, :pow_assent_session, %{session_params: %{state: "token"}})
 
       {:ok, conn: conn}
     end
@@ -174,7 +172,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       conn =
         conn
-        |> Plug.put_session(:request_path, "/custom-uri")
+        |> Conn.put_private(:pow_assent_session, %{request_path: "/custom-uri"})
         |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/custom-uri"
@@ -186,7 +184,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     setup %{conn: conn} do
       conn =
         conn
-        |> Plug.put_session(:session_params, %{state: "token"})
+        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}})
         |> Conn.put_private(:plug_skip_csrf_protection, false)
 
       {:ok, conn: conn}
@@ -211,7 +209,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     setup %{conn: conn} do
       conn =
         conn
-        |> Plug.put_session(:session_params, %{state: "token"})
+        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}})
         |> Conn.put_private(:plug_skip_csrf_protection, false)
 
       {:ok, conn: conn}
@@ -289,8 +287,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       conn =
         conn
-        |> Plug.put_session(:session_params, %{state: "token"})
-        |> Plug.put_session(:invitation_token, "token")
+        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}, invitation_token: "token"})
         |> Phoenix.ConnTest.dispatch(InvitationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/session_created"
@@ -309,7 +306,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       conn =
         conn
-        |> Plug.put_session(:session_params, %{state: "token"})
+        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}})
         |> Phoenix.ConnTest.dispatch(NoRegistrationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       refute Pow.Plug.current_user(conn)

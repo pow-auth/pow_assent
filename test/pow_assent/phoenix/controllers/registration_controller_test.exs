@@ -1,7 +1,7 @@
 defmodule PowAssent.Phoenix.RegistrationControllerTest do
   use PowAssent.Test.Phoenix.ConnCase
 
-  alias PowAssent.Plug
+  alias Plug.Conn
 
   @provider "test_provider"
   @token_params %{"access_token" => "access_token"}
@@ -9,10 +9,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   @user_params %{"name" => "John Doe"}
 
   setup %{conn: conn} do
-    conn =
-      conn
-      |> Plug.init_session()
-      |> Plug.put_session(:callback_params, provider_params())
+    conn = Conn.put_private(conn, :pow_assent_session, %{callback_params: provider_params()})
 
     {:ok, conn: conn}
   end
@@ -21,7 +18,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     test "with missing session params", %{conn: conn} do
       conn =
         conn
-        |> Plug.delete_session(:callback_params)
+        |> Conn.put_private(:pow_assent_session, nil)
         |> get(Routes.pow_assent_registration_path(conn, :add_user_id, @provider))
 
       assert redirected_to(conn) == "/logged-out"
@@ -51,7 +48,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     test "with missing session params", %{conn: conn} do
       conn =
         conn
-        |> Plug.delete_session(:callback_params)
+        |> Conn.put_private(:pow_assent_session, nil)
         |> post(Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
 
       assert redirected_to(conn) == "/logged-out"
@@ -80,7 +77,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       params = provider_params(user_identity_params: %{"uid" => "identity_taken"})
       conn   =
         conn
-        |> Plug.put_session(:callback_params, params)
+        |> Conn.put_private(:pow_assent_session, %{callback_params: params})
         |> post(Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
 
       assert redirected_to(conn) == Routes.pow_registration_path(conn, :new)

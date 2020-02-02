@@ -2,6 +2,8 @@
 
 ## v0.4.6 (TBA)
 
+The callback flow has been changed so sessions are now stored in the backend cache with `PowAssent.Store.Session` instead of using `Plug.Session`. This prevents exposure of sensitive data, as the only thing stored in the Plug session is a random UUID.
+
 ### Enhancements
 
 * [`PowAssent.Plug`] Added `PowAssent.Plug.change_user/4`
@@ -9,6 +11,10 @@
 * [`PowAssent.Phoenix.AuthorizationController`] Now prevents user enumeration attack using `PowEmailConfirmation.Phoenix.ControllerCallbacks` when `PowEmailConfirmation` extension is enabled
 [`PowAssent.Phoenix.RegistrationController`] Now prevents user enumeration attack using `PowEmailConfirmation.Phoenix.ControllerCallbacks` when `PowEmailConfirmation` extension is enabled
 * [`PowAssent.Plug`] Moved business logic away from `PowAssent.Phoenix.AuthorizationController` into `PowAssent.Plug.callback_upsert/4` that will authenticate, upsert user identity, or create user
+* [`PowAssent.Store.Session`] Added session store module
+* [`PowAssent.Plug`] Added `PowAssent.Plug.init_session/1`
+* [`PowAssent.Plug`] Added `PowAssent.Plug.put_session/3`
+* [`PowAssent.Plug`] Added `PowAssent.Plug.delete_session/2`
 
 ## Bug fixes
 
