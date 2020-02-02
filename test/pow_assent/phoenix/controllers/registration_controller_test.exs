@@ -43,6 +43,22 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert html =~ "<label for=\"user_email\">Email</label>"
       assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\">"
     end
+
+    test "shows with changeset stored in session", %{conn: conn} do
+      {:error, {:invalid_user_id_field, changeset}} = PowAssent.Ecto.UserIdentities.Context.create_user(@user_identity_params, Map.put(@user_params, "email", "taken@example.com"), nil, repo: PowAssent.Test.RepoMock, user: PowAssent.Test.Ecto.Users.User)
+      conn =
+        conn
+        |> Conn.put_private(:pow_assent_session, %{changeset: changeset, callback_params: provider_params()})
+        |> get(Routes.pow_assent_registration_path(conn, :add_user_id, @provider))
+
+      assert conn.private[:plug_session]["pow_assent_session"]
+      assert conn.private[:pow_assent_session][:callback_params] == provider_params()
+      refute conn.private[:pow_assent_session][:changeset]
+      assert html = html_response(conn, 200)
+      assert html =~ "<label for=\"user_email\">Email</label>"
+      assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\" value=\"taken@example.com\">"
+      assert html =~ "<span class=\"help-block\">has already been taken</span>"
+    end
   end
 
   describe "POST /auth/:provider/create" do

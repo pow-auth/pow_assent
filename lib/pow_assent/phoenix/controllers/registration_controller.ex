@@ -10,15 +10,18 @@ defmodule PowAssent.Phoenix.RegistrationController do
 
   plug :init_session
   plug :load_params_from_session
+  plug :assign_changeset when action in [:add_user_id]
   plug :assign_create_path
 
   @spec process_add_user_id(Conn.t(), map()) :: {:ok, map(), Conn.t()}
   def process_add_user_id(conn, _params) do
-    {:ok, Plug.change_user(conn), conn}
+    {:ok, conn.assigns[:changeset] || Plug.change_user(conn), conn}
   end
 
   @spec respond_add_user_id({:ok, map(), Conn.t()}) :: Conn.t()
-  def respond_add_user_id({:ok, changeset, conn}) do
+  def respond_add_user_id({:ok, changeset, conn}), do: render_add_user_id(conn, changeset)
+
+  defp render_add_user_id(conn, changeset) do
     params   = Map.fetch!(conn.private, :pow_assent_callback_params)
     provider = Map.fetch!(conn.params, "provider")
 
@@ -51,15 +54,7 @@ defmodule PowAssent.Phoenix.RegistrationController do
   def respond_create({:error, {:invalid_user_id_field, changeset}, conn}) do
     maybe_trigger_email_confirmed_controller_callback({:error, changeset, conn}, &respond_create/1)
   end
-  def respond_create({:error, changeset, conn}) do
-    params   = Map.fetch!(conn.private, :pow_assent_callback_params)
-    provider = Map.fetch!(conn.params, "provider")
-
-    conn
-    |> Plug.put_session(:callback_params, %{provider => params})
-    |> assign(:changeset, changeset)
-    |> render("add_user_id.html")
-  end
+  def respond_create({:error, changeset, conn}), do: render_add_user_id(conn, changeset)
 
   defp maybe_trigger_email_confirmed_controller_callback({:ok, _user, conn} = resp, callback) do
     config = PowPlug.fetch_config(conn)
@@ -101,6 +96,13 @@ defmodule PowAssent.Phoenix.RegistrationController do
         |> halt()
     end
   end
+
+  defp assign_changeset(%{private: %{pow_assent_session: %{changeset: changeset}}} = conn, _opts) do
+    conn
+    |> assign(:changeset, changeset)
+    |> Plug.delete_session(:changeset)
+  end
+  defp assign_changeset(conn, _opts), do: conn
 
   defp assign_create_path(conn, _opts) do
     path = routes(conn).path_for(conn, __MODULE__, :create, [conn.params["provider"]])
