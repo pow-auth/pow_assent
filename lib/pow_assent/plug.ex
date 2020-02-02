@@ -58,6 +58,138 @@ defmodule PowAssent.Plug do
   defp maybe_put_session_params({:error, error}, conn), do: {:error, error, conn}
 
   @doc """
+  Calls the callback method for the provider strategy and will authenticate,
+  upsert user identity, or create user.
+
+  See `callback/4`, `authenticate/2`, `upsert_identity/2`, and `create_user/4`
+  for more.
+
+  To track the state of the flow the following keys may be populated in
+  `conn.private`:
+
+    - `:pow_assent_callback_state` - The state of the flow, that is either
+      `{:ok, step}` or `{:error, step}`.
+    - `:pow_assent_callback_params` - The params returned by the strategy
+      callback phase.
+    - `:pow_assent_callback_error` - The resulting error of any step.
+
+  The value of `:pow_assent_callback_state` may be one of the following:
+
+  - `{:error, :strategy}` - An error ocurred during strategy callback
+      phase. `:pow_assent_callback_error` will be populated with the error.
+  - `{:ok, :upsert_user_identity}` - User identity was created or updated.
+  - `{:error, :upsert_user_identity}` - User identity could not be created
+    or updated. `:pow_assent_callback_error` will be populated with the
+    changeset.
+  - `{:ok, :create_user}` - User was created.
+  - `{:error, :create_user}` - User could not be created.
+    `:pow_assent_callback_error` will be populated with the changeset.
+
+  If `:pow_assent_registration` in `conn.private` is set to `false` then
+  `create_user/4` will not be called and the `:pow_assent_callback_state` set
+  to `{:error, :create_user}` with `nil` value for
+  `:pow_assent_callback_error`.
+  """
+  @spec callback_upsert(Conn.t(), binary(), map(), binary()) :: {:ok, Conn.t()} | {:error, Conn.t()}
+  def callback_upsert(conn, provider, params, redirect_uri) do
+    conn
+    |> callback(provider, params, redirect_uri)
+    |> handle_callback()
+    |> maybe_authenticate()
+    |> maybe_upsert_user_identity()
+    |> maybe_create_user()
+    |> case do
+      %{private: %{pow_assent_callback_state: {:ok, _method}}} = conn ->
+        {:ok, conn}
+
+      conn ->
+        {:error, conn}
+    end
+  end
+
+  defp handle_callback({:ok, user_identity_params, user_params, conn}) do
+    conn
+    |> Conn.put_private(:pow_assent_callback_state, {:ok, :strategy})
+    |> Conn.put_private(:pow_assent_callback_params, %{user_identity: user_identity_params, user: user_params})
+  end
+  defp handle_callback({:error, error, conn})  do
+    conn
+    |> Conn.put_private(:pow_assent_callback_state, {:error, :strategy})
+    |> Conn.put_private(:pow_assent_callback_error, error)
+  end
+
+  defp maybe_authenticate(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
+    user_identity_params = Map.fetch!(params, :user_identity)
+
+    case Pow.Plug.current_user(conn) do
+      nil ->
+        conn
+        |> authenticate(user_identity_params)
+        |> case do
+          {:ok, conn}    -> conn
+          {:error, conn} -> conn
+        end
+
+      _user ->
+        conn
+    end
+  end
+  defp maybe_authenticate(conn), do: conn
+
+  defp maybe_upsert_user_identity(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
+    user_identity_params = Map.fetch!(params, :user_identity)
+
+    case Pow.Plug.current_user(conn) do
+      nil ->
+        conn
+
+      _user ->
+        conn
+        |> upsert_identity(user_identity_params)
+        |> case do
+          {:ok, _user_identity, conn} ->
+            Conn.put_private(conn, :pow_assent_callback_state, {:ok, :upsert_user_identity})
+
+          {:error, changeset, conn} ->
+            conn
+            |> Conn.put_private(:pow_assent_callback_state, {:error, :upsert_user_identity})
+            |> Conn.put_private(:pow_assent_callback_error, changeset)
+        end
+    end
+  end
+  defp maybe_upsert_user_identity(conn), do: conn
+
+  defp maybe_create_user(%{private: %{pow_assent_registration: false}} = conn) do
+    conn
+    |> Conn.put_private(:pow_assent_callback_state, {:error, :create_user})
+    |> Conn.put_private(:pow_assent_callback_error, nil)
+  end
+  defp maybe_create_user(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
+    user_params          = Map.fetch!(params, :user)
+    user_identity_params = Map.fetch!(params, :user_identity)
+
+    case Pow.Plug.current_user(conn) do
+      nil ->
+        conn
+        |> Conn.put_private(:pow_assent_callback_action, :create_user)
+        |> create_user(user_identity_params, user_params)
+        |> case do
+          {:ok, _user, conn} ->
+            Conn.put_private(conn, :pow_assent_callback_state, {:ok, :create_user})
+
+          {:error, changeset, conn} ->
+            conn
+            |> Conn.put_private(:pow_assent_callback_state, {:error, :create_user})
+            |> Conn.put_private(:pow_assent_callback_error, changeset)
+        end
+
+      _user ->
+        conn
+    end
+  end
+  defp maybe_create_user(conn), do: conn
+
+  @doc """
   Calls the callback method for the provider strategy.
 
   Returns the user identity params and user params fetched from the provider.

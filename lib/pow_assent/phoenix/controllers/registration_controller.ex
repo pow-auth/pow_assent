@@ -24,13 +24,13 @@ defmodule PowAssent.Phoenix.RegistrationController do
   end
 
   @spec process_create(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, map(), Conn.t()}
-  def process_create(%{private: %{pow_assent_params: %{user_identity: user_identity_params, user: user_params}}} = conn, %{"user" => user_id_params}) do
+  def process_create(%{private: %{pow_assent_callback_params: %{user_identity: user_identity_params, user: user_params}}} = conn, %{"user" => user_id_params}) do
     Plug.create_user(conn, user_identity_params, user_params, user_id_params)
   end
 
   @spec respond_create({:ok, map(), Conn.t()} | {:error, map(), Conn.t()}) :: Conn.t()
   def respond_create({:ok, user, conn}) do
-    conn =  Conn.delete_session(conn, :pow_assent_params)
+    conn =  Conn.delete_session(conn, :pow_assent_callback_params)
 
     maybe_trigger_email_confirmed_controller_callback({:ok, user, conn}, fn {:ok, _user, conn} ->
       conn
@@ -78,8 +78,8 @@ defmodule PowAssent.Phoenix.RegistrationController do
 
   defp load_params_from_session(%{params: %{"provider" => provider}, private: %{plug_session: plug_session}} = conn, _opts) do
     case plug_session do
-      %{"pow_assent_params" => %{^provider => params}} ->
-        Conn.put_private(conn, :pow_assent_params, params)
+      %{"pow_assent_callback_params" => %{^provider => params}} ->
+        Conn.put_private(conn, :pow_assent_callback_params, params)
 
       _ ->
         conn
