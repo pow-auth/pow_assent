@@ -28,7 +28,9 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
   @valid_params %{user_id: 1, provider: "test_provider", uid: "1"}
 
   setup do
-    {:ok, user: Repo.insert(%User{id: 1, email: "test@example.com"})}
+    user = Repo.insert(%User{id: 1, email: "test@example.com"})
+
+    {:ok, user: user}
   end
 
   describe "changeset/3" do

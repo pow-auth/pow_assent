@@ -15,7 +15,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
     put_oauth2_env(bypass)
 
-    {:ok, user: user, bypass: bypass, conn: conn}
+    {:ok, user: user, bypass: bypass}
   end
 
   defmodule FailAuthorizeURL do
@@ -343,10 +343,10 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   alias PowAssent.Test.WithAccessToken.Phoenix.Endpoint, as: WithAccessTokenEndpoint
   alias PowAssent.Test.WithAccessToken.Users.User, as: WithAccessTokenUser
   describe "GET /auth/:provider/callback recording strategy params" do
-    setup context do
+    setup do
       user = %WithAccessTokenUser{id: 1}
 
-      {:ok, %{context | user: user}}
+      {:ok, user: user}
     end
 
     test "with new identity", %{conn: conn, bypass: bypass, user: user} do
