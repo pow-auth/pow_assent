@@ -370,6 +370,14 @@ config :my_app, MyAppWeb.Endpoint,
 
 ## Pow Extensions
 
+### PowPersistentSession
+
+PowAssent will set a persistent session if `PowPersistentSession` extension is enabled and `persistent_session` param has `true` value for the authorization callback. For a URI it would looke like this:
+
+```elixir
+Routes.pow_assent_authorization_path(conn, :new, provider, persistent_session: true)
+```
+
 ### PowEmailConfirmation
 
 The e-mail fetched from the provider params is assumed confirmed if an `email_verified` key with value `true` also exists in the params. In that case the user will have `:email_confirmed_at` set. If `email_verified` isn't `true` in the provider params, or the user provides the e-mail, then the user will have to confirm their e-mail before they can sign in.
@@ -378,7 +386,7 @@ To prevent user enumeration attacks whenever there is a unique constraint error 
 
 ### PowInvitation
 
-PowAssent works out of the box with PowInvitation.
+PowAssent works out of the box with `PowInvitation`.
 
 Provider links will have an `invitation_token` query param if an invited user exists in the connection. This will be used in the authorization callback flow to load the invited user. If a user identity is created, the invited user will have the `:invitation_accepted_at` set.
 

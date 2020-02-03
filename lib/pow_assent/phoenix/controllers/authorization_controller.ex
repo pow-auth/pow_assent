@@ -7,6 +7,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   alias Pow.Extension.Config, as: ExtensionConfig
   alias Pow.Plug, as: PowPlug
   alias PowEmailConfirmation.Phoenix.ControllerCallbacks, as: EmailConfirmationCallbacks
+  alias PowPersistentSession.Plug, as: PowPersistentSessionPlug
 
   plug :require_authenticated when action in [:delete]
   plug :assign_callback_url when action in [:new, :callback]
@@ -27,6 +28,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> maybe_store_session_params()
     |> maybe_store_request_path()
     |> maybe_store_invitation_token()
+    |> maybe_store_persistent_session_value()
     |> redirect(external: url)
   end
   def respond_new({:error, error, _conn}), do: handle_strategy_error(error)
@@ -40,8 +42,12 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   defp maybe_store_request_path(conn), do: conn
 
   defp maybe_store_invitation_token(%{params: %{"invitation_token" => token}} = conn),
-  do: Plug.put_session(conn, :invitation_token, token)
+    do: Plug.put_session(conn, :invitation_token, token)
   defp maybe_store_invitation_token(conn), do: conn
+
+  defp maybe_store_persistent_session_value(%{params: %{"persistent_session" => "true"}} = conn),
+    do: Plug.put_session(conn, :store_persistent_session?, true)
+  defp maybe_store_persistent_session_value(conn), do: conn
 
   @spec process_callback(Conn.t(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()} | {:error, {atom(), map()} | map(), Conn.t()}
   def process_callback(conn, %{"provider" => provider} = params) do
@@ -52,6 +58,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   def respond_callback({:ok, %{private: %{pow_assent_callback_state: {:ok, :create_user}}} = conn}) do
     trigger_registration_email_confirmation_controller_callback(conn, fn conn ->
       conn
+      |> maybe_create_persistent_session()
       |> put_flash(:info, extension_messages(conn).user_has_been_created(conn))
       |> redirect(to: routes(conn).after_registration_path(conn))
     end)
@@ -59,6 +66,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   def respond_callback({:ok, conn}) do
     trigger_session_email_confirmation_controller_callback(conn, fn conn ->
       conn
+      |> maybe_create_persistent_session()
       |> put_flash(:info, extension_messages(conn).signed_in(conn))
       |> redirect(to: routes(conn).after_sign_in_path(conn))
     end)
@@ -95,7 +103,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
       email_verified?(user) ->
         callback.(conn)
 
-      email_confirmation_enabled?(config) ->
+      extension_enabled?(config, PowEmailConfirmation) ->
         Pow.Phoenix.RegistrationController
         |> EmailConfirmationCallbacks.before_respond(:create, to_email_confirmation_res(conn), config)
         |> case do
@@ -120,10 +128,10 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   defp email_verified?(%{email_verified: true}), do: true
   defp email_verified?(_params), do: false
 
-  defp email_confirmation_enabled?(config) do
+  defp extension_enabled?(config, extension) do
     config
     |> ExtensionConfig.extensions()
-    |> Enum.member?(PowEmailConfirmation)
+    |> Enum.member?(extension)
   end
 
   defp trigger_session_email_confirmation_controller_callback(conn, callback) do
@@ -136,6 +144,19 @@ defmodule PowAssent.Phoenix.AuthorizationController do
       {:halt, conn} -> conn
     end
   end
+
+  defp maybe_create_persistent_session(%{private: %{pow_assent_session: %{store_persistent_session?: true}}} = conn) do
+    user = PowPlug.current_user(conn)
+
+    conn
+    |> PowPlug.fetch_config()
+    |> extension_enabled?(PowPersistentSession)
+    |> case do
+      true -> PowPersistentSessionPlug.create(conn, user)
+      _any -> conn
+    end
+  end
+  defp maybe_create_persistent_session(conn), do: conn
 
   @spec process_delete(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, any(), Conn.t()}
   def process_delete(conn, %{"provider" => provider}) do

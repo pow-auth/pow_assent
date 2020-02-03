@@ -1,4 +1,4 @@
-defmodule PowAssent.Test.Invitation.Phoenix.Endpoint do
+defmodule PowAssent.Test.PersistentSession.Phoenix.Endpoint do
   @moduledoc false
   use Phoenix.Endpoint, otp_app: :pow_assent
 
@@ -23,8 +23,11 @@ defmodule PowAssent.Test.Invitation.Phoenix.Endpoint do
     routes_backend: PowAssent.Test.Phoenix.Routes,
     messages_backend: PowAssent.Test.Phoenix.Messages,
     mailer_backend: PowAssent.Test.Phoenix.MailerMock,
-    repo: PowAssent.Test.Invitation.RepoMock,
+    repo: PowAssent.Test.RepoMock,
+    extensions: [PowPersistentSession],
     otp_app: :pow_assent
+
+  plug PowPersistentSession.Plug.Cookie
 
   plug PowAssent.Test.Phoenix.Router
 end

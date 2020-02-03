@@ -10,7 +10,8 @@ The callback flow has been changed so sessions are now stored in the backend cac
 * [`PowAssent.Operations`] Added `PowAssent.Operations.user_identity_changeset/4`
 * [`PowAssent.Phoenix.AuthorizationController`] Now prevents user enumeration attack using `PowEmailConfirmation.Phoenix.ControllerCallbacks` when `PowEmailConfirmation` extension is enabled
 * [`PowAssent.Phoenix.AuthorizationController`] Now stores `:changeset` in session when redirecting to `:add_user_id` page
-[`PowAssent.Phoenix.RegistrationController`] Now prevents user enumeration attack using `PowEmailConfirmation.Phoenix.ControllerCallbacks` when `PowEmailConfirmation` extension is enabled
+* [`PowAssent.Phoenix.AuthorizationController`] Now sets persistent session with `PowPersistentSession` if the extension is enabled and `conn.params` has `persistent_session` set to `true`
+* [`PowAssent.Phoenix.RegistrationController`] Now prevents user enumeration attack using `PowEmailConfirmation.Phoenix.ControllerCallbacks` when `PowEmailConfirmation` extension is enabled
 * [`PowAssent.Phoenix.RegistrationController`] Now uses `:changeset` stored in the session when rendering `:add_user_id` page
 * [`PowAssent.Plug`] Moved business logic away from `PowAssent.Phoenix.AuthorizationController` into `PowAssent.Plug.callback_upsert/4` that will authenticate, upsert user identity, or create user
 * [`PowAssent.Store.Session`] Added session store module

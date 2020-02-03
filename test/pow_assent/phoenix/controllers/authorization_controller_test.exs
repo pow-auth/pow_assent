@@ -46,6 +46,13 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert get_pow_assent_session(conn, :invitation_token) == "token"
     end
 
+    test "redirects with stored persistent session option", %{conn: conn} do
+      conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider, persistent_session: true)
+
+      assert conn.private[:plug_session]["pow_assent_session"]
+      assert get_pow_assent_session(conn, :store_persistent_session?)
+    end
+
     test "with error", %{conn: conn, bypass: bypass} do
       put_oauth2_env(bypass, strategy: FailAuthorizeURL)
 
@@ -218,6 +225,39 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert user_identity.provider == "test_provider"
       refute conn.private[:plug_session]["pow_assent_session"]
       refute get_pow_assent_session(conn, :session_params)
+    end
+  end
+
+
+  alias PowAssent.Test.PersistentSession.Phoenix.Endpoint, as: PersistentSessionEndpoint
+  describe "GET /auth/:provider/callback with PowPersistentSession" do
+    setup %{conn: conn} do
+      conn =
+        conn
+        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}, store_persistent_session?: true})
+        |> Conn.put_private(:plug_skip_csrf_protection, false)
+
+      {:ok, conn: conn}
+    end
+
+    test "when creates user with store_persistent_session? creates persistent session", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{sub: "new_user", email: "foo@example.com"})
+
+      conn = Phoenix.ConnTest.dispatch(conn, PersistentSessionEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      assert redirected_to(conn) == "/registration_created"
+      assert user = Pow.Plug.current_user(conn)
+      assert conn.resp_cookies["pow_assent_persistent_session_cookie"]
+    end
+
+    test "with authenticates with store_persistent_session? creates persistent session", %{conn: conn, bypass: bypass} do
+      expect_oauth2_flow(bypass, user: %{sub: "existing_user"})
+
+      conn = Phoenix.ConnTest.dispatch(conn, PersistentSessionEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      assert redirected_to(conn) == "/session_created"
+      assert user = Pow.Plug.current_user(conn)
+      assert conn.resp_cookies["pow_assent_persistent_session_cookie"]
     end
   end
 
