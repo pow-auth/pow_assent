@@ -43,7 +43,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
 
       user = Repo.get!(user.__struct__, user.id)
 
-      {:ok, %{user: user}}
+      {:ok, user: user}
     end
 
     test "retrieves", %{user: user} do
@@ -73,7 +73,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
         |> Changeset.change(email: "test@example.com")
         |> Repo.insert!()
 
-      {:ok, %{user: user}}
+      {:ok, user: user}
     end
 
     test "inserts with valid params", %{user: user} do

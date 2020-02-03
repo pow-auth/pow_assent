@@ -2,7 +2,7 @@ defmodule PowAssent.Test.OAuth2TestCase do
   @moduledoc false
   use ExUnit.CaseTemplate
 
-  setup _tags do
+  setup do
     params = %{"code" => "test", "state" => "test"}
     bypass = Bypass.open()
     config = [client_secret: "secret", site: "http://localhost:#{bypass.port}", session_params: %{state: "test"}]
