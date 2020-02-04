@@ -1,4 +1,4 @@
-defmodule PowAssent.Store.Session do
+defmodule PowAssent.Store.SessionCache do
   @moduledoc """
   Default module for session storage.
   """

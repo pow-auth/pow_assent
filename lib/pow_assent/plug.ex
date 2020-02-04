@@ -15,7 +15,7 @@ defmodule PowAssent.Plug do
         ]
   """
   alias Plug.Conn
-  alias PowAssent.{Config, Operations, Store.Session}
+  alias PowAssent.{Config, Operations, Store.SessionCache}
   alias Pow.{Plug, Store.Backend.EtsCache, UUID}
 
   @doc """
@@ -401,8 +401,8 @@ defmodule PowAssent.Plug do
 
   The session store can be changed by setting `:session_store` config option.
   By default it's
-  `{PowAssent.Store.Session, backend: Pow.Store.Backend.EtsCache}`. The backend
-  store can be changed by setting `:cache_store_backend` for the Pow
+  `{PowAssent.Store.SessionCache, backend: Pow.Store.Backend.EtsCache}`. The
+  backend store can be changed by setting `:cache_store_backend` for the Pow
   configuration.
   """
   @spec init_session(Conn.t()) :: Conn.t()
@@ -445,7 +445,7 @@ defmodule PowAssent.Plug do
   defp default_store(pow_config) do
     backend = Config.get(pow_config, :cache_store_backend, EtsCache)
 
-    {Session, [backend: backend]}
+    {SessionCache, [backend: backend]}
   end
 
   defp put_session_value(%{private: %{@private_session_info_key => :write, @private_session_key => session}} = conn, config, pow_config) when session != %{} do
