@@ -9,7 +9,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   @provider "test_provider"
   @callback_params %{code: "test", redirect_uri: "", state: "token"}
 
-  setup %{conn: conn} do
+  setup do
     user   = %User{id: 1}
     bypass = Bypass.open()
 
