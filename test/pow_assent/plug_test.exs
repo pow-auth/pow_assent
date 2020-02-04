@@ -3,19 +3,23 @@ defmodule PowAssent.PlugTest do
   doctest PowAssent.Plug
 
   alias Plug.{Conn, ProcessStore, Session, Test}
+  alias Pow.Plug.Session, as: PowSession
   alias PowAssent.Plug
   alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
 
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 
   @default_config [
-    plug: Pow.Plug.Session,
+    plug: PowSession,
     user: User,
     otp_app: :pow_assent,
-    repo: RepoMock
+    repo: RepoMock,
+    cache_store_backend: EtsCacheMock
   ]
 
   setup do
+    EtsCacheMock.init()
+
     {:ok, conn: init_session_conn()}
   end
 
@@ -49,13 +53,12 @@ defmodule PowAssent.PlugTest do
   end
 
   describe "callback/3" do
-    setup %{conn: conn} do
+    setup do
       bypass = Bypass.open()
-      conn   = init_session(conn)
 
       put_oauth2_env(bypass)
 
-      {:ok, conn: conn, bypass: bypass}
+      {:ok, bypass: bypass}
     end
 
     test "returns user params", %{conn: conn, bypass: bypass} do
@@ -82,11 +85,12 @@ defmodule PowAssent.PlugTest do
 
   test "authenticate/3", %{conn: conn} do
     assert {:error, _conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "new_user"})
+    refute Pow.Plug.current_user(conn)
+    refute fetch_session_id(conn)
 
     assert {:ok, conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "existing_user"})
-
     assert Pow.Plug.current_user(conn) == %User{id: 1, email: "test@example.com"}
-    assert_pow_session conn
+    assert fetch_session_id(conn)
   end
 
   describe "upsert_identity/3" do
@@ -102,21 +106,22 @@ defmodule PowAssent.PlugTest do
       assert {:ok, user_identity, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "new_identity"})
 
       assert user_identity.id == :inserted
-      assert_pow_session conn
+      assert fetch_session_id(conn)
     end
 
     test "updates user identity", %{conn: conn} do
       assert {:ok, user_identity, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "existing_user"})
 
       assert user_identity.id == :updated
-      assert_pow_session conn
+
+      assert fetch_session_id(conn)
     end
 
     test "with identity already taken", %{conn: conn} do
       assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.upsert_identity(conn, %{"provider" => "test_provider", "uid" => "identity_taken"})
 
       assert Pow.Plug.current_user(conn) == @user
-      refute_pow_session conn
+      refute fetch_session_id(conn)
     end
   end
 
@@ -128,17 +133,17 @@ defmodule PowAssent.PlugTest do
       assert {:ok, user, conn} = Plug.create_user(conn, @user_identity_attrs, @user_attrs)
 
       assert user.id == :inserted
-      assert_pow_session conn
+      assert fetch_session_id(conn)
     end
 
     test "with missing user id", %{conn: conn} do
       assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, @user_identity_attrs, Map.delete(@user_attrs, "email"))
-      refute_pow_session conn
+      refute fetch_session_id(conn)
     end
 
     test "with identity already taken", %{conn: conn} do
       assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, Map.put(@user_identity_attrs, "uid", "identity_taken"), @user_attrs)
-      refute_pow_session conn
+      refute fetch_session_id(conn)
     end
   end
 
@@ -179,8 +184,8 @@ defmodule PowAssent.PlugTest do
       assert Plug.available_providers(conn) == [:test_provider]
     end
 
-    test "with no provider configuration", %{conn: conn} do
-      conn = Pow.Plug.put_config(conn, otp_app: :my_app)
+    test "with no provider configuration" do
+      conn = conn(otp_app: :my_app)
 
       assert Plug.available_providers(conn) == []
     end
@@ -188,17 +193,8 @@ defmodule PowAssent.PlugTest do
 
   describe "init_session/1" do
     @store_config [namespace: "pow_assent_sessions"]
-    @config [cache_store_backend: EtsCacheMock]
 
-    setup %{conn: conn} do
-      conn = Pow.Plug.put_config(conn, @config)
-
-      EtsCacheMock.init()
-
-      {:ok, conn: conn}
-    end
-
-    test "initializes new sessionn", %{conn: conn} do
+    test "initializes new session", %{conn: conn} do
       init_conn = Plug.init_session(conn)
 
       assert init_conn.private[:pow_assent_session] == %{}
@@ -243,9 +239,10 @@ defmodule PowAssent.PlugTest do
         conn
         |> Conn.put_session(:pow_assent_session, key)
         |> Conn.send_resp(200, "")
-        |> recycle_session_conn(@config)
-
-      conn = Plug.init_session(conn)
+        |> recycle_session_conn()
+        |> init_session_conn()
+        |> Plug.init_session()
+        |> Conn.send_resp(200, "")
 
       refute conn.private[:plug_session]["pow_assent_session"]
       assert conn.private[:pow_assent_session] == %{a: 1}
@@ -264,32 +261,28 @@ defmodule PowAssent.PlugTest do
     assert conn.private[:pow_assent_session_info] == :write
   end
 
-  defp assert_pow_session(conn) do
-    assert conn.private[:plug_session]["pow_assent_auth"]
-  end
-  defp refute_pow_session(conn) do
-    refute conn.private[:plug_session]["pow_assent_auth"]
+  defp init_session_conn(conn \\ nil) do
+    (conn || conn(@default_config))
+    |> Session.call(Session.init(store: ProcessStore, key: "foobar"))
+    |> PowSession.call(PowSession.init(@default_config))
   end
 
-  defp init_session_conn() do
+  defp conn(config) do
     :get
     |> Test.conn("/")
-    |> Pow.Plug.put_config(@default_config)
-    |> init_session()
-    |> Conn.fetch_session()
+    |> Conn.put_private(:pow_config, config)
   end
 
-  defp init_session(conn) do
-    opts = Session.init(store: ProcessStore, key: "foobar")
-    Session.call(conn, opts)
-  end
-
-  defp recycle_session_conn(old_conn, config) do
-    :get
-    |> Test.conn("/")
-    |> Pow.Plug.put_config(config)
+  defp recycle_session_conn(old_conn) do
+    []
+    |> conn()
     |> Test.recycle_cookies(old_conn)
-    |> init_session()
-    |> Conn.fetch_session()
+    |> init_session_conn()
+  end
+
+  defp fetch_session_id(conn) do
+    conn = Conn.send_resp(conn, 200, "")
+
+    Map.get(conn.private[:plug_session], "pow_assent_auth")
   end
 end

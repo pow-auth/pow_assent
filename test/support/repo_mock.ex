@@ -36,7 +36,7 @@ defmodule PowAssent.Test.RepoMock do
   def insert(%{valid?: true, data: %mod{}} = changeset, _opts) do
     struct = %{Ecto.Changeset.apply_changes(changeset) | id: :inserted}
 
-    # We store the struct in the process because the struct is force reloaded with `get!/2`
+    # We store the struct in the process because the struct is force reloaded with `get_by!/2`
     Process.put({mod, :inserted}, struct)
 
     {:ok, struct}
@@ -46,13 +46,13 @@ defmodule PowAssent.Test.RepoMock do
   def update(%{valid?: true, data: %mod{}} = changeset, _opts) do
     struct = %{Ecto.Changeset.apply_changes(changeset) | id: :updated}
 
-    # We store the user in the process because the user is force reloaded with `get!/2`
+    # We store the user in the process because the user is force reloaded with `get_by!/2`
     Process.put({mod, :updated}, struct)
 
     {:ok, struct}
   end
 
-  def get!(struct, id, _opts), do: Process.get({struct, id})
+  def get_by!(struct, [id: id], _opts), do: Process.get({struct, id})
 
   def preload(%User{id: :multiple_identities} = user, :user_identities, force: true), do: %{user | user_identities: [%UserIdentity{id: 1, provider: "test_provider"}, %UserIdentity{id: 2, provider: "other_provider"}]}
   def preload(user, :user_identities, force: true), do: %{user | user_identities: [%UserIdentity{id: 1, provider: "test_provider"}]}
