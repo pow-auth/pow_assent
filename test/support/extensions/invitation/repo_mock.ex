@@ -11,5 +11,5 @@ defmodule PowAssent.Test.Invitation.RepoMock do
 
   defdelegate insert(changeset, opts), to: RepoMock
 
-  defdelegate get!(struct, id, opts), to: RepoMock
+  defdelegate get_by!(struct, clauses, opts), to: RepoMock
 end

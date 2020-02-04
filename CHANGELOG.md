@@ -4,6 +4,8 @@
 
 The callback flow has been changed so sessions are now stored in the backend cache with `PowAssent.Store.SessionCache` instead of using `Plug.Session`. This prevents exposure of sensitive data, as the only thing stored in the Plug session is a random UUID.
 
+Updated Pow requirement to `~> 1.0.17`.
+
 ### Enhancements
 
 * [`PowAssent.Plug`] Added `PowAssent.Plug.change_user/4`

@@ -258,7 +258,7 @@ defmodule PowAssent.Plug do
     |> Operations.get_user_by_provider_uid(uid, config)
     |> case do
       nil  -> {:error, conn}
-      user -> {:ok, Plug.get_plug(config).do_create(conn, user, config)}
+      user -> {:ok, Plug.create(conn, user)}
     end
   end
 
@@ -281,7 +281,7 @@ defmodule PowAssent.Plug do
     user
     |> Operations.upsert(user_identity_params, config)
     |> case do
-      {:ok, user_identity} -> {:ok, user_identity, Plug.get_plug(config).do_create(conn, user, config)}
+      {:ok, user_identity} -> {:ok, user_identity, Plug.create(conn, user)}
       {:error, error}      -> {:error, error, conn}
     end
   end
@@ -298,7 +298,7 @@ defmodule PowAssent.Plug do
     user_identity_params
     |> Operations.create_user(user_params, user_id_params, config)
     |> case do
-      {:ok, user}     -> {:ok, user, Plug.get_plug(config).do_create(conn, user, config)}
+      {:ok, user}     -> {:ok, user, Plug.create(conn, user)}
       {:error, error} -> {:error, error, conn}
     end
   end
