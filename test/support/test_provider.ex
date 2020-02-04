@@ -34,9 +34,11 @@ defmodule PowAssent.Test.TestProvider do
           client_id: "client_id",
           client_secret: "abc123",
           site: "http://localhost:#{bypass.port}",
-          strategy: __MODULE__
+          strategy: __MODULE__,
         ], config)
-      ]
+      ],
+      # We suppress the SSL warnings here as Bypass doesn't support SSL
+      http_adapter: {Assent.HTTPAdapter.Httpc, ssl: [verify_fun: :ok]}
     )
   end
 end
