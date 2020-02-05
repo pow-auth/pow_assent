@@ -78,6 +78,7 @@ defmodule PowAssent.MixProject do
         "guides/set_up_pow.md": [],
         "guides/capture_access_token.md": [],
         "guides/legacy_migration.md": [],
+        "guides/api.md": [],
       ],
       groups_for_modules: [
         Ecto: ~r/^PowAssent.Ecto/,
