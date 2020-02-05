@@ -232,9 +232,9 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     user_mod      = user!(config)
     user_id_field = user_mod.pow_user_id_field()
 
-    Enum.find_value(errors, false, fn
+    Enum.find_value(errors, {:error, changeset}, fn
       {^user_id_field, _error} -> {:error, {:invalid_user_id_field, changeset}}
-      _any                     -> {:error, changeset}
+      _any                     -> false
     end)
   end
   defp invalid_user_id_error(any, _config), do: any
