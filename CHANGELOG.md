@@ -20,9 +20,14 @@ Updated Pow requirement to `~> 1.0.17`.
 * [`PowAssent.Plug`] Added `PowAssent.Plug.put_session/3`
 * [`PowAssent.Plug`] Added `PowAssent.Plug.delete_session/2`
 
-## Bug fixes
+### Bug fixes
 
 * [`PowAssent.Ecto.Schema`] Fixed issue in `PowAssent.Ecto.Schema.changeset/2` where confirmation token was not set thus allowing users with unconfirmed email to sign in
+
+### Documentation
+
+* Added [legacy migration guide](guides/legacy_migration.md)
+* Added [API guide](guides/api.md)
 
 ## v0.4.5 (2019-12-06)
 
