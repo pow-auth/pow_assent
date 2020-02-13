@@ -303,7 +303,7 @@ PowAssent will pick it up in the authorization flow, and prevent creating a user
 
 By default Erlangs built-in `:httpc` is used for requests. SSL verification is automatically enabled when `:certifi` and `:ssl_verify_fun` packages are available. `:httpc` only supports HTTP/1.1.
 
-If you would like HTTP/2 support, you should consider adding [`Mint`](https://github.com/ninenines/mint) to your project.
+If you would like HTTP/2 support, you should consider adding [`Mint`](https://github.com/elixir-mint/mint) to your project.
 
 Update `mix.exs`:
 
