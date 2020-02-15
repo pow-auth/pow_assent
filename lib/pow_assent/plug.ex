@@ -171,7 +171,6 @@ defmodule PowAssent.Plug do
     case Pow.Plug.current_user(conn) do
       nil ->
         conn
-        |> Conn.put_private(:pow_assent_callback_action, :create_user)
         |> create_user(user_identity_params, user_params)
         |> case do
           {:ok, _user, conn} ->
