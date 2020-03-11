@@ -43,7 +43,7 @@ defmodule MyAppWeb.API.V1.AuthorizationController do
       {:ok, url, conn} ->
         json(conn, %{data: %{url: url, session_params: conn.private[:pow_assent_session_params]}})
 
-      {:error, _error} ->
+      {:error, _error, conn} ->
         conn
         |> put_status(500)
         |> json(%{error: %{status: 500, message: "An unexpected error occurred"}})
@@ -61,7 +61,7 @@ defmodule MyAppWeb.API.V1.AuthorizationController do
 
     conn
     |> Conn.put_private(:pow_assent_session_params, session_params)
-    |> Plug.callback_upsert(provider, params, redirect_uri(conn))
+    |> Plug.callback_upsert(provider, params, redirect_uri(conn, provider))
     |> case do
       {:ok, conn} ->
         json(conn, %{data: %{token: conn.private[:api_auth_token], renew_token: conn.private[:api_renew_token]}})
@@ -103,7 +103,12 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
     @behaviour Assent.Strategy
 
     @impl true
-    def authorize_url(_config), do: {:ok, %{url: "https://provider.example.com/oauth/authorize", session_params: %{a: 1}}}
+    def authorize_url(config) do
+      case config[:error] do
+        nil   -> {:ok, %{url: "https://provider.example.com/oauth/authorize", session_params: %{a: 1}}}
+        error -> {:error, error}
+      end
+    end
 
     @impl true
     def callback(_config, %{"code" => "valid"}), do: {:ok, %{user: %{"sub" => 1, "email" => "test@example.com"}, token: %{"access_token" => "access_Token"}}}
@@ -113,7 +118,8 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
   setup do
     Application.put_env(@otp_app, :pow_assent,
       providers: [
-        test_provider: [strategy: TestProvider]
+        test_provider: [strategy: TestProvider],
+        invalid_test_provider: [strategy: TestProvider, error: :invalid]
       ])
 
     :ok
@@ -126,6 +132,14 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
       assert json = json_response(conn, 200)
       assert json["data"]["url"] == "https://provider.example.com/oauth/authorize"
       assert json["data"]["session_params"] == %{"a" => 1}
+    end
+
+    test "with error", %{conn: conn} do
+      conn = get conn, Routes.api_v1_authorization_path(conn, :new, :invalid_test_provider)
+
+      assert json = json_response(conn, 500)
+      assert json["error"]["message"] == "An unexpected error occurred"
+      assert json["error"]["status"] == 500
     end
   end
 
