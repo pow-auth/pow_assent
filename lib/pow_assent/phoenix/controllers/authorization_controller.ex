@@ -191,17 +191,15 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     conn = Plug.delete_session(conn, :invitation_token)
 
     conn
-    |> PowInvitation.Plug.invited_user_from_token(token)
+    |> PowInvitation.Plug.load_invited_user_by_token(token)
     |> case do
-      nil ->
+      {:error, conn} ->
         conn
 
-      user ->
+      {:ok, %{assigns: %{invited_user: user}} = conn} ->
         config = PowPlug.fetch_config(conn)
 
-        conn
-        |> PowInvitation.Plug.assign_invited_user(user)
-        |> PowPlug.assign_current_user(user, config)
+        PowPlug.assign_current_user(conn, user, config)
     end
   end
   defp load_user_by_invitation_token(conn, _opts), do: conn
