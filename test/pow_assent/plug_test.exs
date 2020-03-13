@@ -281,7 +281,10 @@ defmodule PowAssent.PlugTest do
   end
 
   defp fetch_session_id(conn) do
-    conn = Conn.send_resp(conn, 200, "")
+    conn =
+      conn
+      |> Map.put(:secret_key_base, String.duplicate("abcdefghijklmnopqrstuvxyz0123456789", 2))
+      |> Conn.send_resp(200, "")
 
     Map.get(conn.private[:plug_session], "pow_assent_auth")
   end
