@@ -1,4 +1,4 @@
-defmodule PowAssent.ViewHelpersTest do
+defmodule PowAssent.Phoenix.ViewHelpersTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   alias Plug.Conn
@@ -56,5 +56,33 @@ defmodule PowAssent.ViewHelpersTest do
 
     [safe: iodata] = ViewHelpers.provider_links(conn)
     assert {:safe, iodata} == Link.link("Sign in with Test provider", to: "/auth/test_provider/new?invitation_token=token")
+  end
+
+  test "authorization_link/4 accepts blocks", %{conn: conn} do
+    {:safe, iodata} = ViewHelpers.authorization_link(conn, :test_provider) do
+      "Provider auth"
+    end
+
+    assert {:safe, iodata} == Link.link("Provider auth", to: "/auth/test_provider/new")
+
+    {:safe, iodata} = ViewHelpers.authorization_link(conn, :test_provider, class: "example") do
+      "Provider auth"
+    end
+
+    assert {:safe, iodata} == Link.link("Provider auth", to: "/auth/test_provider/new", class: "example")
+  end
+
+  test "deauthorization_link/4 accepts blocks", %{conn: conn} do
+    {:safe, iodata} = ViewHelpers.deauthorization_link(conn, :test_provider) do
+      "Provider remove"
+    end
+
+    assert {:safe, iodata} == Link.link("Provider remove", to: "/auth/test_provider", method: "delete")
+
+    {:safe, iodata} = ViewHelpers.deauthorization_link(conn, :test_provider, class: "example") do
+      "Provider remove"
+    end
+
+    assert {:safe, iodata} == Link.link("Provider remove", to: "/auth/test_provider", method: "delete", class: "example")
   end
 end

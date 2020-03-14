@@ -37,15 +37,24 @@ defmodule PowAssent.Phoenix.ViewHelpers do
   `:invited_user` is assigned to the conn, the invitation token will be passed
   on through the URL query params.
   """
-  @spec authorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
-  def authorization_link(conn, provider, opts \\ []) do
+  @spec authorization_link(Conn.t(), atom(), keyword(), keyword()) :: HTML.safe()
+  def authorization_link(conn, provider, opts \\ [])
+  def authorization_link(conn, provider, do: contents),
+    do: authorization_link(conn, provider, contents, [])
+  def authorization_link(conn, provider, opts) do
+    msg = AuthorizationController.extension_messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
+
+    authorization_link(conn, provider, msg, opts)
+  end
+  def authorization_link(conn, provider, opts, do: contents),
+    do: authorization_link(conn, provider, contents, opts)
+  def authorization_link(conn, provider, contents, opts) do
     query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
 
-    msg  = AuthorizationController.extension_messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider], query_params)
     opts = Keyword.merge(opts, to: path)
 
-    Link.link(msg, opts)
+    Link.link(contents, opts)
   end
 
   defp invitation_token_query_params(%{assigns: %{invited_user: %{invitation_token: token}}}), do: [invitation_token: token]
@@ -60,11 +69,20 @@ defmodule PowAssent.Phoenix.ViewHelpers do
   The link is used to remove authorization with the provider.
   """
   @spec deauthorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
-  def deauthorization_link(conn, provider, opts \\ []) do
-    msg  = AuthorizationController.extension_messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
+  def deauthorization_link(conn, provider, opts \\ [])
+  def deauthorization_link(conn, provider, do: contents),
+    do: deauthorization_link(conn, provider, contents, [])
+  def deauthorization_link(conn, provider, opts) do
+    msg = AuthorizationController.extension_messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
+
+    deauthorization_link(conn, provider, msg, opts)
+  end
+  def deauthorization_link(conn, provider, opts, do: contents),
+    do: deauthorization_link(conn, provider, contents, opts)
+  def deauthorization_link(conn, provider, contents, opts) do
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :delete, [provider])
     opts = Keyword.merge(opts, to: path, method: :delete)
 
-    Link.link(msg, opts)
+    Link.link(contents, opts)
   end
 end
