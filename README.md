@@ -194,10 +194,12 @@ For OIDC requests a nonce may be required. PowAssent can automatically generate 
 ```elixir
 config :my_app, :pow_assent,
   providers: [
-    github: [
+    example: [
       client_id: "REPLACE_WITH_CLIENT_ID",
+      site: "https://server.example.com",
+      authorization_params: [scope: "user:read user:write"]
       nonce: true,
-      strategy: Assent.Strategy.AzureAD
+      strategy: Assent.Strategy.OIDC
     ]
   ]
 ```
