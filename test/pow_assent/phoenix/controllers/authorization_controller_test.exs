@@ -187,7 +187,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert %{"test_provider" => %{user_identity: user_identity, user: user}} = get_pow_assent_session(conn, :callback_params)
-      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"email" => "", "name" => "John Doe", "sub" => "new_user"}}
       assert user == %{"name" => "John Doe", "email" => ""}
       refute get_pow_assent_session(conn, :session_params)
       assert get_pow_assent_session(conn, :callback_params)
@@ -202,7 +202,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert %{"test_provider" => %{user_identity: user_identity, user: user}} = get_pow_assent_session(conn, :callback_params)
-      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"email" => "taken@example.com", "name" => "John Doe", "sub" => "new_user"}}
       assert user == %{"name" => "John Doe", "email" => "taken@example.com"}
       refute get_pow_assent_session(conn, :session_params)
       assert get_pow_assent_session(conn, :callback_params)
@@ -310,7 +310,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert %{"test_provider" => %{user_identity: user_identity, user: user}} = get_pow_assent_session(conn, :callback_params)
-      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"email" => "taken@example.com", "email_verified" => true, "name" => "John Doe", "sub" => "new_user"}}
       assert user == %{"name" => "John Doe", "email" => "taken@example.com", "email_verified" => true}
       refute get_pow_assent_session(conn, :session_params)
       assert get_pow_assent_session(conn, :callback_params)
@@ -408,6 +408,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert user = Pow.Plug.current_user(conn)
       assert [user_identity] = user.user_identities
       assert user_identity.access_token == "access_token"
+      assert user_identity.name == "John Doe"
     end
 
     test "when identity exists updates identity", %{conn: conn, bypass: bypass} do

@@ -32,7 +32,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
   alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithoutUserIdentities, Users.UserWithCustomChangesetUserIdentities, Users.User}
 
   @config [repo: Repo, user: User]
-  @user_identity_params %{"provider" => "test_provider", "uid" => "1", "token" => %{"access_token" => "access_token"}}
+  @user_identity_params %{"provider" => "test_provider", "uid" => "1", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"name" => "John Doe"}}
   @user_identity %{provider: @user_identity_params["provider"], uid: @user_identity_params["uid"]}
 
   describe "get_user_by_provider_uid/2" do
@@ -93,8 +93,9 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
       assert {:ok, prev_user_identity} = Context.upsert(user, @user_identity_params, @config_with_access_token)
       assert prev_user_identity.access_token
       refute prev_user_identity.refresh_token
+      assert prev_user_identity.name
 
-      params = Map.merge(@user_identity_params, %{"token" => %{"access_token" => "changed_access_token", "refresh_token" => "refresh_token"}})
+      params = Map.merge(@user_identity_params, %{"token" => %{"access_token" => "changed_access_token", "refresh_token" => "refresh_token"}, "userinfo" => %{"name" => "John Doe Jr"}})
 
       assert {:ok, user_identity} = Context.upsert(user, params, @config_with_access_token)
       assert prev_user_identity.id == user_identity.id
@@ -102,12 +103,14 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
       assert user_identity.uid == "1"
       assert user_identity.access_token == "changed_access_token"
       assert user_identity.refresh_token == "refresh_token"
+      assert user_identity.name == "John Doe Jr"
 
       params = Map.put(@user_identity_params, "uid", 1)
 
       assert {:ok, user_identity} = Context.upsert(user, params, @config_with_access_token)
       assert user_identity.uid == "1"
       assert user_identity.access_token == "access_token"
+      assert user_identity.name == "John Doe"
     end
 
     test "when other user has provider uid", %{user: user} do
@@ -144,6 +147,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
       assert user_identity.provider == "test_provider"
       assert user_identity.uid == "1"
       assert user_identity.access_token == "access_token"
+      assert user_identity.name == "John Doe"
     end
 
     test "with integer uid param" do

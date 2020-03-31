@@ -5,7 +5,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
 
   @provider "test_provider"
   @token_params %{"access_token" => "access_token"}
-  @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}
+  @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params, "userinfo" => %{"sub" => "new_user", "name" => "John Doe"}}
   @user_params %{"name" => "John Doe"}
 
   setup %{conn: conn} do
@@ -166,6 +166,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert user = Pow.Plug.current_user(conn)
       assert [user_identity] = user.user_identities
       assert user_identity.access_token == "access_token"
+      assert user_identity.name == "John Doe"
     end
   end
 

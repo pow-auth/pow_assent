@@ -210,7 +210,10 @@ defmodule PowAssent.Plug do
   defp maybe_set_session_params_config(config, _conn), do: config
 
   defp parse_callback_response({:ok, %{user: user} = response}, provider, conn) do
-    other_params = Map.drop(response, [:user])
+    other_params =
+      response
+      |> Map.delete(:user)
+      |> Map.put(:userinfo, user)
 
     user
     |> normalize_username()

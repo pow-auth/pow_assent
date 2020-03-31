@@ -8,6 +8,8 @@ defmodule PowAssent.Test.WithCustomChangeset.UserIdentities.UserIdentity do
     field :access_token, :string
     field :refresh_token, :string
 
+    field :name, :string
+
     pow_assent_user_identity_fields()
 
     timestamps()
@@ -15,10 +17,12 @@ defmodule PowAssent.Test.WithCustomChangeset.UserIdentities.UserIdentity do
 
   def changeset(user_identity_or_changeset, attrs) do
     token_params = Map.get(attrs, "token") || Map.get(attrs, :token) || attrs
+    userinfo_params = Map.get(attrs, "userinfo", %{})
 
     user_identity_or_changeset
     |> pow_assent_changeset(attrs)
     |> Ecto.Changeset.cast(token_params, [:access_token, :refresh_token])
+    |> Ecto.Changeset.cast(userinfo_params, [:name])
     |> Ecto.Changeset.validate_required([:access_token])
   end
 end

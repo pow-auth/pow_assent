@@ -2,7 +2,10 @@
 
 ## v0.4.9 (TBA)
 
+### Enhancements
+
 * [`PowAssent.Plug`] Now stores a session cookie instead of using `Plug.Session` to prevent SameSite policy issue in `form_post` flow
+* [`PowAssent.Plug`] `PowAssent.Plug.callback/4` now adds the `userinfo` with claims to the user identity params
 
 ## v0.4.8 (2020-05-18)
 
