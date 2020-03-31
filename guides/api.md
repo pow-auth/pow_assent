@@ -75,7 +75,7 @@ defmodule MyAppWeb.API.V1.AuthorizationController do
 end
 ```
 
-`session_params` should be stored in the client. `https://client.example.com/auth/:provider/callback` is the  client side URI where the user will be redirected back to after authorization. The client should then send a POST request from the client to the callback URI in the API with the both the params received from the provider, and the `session_params` stored in the client.
+`session_params` should be stored in the client. `https://client.example.com/auth/:provider/callback` is the client side URI where the user will be redirected back to after authorization. The client should then send a POST request from the client to the callback URI in the API with the both the params received from the provider, and the `session_params` stored in the client.
 
 That's it!
 
