@@ -154,10 +154,10 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
   end
 
-  alias PowAssent.Test.WithAccessToken.Phoenix.Endpoint, as: WithAccessTokenEndpoint
+  alias PowAssent.Test.WithCustomChangeset.Phoenix.Endpoint, as: WithCustomChangesetEndpoint
   describe "POST /auth/:provider/create recording strategy params" do
     test "records", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch(conn, WithAccessTokenEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
+      conn = Phoenix.ConnTest.dispatch(conn, WithCustomChangesetEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]

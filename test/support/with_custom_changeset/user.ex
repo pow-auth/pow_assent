@@ -1,4 +1,4 @@
-defmodule PowAssent.Test.WithAccessToken.Users.User do
+defmodule PowAssent.Test.WithCustomChangeset.Users.User do
   @moduledoc false
   use Ecto.Schema
   use Pow.Ecto.Schema
