@@ -24,8 +24,7 @@ defmodule PowAssent.Test.Invitation.Phoenix.Endpoint do
     messages_backend: PowAssent.Test.Phoenix.Messages,
     mailer_backend: PowAssent.Test.Phoenix.MailerMock,
     repo: PowAssent.Test.Invitation.RepoMock,
-    otp_app: :pow_assent,
-    repo: PowAssent.Test.Invitation.RepoMock
+    otp_app: :pow_assent
 
   plug PowAssent.Test.Phoenix.Router
 end
