@@ -60,6 +60,12 @@ defmodule PowAssent.Ecto.SchemaTest do
       assert [user_identity] = changeset.changes.user_identities
       assert user_identity.errors[:uid_provider] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
     end
+
+    test "uses case insensitive value for user id" do
+      changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "Test@EXAMPLE.com", name: "John Doe"}, nil)
+      assert changeset.valid?
+      assert Ecto.Changeset.get_field(changeset, :email) == "test@example.com"
+    end
   end
 
   defmodule UsernameUserWithEmail do
