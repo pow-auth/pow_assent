@@ -197,7 +197,7 @@ config :my_app, :pow_assent,
     example: [
       client_id: "REPLACE_WITH_CLIENT_ID",
       site: "https://server.example.com",
-      authorization_params: [scope: "user:read user:write"]
+      authorization_params: [scope: "user:read user:write"],
       nonce: true,
       strategy: Assent.Strategy.OIDC
     ]
