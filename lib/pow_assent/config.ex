@@ -48,27 +48,52 @@ defmodule PowAssent.Config do
   def get_providers(config), do: get(config, :providers, [])
 
   @doc """
+  Merge new config for provider.
+
+  The new config values are deep merged with the existing provider config. Any
+  conflicting keys from the default config for the strategy will be fetched and
+  the provider config deep merged unto it.
+  """
+  @spec merge_provider_config(t(), atom(), t()) :: t()
+  def merge_provider_config(config, provider, new_provider_config) do
+    provider_config =
+      config
+      |> get_provider_config(provider)
+      |> deep_merge(new_provider_config)
+
+    default_config =
+      provider_config
+      |> Keyword.get(:strategy)
+      |> apply(:default_config, [provider_config])
+      |> Keyword.take(Keyword.keys(provider_config))
+
+    updated_provider_config = deep_merge(default_config, provider_config)
+
+    updated_config =
+      config
+      |> get_providers()
+      |> Keyword.put(provider, updated_provider_config)
+
+    put(config, :providers, updated_config)
+  end
+
+  defp deep_merge([{k1, _} | _] = left, [{k2, _} | _] = right) when is_atom(k1) and is_atom(k2) do
+    Keyword.merge(left, right, fn _k, left, right ->
+      deep_merge(left, right)
+    end)
+  end
+  defp deep_merge(_left, right), do: right
+
+  @doc """
   Gets the provider configuration from the provided configuration.
   """
-  @spec get_provider_config(t(), atom() | binary()) :: t() | no_return
+  @spec get_provider_config(t(), atom()) :: t() | no_return
   def get_provider_config(config, provider) do
     config
     |> get_providers()
-    |> get_for_provider(provider)
-    |> Kernel.||(raise_error("No provider configuration available for #{provider}."))
+    |> Keyword.get(provider)
+    |> Kernel.||(raise_no_provider_config_error(provider))
     |> add_global_config(config)
-  end
-
-  defp get_for_provider(providers_config, provider) when is_atom(provider) do
-    get(providers_config, provider)
-  end
-  defp get_for_provider(providers_config, provider) when is_binary(provider) do
-    Enum.find_value(providers_config, fn {key, value} ->
-      case Atom.to_string(key) do
-        ^provider -> value
-        _any      -> false
-      end
-    end)
   end
 
   defp add_global_config(provider_config, config) do
@@ -80,6 +105,12 @@ defmodule PowAssent.Config do
     |> Enum.map(&{&1, get(config, &1)})
     |> Enum.reject(&is_nil(elem(&1, 1)))
     |> Keyword.merge(provider_config)
+  end
+
+  @doc false
+  @spec raise_no_provider_config_error(any()) :: no_return
+  def raise_no_provider_config_error(provider) do
+    raise_error("No provider configuration available for #{provider}.")
   end
 
   @doc """

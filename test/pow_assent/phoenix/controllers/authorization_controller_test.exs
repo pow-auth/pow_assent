@@ -30,7 +30,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     test "redirects to authorization url", %{conn: conn, bypass: bypass} do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider)
 
-      assert redirected_to(conn) =~ "http://localhost:#{bypass.port}/oauth/authorize?client_id=client_id&redirect_uri=http%3A%2F%2Flocalhost%2Fauth%2Ftest_provider%2Fcallback&response_type=code&state="
+      assert redirected_to(conn) =~ "http://localhost:#{bypass.port}/oauth/authorize?client_id=client_id&"
       assert conn.private[:plug_session]["pow_assent_session"]
       assert get_pow_assent_session(conn, :session_params)[:state]
     end

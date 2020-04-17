@@ -30,7 +30,7 @@ defmodule PowAssent.PlugTest do
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
       assert %{private: %{pow_assent_session_params: %{state: state}}} = conn
-      assert url == "http://localhost:8888/oauth/authorize?client_id=client_id&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&state=#{state}"
+      assert get_query_param(url, "state") == state
     end
 
     test "uses nonce from config", %{conn: conn} do
@@ -40,15 +40,16 @@ defmodule PowAssent.PlugTest do
 
       assert %{private: %{pow_assent_session_params: %{state: state, nonce: nonce}}} = conn
       assert nonce == "nonce"
-      assert url == "http://localhost:8888/oauth/authorize?client_id=client_id&nonce=nonce&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&scope=openid&state=#{state}"
+      assert get_query_param(url, "nonce") == "nonce"
     end
 
     test "uses generated nonce when nonce in config set to true", %{conn: conn} do
       put_oauth2_env(%Bypass{port: 8888}, nonce: true, strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
+
       assert %{private: %{pow_assent_session_params: %{state: state, nonce: nonce}}} = conn
-      assert url == "http://localhost:8888/oauth/authorize?client_id=client_id&#{URI.encode_query(%{nonce: nonce})}&redirect_uri=https%3A%2F%2Fexample.com%2F&response_type=code&scope=openid&state=#{state}"
+      assert get_query_param(url, "nonce") == URI.encode(nonce)
     end
   end
 
@@ -309,6 +310,26 @@ defmodule PowAssent.PlugTest do
     assert conn.private[:pow_assent_session_info] == :write
   end
 
+  test "merge_provider_config/3", %{conn: conn} do
+    put_oauth2_env(%Bypass{port: 8888}, authorization_params: [a: 1, b: 2])
+
+    conn =
+      conn
+      |> Conn.put_private(:pow_config, @default_config)
+      |> Plug.merge_provider_config(:test_provider, authorization_params: [a: 2, c: 3])
+
+    config = Pow.Plug.fetch_config(conn)
+
+    assert config[:pow_assent][:providers][:test_provider][:authorization_params] == [scope: "user:read user:write", b: 2, a: 2, c: 3]
+    assert {:ok, url, _conn} = Plug.authorize_url(conn, :test_provider, "http://localhost:4000")
+    assert url =~ "http://localhost:8888/oauth/authorize?"
+
+    assert get_query_param(url, "a") == "2"
+    assert get_query_param(url, "b") == "2"
+    assert get_query_param(url, "c") == "3"
+    assert get_query_param(url, "scope") == "user:read user:write"
+  end
+
   defp init_session_conn(conn \\ nil) do
     (conn || conn(@default_config))
     |> Session.call(Session.init(store: ProcessStore, key: "foobar"))
@@ -335,5 +356,11 @@ defmodule PowAssent.PlugTest do
       |> Conn.send_resp(200, "")
 
     Map.get(conn.private[:plug_session], "pow_assent_auth")
+  end
+
+  defp get_query_param(uri, param) do
+    %{query: query} = URI.parse(uri)
+
+    URI.decode_query(query)[param]
   end
 end

@@ -369,7 +369,7 @@ defmodule PowAssent.Plug do
     conn
     |> Plug.current_user()
     |> get_all_providers_for_user(config)
-    |> Enum.map(&String.to_existing_atom(&1.provider))
+    |> Enum.map(&provider_to_atom!(&1.provider))
   end
 
   defp get_all_providers_for_user(nil, _config), do: []
@@ -410,6 +410,7 @@ defmodule PowAssent.Plug do
     |> get_provider_config(provider, redirect_uri)
   end
   defp get_provider_config(config, provider, redirect_uri) do
+    provider        = provider_to_atom!(provider)
     config          = Config.get_provider_config(config, provider)
     strategy        = config[:strategy]
     provider_config =
@@ -419,6 +420,16 @@ defmodule PowAssent.Plug do
 
     {strategy, provider_config}
   end
+
+  defp provider_to_atom!(provider) when is_binary(provider) do
+    try do
+      String.to_existing_atom(provider)
+    rescue
+      ArgumentError ->
+        Config.raise_no_provider_config_error(provider)
+    end
+  end
+  defp provider_to_atom!(provider) when is_atom(provider), do: provider
 
   @private_session_key :pow_assent_session
   @private_session_info_key :pow_assent_session_info
@@ -514,5 +525,26 @@ defmodule PowAssent.Plug do
     session = Map.delete(session, key)
 
     Conn.put_private(conn, @private_session_key, session)
+  end
+
+  @doc """
+  Merges existing provider config with new config in the conn.
+
+  The existing config is fetched with `fetch_config/1`, and the new config deep
+  merged unto it with `PowAssent.Config.merge_provider_config/3`. The updated
+  config will be set as `:pow_assent` config value for the Pow config for the
+  conn with `Pow.Plug.put_config/2`.
+  """
+  @spec merge_provider_config(Conn.t(), binary(), Keyword.t()) :: Conn.t()
+  def merge_provider_config(conn, provider, new_config) do
+    pow_config = Pow.Plug.fetch_config(conn)
+    provider   = provider_to_atom!(provider)
+
+    pow_assent_config =
+      conn
+      |> fetch_config()
+      |> Config.merge_provider_config(provider, new_config)
+
+    Pow.Plug.put_config(conn, Config.put(pow_config, :pow_assent, pow_assent_config))
   end
 end
