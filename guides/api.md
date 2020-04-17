@@ -111,7 +111,7 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
     end
 
     @impl true
-    def callback(_config, %{"code" => "valid"}), do: {:ok, %{user: %{"sub" => 1, "email" => "test@example.com"}, token: %{"access_token" => "access_Token"}}}
+    def callback(_config, %{"code" => "valid"}), do: {:ok, %{user: %{"sub" => 1, "email" => "test@example.com"}, token: %{"access_token" => "access_token"}}}
     def callback(_config, _params), do: {:error, "Invalid params"}
   end
 
