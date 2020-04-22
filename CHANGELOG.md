@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.7 (TBA)
+## v0.4.7 (2020-04-22)
 
 Now support Phoenix 1.5 and requires Pow `~> 1.0.19` and Elixir 1.7.
 
