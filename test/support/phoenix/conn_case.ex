@@ -6,7 +6,8 @@ defmodule PowAssent.Test.Phoenix.ConnCase do
 
   using do
     quote do
-      use ConnTest
+      import Plug.Conn
+      import Phoenix.ConnTest
 
       alias Router.Helpers, as: Routes
 
