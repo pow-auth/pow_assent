@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.9 (TBA)
+
+### Enhancements
+
+* [`PowAssent.Ecto.UserIdentities.Context`] Changed `PowAssent.Ecto.UserIdentities.Context.create_user/4` to return `{:invalid_user_id_field, changeset}` when there is only error(s) on the user id field
+
 ## v0.4.8 (2020-05-18)
 
 ### Enhancements

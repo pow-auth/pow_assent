@@ -210,7 +210,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     |> user_mod.user_identity_changeset(params, user_params, user_id_params)
     |> Context.do_insert(config)
     |> user_user_identity_bound_different_user_error()
-    |> invalid_user_id_error(config)
+    |> maybe_invalid_user_id_error(config)
   end
 
   defp user_user_identity_bound_different_user_error({:error, %{changes: %{user_identities: [%{errors: errors}]}} = changeset}) do
@@ -228,16 +228,16 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     end)
   end
 
-  defp invalid_user_id_error({:error, %{errors: errors} = changeset}, config) do
+  defp maybe_invalid_user_id_error({:error, %{errors: errors} = changeset}, config) do
     user_mod      = user!(config)
     user_id_field = user_mod.pow_user_id_field()
 
-    Enum.find_value(errors, {:error, changeset}, fn
-      {^user_id_field, _error} -> {:error, {:invalid_user_id_field, changeset}}
-      _any                     -> false
-    end)
+    case Keyword.keys(errors) do
+      [^user_id_field] -> {:error, {:invalid_user_id_field, changeset}}
+      _any             -> {:error, changeset}
+    end
   end
-  defp invalid_user_id_error(any, _config), do: any
+  defp maybe_invalid_user_id_error(any, _config), do: any
 
   @doc """
   Deletes a user identity for the provider and user.
