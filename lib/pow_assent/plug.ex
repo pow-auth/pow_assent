@@ -247,7 +247,8 @@ defmodule PowAssent.Plug do
   @doc """
   Authenticates a user with provider and provider user params.
 
-  If successful, a new session will be created.
+  If successful, a new session will be created. After session has been created
+  the callbacks stored with `put_create_session_callback/2` will run.
   """
   @spec authenticate(Conn.t(), map()) :: {:ok, Conn.t()} | {:error, Conn.t()}
   def authenticate(conn, %{"provider" => provider, "uid" => uid}) do
@@ -257,8 +258,36 @@ defmodule PowAssent.Plug do
     |> Operations.get_user_by_provider_uid(uid, config)
     |> case do
       nil  -> {:error, conn}
-      user -> {:ok, Plug.create(conn, user)}
+      user -> {:ok, create_session(conn, user, provider, config)}
     end
+  end
+
+  defp create_session(conn, user, %{"provider" => provider}, config), do: create_session(conn, user, provider, config)
+  defp create_session(conn, user, provider, config) when is_binary(provider) do
+    conn = Plug.create(conn, user)
+
+    conn
+    |> fetch_create_session_callbacks()
+    |> Enum.reduce(conn, fn callback, conn ->
+      callback.(conn, provider, config)
+    end)
+  end
+
+  defp fetch_create_session_callbacks(conn) do
+    Map.get(conn.private, :pow_assent_create_session_callbacks, [])
+  end
+
+  @doc """
+  Store a callback method to run after session is created.
+  """
+  @spec put_create_session_callback(Conn.t(), function()) :: Conn.t()
+  def put_create_session_callback(conn, callback) do
+    callbacks =
+      conn
+      |> fetch_create_session_callbacks()
+      |> Kernel.++([callback])
+
+    Conn.put_private(conn, :pow_assent_create_session_callbacks, callbacks)
   end
 
   # TODO: Remove by 0.4.0
@@ -270,7 +299,8 @@ defmodule PowAssent.Plug do
   @doc """
   Will upsert identity for the current user.
 
-  If successful, a new session will be created.
+  If successful, a new session will be created. After session has been created
+  the callbacks stored with `put_create_session_callback/2` will run.
   """
   @spec upsert_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
   def upsert_identity(conn, user_identity_params) do
@@ -280,7 +310,7 @@ defmodule PowAssent.Plug do
     user
     |> Operations.upsert(user_identity_params, config)
     |> case do
-      {:ok, user_identity} -> {:ok, user_identity, Plug.create(conn, user)}
+      {:ok, user_identity} -> {:ok, user_identity, create_session(conn, user, user_identity_params, config)}
       {:error, error}      -> {:error, error, conn}
     end
   end
@@ -288,7 +318,8 @@ defmodule PowAssent.Plug do
   @doc """
   Create a user with the provider and provider user params.
 
-  If successful, a new session will be created.
+  If successful, a new session will be created. After session has been created
+  the callbacks stored with `put_create_session_callback/2` will run.
   """
   @spec create_user(Conn.t(), map(), map(), map() | nil) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()} | map(), Conn.t()}
   def create_user(conn, user_identity_params, user_params, user_id_params \\ nil) do
@@ -297,7 +328,7 @@ defmodule PowAssent.Plug do
     user_identity_params
     |> Operations.create_user(user_params, user_id_params, config)
     |> case do
-      {:ok, user}     -> {:ok, user, Plug.create(conn, user)}
+      {:ok, user}     -> {:ok, user, create_session(conn, user, user_identity_params, config)}
       {:error, error} -> {:error, error, conn}
     end
   end
@@ -359,7 +390,13 @@ defmodule PowAssent.Plug do
     |> Keyword.keys()
   end
 
-  defp fetch_config(conn) do
+  @doc """
+  Fetch PowAssent configuration from the Pow configration.
+
+  Calls `Pow.Plug.fetch_config/1` and fetches the `pow_assent` key value.
+  """
+  @spec fetch_config(Conn.t()) :: Config.t()
+  def fetch_config(conn) do
     config = Plug.fetch_config(conn)
 
     config

@@ -384,6 +384,16 @@ PowAssent works out of the box with PowInvitation.
 
 Provider links will have an `invitation_token` query param if an invited user exists in the connection. This will be used in the authorization callback flow to load the invited user. If a user identity is created, the invited user will have the `:invitation_accepted_at` set.
 
+### PowPersistentSession
+
+PowAssent doesn't support `PowPersistentSession`. However you can enable `PowPersistentSession` by using the `PowAssent.Plug.put_create_session_callback/2` method:
+
+```elixir
+PowAssent.Plug.put_create_session_callback(conn, fn conn, _provider, _config ->
+  PowPersistentSession.Plug.create(conn, Pow.Plug.current_user(conn))
+end)
+```
+
 ## Security concerns
 
 All sessions created through PowAssent provider authentication are temporary. However, it's a good idea to do some housekeeping in your app and make sure that you have the level of security as warranted by the scope of your app. That may include requiring users to re-authenticate before viewing or editing their user details.
