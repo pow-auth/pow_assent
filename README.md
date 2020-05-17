@@ -412,9 +412,26 @@ end
 You can also enable `PowPersistentSession` by using the `PowAssent.Plug.put_create_session_callback/2` method:
 
 ```elixir
-PowAssent.Plug.put_create_session_callback(conn, fn conn, _provider, _config ->
-  PowPersistentSession.Plug.create(conn, Pow.Plug.current_user(conn))
-end)
+defmodule MyAppWeb.Router do
+  use Phoenix.Router
+  # ...
+
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug :pow_assent_persistent_session
+  end
+
+  defp pow_assent_persistent_session(conn, _opts) do
+    PowAssent.Plug.put_create_session_callback(conn, fn conn, _provider, _config ->
+      PowPersistentSession.Plug.create(conn, Pow.Plug.current_user(conn))
+    end)
+  end
+
+  # ...
 ```
 
 ## Security concerns
