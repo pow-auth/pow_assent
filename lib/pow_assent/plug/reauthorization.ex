@@ -2,6 +2,22 @@ defmodule PowAssent.Plug.Reauthorization do
   @moduledoc """
   This plug can reauthorize a user who signed in through a provider.
 
+  The plug is dependent on a `:handler` that has the following methods:
+
+   * `reauthorize?/2` - verifies the request for reauthorization condition. If
+    the condition exists for the request (usually the sign in path), the
+    reauthorization cookie will be fetched and deleted, the `reauthorize/2`
+    callback will be called, and the connection halted.
+
+  * `clear_reauthorization?/2` - verifies the request for clear reauthorization
+    condition. If the condition exists (usually the session delete path) then
+    the cookie is deleted.
+
+  * `reauthorize/3` - the callback to handle the request when a reauthorization
+    condition exists. Usually this would redirect the user.
+
+  See `PowAssent.Phoenix.ReauthorizationPlugHandler` for a Phoenix example.
+
   ## Example
 
       plug PowAssent.Plug.Reauthorization,

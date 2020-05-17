@@ -12,6 +12,12 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandler do
   alias PowAssent.Phoenix.AuthorizationController
   alias Pow.{Config, Phoenix.SessionController}
 
+  @doc """
+  Checks if the user should be reauthorized.
+
+  Returns true when the request path matches
+  `Pow.Phoenix.Routes.user_not_authenticated_path/1`.
+  """
   @spec reauthorize?(Conn.t(), Config.t()) :: boolean()
   def reauthorize?(conn, config) do
     check_conn!(conn, config)
@@ -30,6 +36,15 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandler do
   defp compare_paths(%{path: path}, %{path: path}), do: true
   defp compare_paths(_, _), do: false
 
+  @doc """
+  Reauthorize callback.
+
+  Redirects the user to the authorization path where they will be redirected to
+  the provider. The `request_path` is automatically appended to uri query if
+  found in params.
+
+  See `PowAssent.Plug.Reauthorization` for more.
+  """
   @spec reauthorize(Conn.t(), binary(), Config.t()) :: Conn.t()
   def reauthorize(conn, provider, config) do
     check_conn!(conn, config)
@@ -43,6 +58,12 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandler do
   defp check_conn!(%{private: %{phoenix_router: _router}}, _config), do: :ok
   defp check_conn!(_conn, config), do: raise_missing_phoenix_router(config)
 
+  @doc """
+  Checks the reauthorization should be cleared.
+
+  Returns true when the request path matches
+  `Routes.pow_session_path(conn, :delete)`.
+  """
   @spec clear_reauthorization?(Conn.t(), Config.t()) :: boolean()
   def clear_reauthorization?(conn, config) do
     check_conn!(conn, config)
