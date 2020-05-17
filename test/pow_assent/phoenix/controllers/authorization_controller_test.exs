@@ -60,8 +60,10 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   end
 
   describe "GET /auth/:provider/callback" do
+    @pow_assent_session %{session_params: %{state: "token"}}
+
     setup %{conn: conn} do
-      conn = Conn.put_private(conn, :pow_assent_session, %{session_params: %{state: "token"}})
+      conn = Conn.put_private(conn, :pow_assent_session, @pow_assent_session)
 
       {:ok, conn: conn}
     end
@@ -191,7 +193,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       conn =
         conn
-        |> Conn.put_private(:pow_assent_session, %{request_path: "/custom-uri"})
+        |> Conn.put_private(:pow_assent_session, Map.put(@pow_assent_session, :request_path, "/custom-uri"))
         |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/custom-uri"
@@ -201,10 +203,12 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   end
 
   describe "POST /auth/:provider/callback" do
+    @pow_assent_session %{session_params: %{state: "token"}}
+
     setup %{conn: conn} do
       conn =
         conn
-        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}})
+        |> Conn.put_private(:pow_assent_session, @pow_assent_session)
         |> Conn.put_private(:plug_skip_csrf_protection, false)
 
       {:ok, conn: conn}
@@ -227,10 +231,12 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   alias PowAssent.Test.EmailConfirmation.Phoenix.Endpoint, as: EmailConfirmationEndpoint
   describe "GET /auth/:provider/callback with PowEmailConfirmation" do
+    @pow_assent_session %{session_params: %{state: "token"}}
+
     setup %{conn: conn} do
       conn =
         conn
-        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}})
+        |> Conn.put_private(:pow_assent_session, @pow_assent_session)
         |> Conn.put_private(:plug_skip_csrf_protection, false)
 
       {:ok, conn: conn}
@@ -311,10 +317,11 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       expect_oauth2_flow(bypass, user: %{sub: "new_identity"})
 
       signed_token = sign_invitation_token(conn, "token")
+      session      = %{session_params: %{state: "token"}, invitation_token: signed_token}
 
       conn =
         conn
-        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}, invitation_token: signed_token})
+        |> Conn.put_private(:pow_assent_session, session)
         |> Phoenix.ConnTest.dispatch(InvitationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/session_created"
@@ -329,12 +336,14 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   alias PowAssent.Test.NoRegistration.Phoenix.Endpoint, as: NoRegistrationEndpoint
   describe "GET /auth/:provider/callback as authentication with missing registration routes" do
+    @pow_assent_session %{session_params: %{state: "token"}}
+
     test "can't register", %{conn: conn, bypass: bypass} do
       expect_oauth2_flow(bypass, user: %{sub: "new_user"})
 
       conn =
         conn
-        |> Conn.put_private(:pow_assent_session, %{session_params: %{state: "token"}})
+        |> Conn.put_private(:pow_assent_session, @pow_assent_session)
         |> Phoenix.ConnTest.dispatch(NoRegistrationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       refute Pow.Plug.current_user(conn)
@@ -349,10 +358,11 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   alias PowAssent.Test.WithAccessToken.Phoenix.Endpoint, as: WithAccessTokenEndpoint
   alias PowAssent.Test.WithAccessToken.Users.User, as: WithAccessTokenUser
   describe "GET /auth/:provider/callback recording strategy params" do
-    setup do
+    setup %{conn: conn} do
       user = %WithAccessTokenUser{id: 1}
+      conn = Conn.put_private(conn, :pow_assent_session, %{session_params: %{}})
 
-      {:ok, user: user}
+      {:ok, user: user, conn: conn}
     end
 
     test "with new identity", %{conn: conn, bypass: bypass, user: user} do
