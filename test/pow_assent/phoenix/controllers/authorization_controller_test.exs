@@ -2,6 +2,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
+  import ExUnit.CaptureLog
 
   alias Plug.Conn
   alias PowAssent.Test.Ecto.Users.User
@@ -53,9 +54,14 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     test "with error", %{conn: conn, bypass: bypass} do
       put_oauth2_env(bypass, strategy: FailAuthorizeURL)
 
-      assert_raise RuntimeError, "fail", fn ->
-        get(conn, Routes.pow_assent_authorization_path(conn, :new, @provider))
-      end
+      assert capture_log(fn ->
+        conn = get(conn, Routes.pow_assent_authorization_path(conn, :new, @provider))
+
+        assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+        assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
+        refute conn.private[:plug_session]["pow_assent_session"]
+        refute get_pow_assent_session(conn, :session_params)
+      end) =~ "Strategy failed with error: \"fail\""
     end
   end
 
@@ -75,23 +81,38 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         |> send_resp(401, Jason.encode!(%{error: "invalid_client"}))
       end)
 
-      assert_raise Assent.RequestError, ~r/Server responded with status: 401/, fn ->
-        get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
-      end
+      assert capture_log(fn ->
+        conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+
+        assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+        assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
+        refute conn.private[:plug_session]["pow_assent_session"]
+        refute get_pow_assent_session(conn, :session_params)
+      end) =~ "Strategy failed with error: %Assent.RequestError{error: :invalid_server_response, message: \"Server responded with status: 401"
     end
 
     test "with timeout", %{conn: conn, bypass: bypass} do
       Bypass.down(bypass)
 
-      assert_raise Assent.RequestError, ~r/Server was unreachable with Assent.HTTPAdapter.Httpc/, fn ->
-        get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
-      end
+      assert capture_log(fn ->
+        conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+
+        assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+        assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
+        refute conn.private[:plug_session]["pow_assent_session"]
+        refute get_pow_assent_session(conn, :session_params)
+      end) =~ "Strategy failed with error: %Assent.RequestError{error: :unreachable, message: \"Server was unreachable with Assent.HTTPAdapter.Httpc."
     end
 
     test "with invalid state", %{conn: conn} do
-      assert_raise Assent.CallbackCSRFError, fn ->
-        get(conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, Map.put(@callback_params, :state, "invalid")))
-      end
+      assert capture_log(fn ->
+        conn = get(conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, Map.put(@callback_params, :state, "invalid")))
+
+        assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+        assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
+        refute conn.private[:plug_session]["pow_assent_session"]
+        refute get_pow_assent_session(conn, :session_params)
+      end) =~ "Strategy failed with error: %Assent.CallbackCSRFError{message: \"CSRF detected with param key \\\"state\\\"\"}"
     end
 
     test "when identity exists authenticates", %{conn: conn, bypass: bypass} do
