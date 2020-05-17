@@ -53,12 +53,14 @@ defmodule PowAssent.PlugTest do
   end
 
   describe "callback/3" do
-    setup do
+    setup %{conn: conn} do
       bypass = Bypass.open()
 
       put_oauth2_env(bypass)
 
-      {:ok, bypass: bypass}
+      conn = Conn.put_private(conn, :pow_assent_session_params, %{})
+
+      {:ok, conn: conn, bypass: bypass}
     end
 
     test "returns user params", %{conn: conn, bypass: bypass} do
