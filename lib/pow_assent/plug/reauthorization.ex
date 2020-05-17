@@ -52,28 +52,59 @@ defmodule PowAssent.Plug.Reauthorization do
 
   @doc false
   @spec call(Conn.t(), {Config.t(), {module(), Config.t()}}) :: Conn.t()
-  def call(conn, {config, handler}) do
+  def call(conn, {config, {handler, handler_config}}) do
     config =
       conn
       |> Plug.fetch_config()
       |> Config.merge(config)
 
-    conn
-    |> maybe_reauthorize_with_provider(handler, config)
-    |> Plug.put_create_session_callback(&store_reauthorization_provider/3)
+    conn =
+      conn
+      |> Conn.fetch_cookies()
+      |> Plug.put_create_session_callback(&store_reauthorization_provider/3)
+
+    provider = get_reauthorization_provider(conn, {handler, handler_config}, config)
+
+    cond do
+      provider ->
+        conn
+        |> clear_cookie(config)
+        |> handler.reauthorize(provider, handler_config)
+        |> Conn.halt()
+
+      clear_reauthorization?(conn,  {handler, handler_config}) ->
+        clear_cookie(conn, config)
+
+      true ->
+        conn
+    end
   end
 
-  defp maybe_reauthorize_with_provider(conn, {handler, handler_config}, config) do
-    conn = Conn.fetch_cookies(conn)
+  defp store_reauthorization_provider(conn, provider, config) do
+    Conn.register_before_send(conn, &Conn.put_resp_cookie(&1, cookie_key(config), provider, cookie_opts(config)))
+  end
 
+  defp cookie_key(config) do
+    Config.get(config, :reauthorization_cookie_key, default_cookie_key(config))
+  end
+
+  defp default_cookie_key(config) do
+    PowPlug.prepend_with_namespace(config, @cookie_key)
+  end
+
+  defp cookie_opts(config) do
+    config
+    |> Config.get(:reauthorization_cookie_opts, [])
+    |> Keyword.put_new(:max_age, @cookie_max_age)
+    |> Keyword.put_new(:path, "/")
+  end
+
+  defp get_reauthorization_provider(conn, {handler, handler_config}, config) do
     with :ok             <- check_should_reauthorize(conn, {handler, handler_config}),
          {:ok, provider} <- fetch_provider_from_cookie(conn, config) do
-      conn
-      |> Conn.put_resp_cookie(cookie_key(config), "", max_age: -1)
-      |> handler.reauthorize(provider, handler_config)
-      |> Conn.halt()
+      provider
     else
-      :error -> conn
+      :error -> nil
     end
   end
 
@@ -100,24 +131,12 @@ defmodule PowAssent.Plug.Reauthorization do
     end
   end
 
-  defp store_reauthorization_provider(conn, provider, config) do
-    Conn.register_before_send(conn, &Conn.put_resp_cookie(&1, cookie_key(config), provider, cookie_opts(config)))
+  defp clear_cookie(conn, config) do
+    Conn.put_resp_cookie(conn, cookie_key(config), "", max_age: -1)
   end
 
-  defp cookie_key(config) do
-    Config.get(config, :reauthorization_cookie_key, default_cookie_key(config))
-  end
-
-  defp default_cookie_key(config) do
-    PowPlug.prepend_with_namespace(config, @cookie_key)
-  end
-
-  defp cookie_opts(config) do
-    config
-    |> Config.get(:reauthorization_cookie_opts, [])
-    |> Keyword.put_new(:max_age, @cookie_max_age)
-    |> Keyword.put_new(:path, "/")
-  end
+  defp clear_reauthorization?(conn, {handler, handler_config}),
+    do: handler.clear_reauthorization?(conn, handler_config)
 
   @spec raise_no_handler :: no_return
   defp raise_no_handler do

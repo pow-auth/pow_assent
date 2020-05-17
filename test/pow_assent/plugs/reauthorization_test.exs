@@ -13,6 +13,9 @@ defmodule PowAssent.Plug.ReauthorizationTest do
     def reauthorize?(%{private: %{reauthorize?: true}}, _config), do: true
     def reauthorize?(_conn, _config), do: false
 
+    def clear_reauthorization?(%{private: %{clear_reauthorization?: true}}, _config), do: true
+    def clear_reauthorization?(_conn, _config), do: false
+
     def reauthorize(conn, provider, _config) do
       conn
       |> Conn.put_private(:reauthorizing, provider)
@@ -59,6 +62,7 @@ defmodule PowAssent.Plug.ReauthorizationTest do
         |> init_plug(@plug_opts)
 
       refute conn.halted
+      assert conn.resp_cookies == %{}
     end
 
     test "when not in reauthorization condition with cookie set", %{conn: conn} do
@@ -68,6 +72,7 @@ defmodule PowAssent.Plug.ReauthorizationTest do
         |> init_plug(@plug_opts)
 
       refute conn.halted
+      assert conn.resp_cookies == %{}
     end
 
     test "when in reauthorization condition with cookie set with invalid provider", %{conn: conn} do
@@ -109,6 +114,19 @@ defmodule PowAssent.Plug.ReauthorizationTest do
       assert cookie.value == ""
       assert cookie.max_age == -1
     end
+
+    test "when in clear reauthorization condition", %{conn: conn} do
+      conn =
+        conn
+        |> with_clear_reauthorization_condition()
+        |> with_reauthorization_cookie()
+        |> init_plug(@plug_opts)
+
+      refute conn.halted
+      assert cookie = conn.resp_cookies[@cookie_key]
+      assert cookie.value == ""
+      assert cookie.max_age == -1
+    end
   end
 
   describe "call/2 when session is created" do
@@ -139,6 +157,8 @@ defmodule PowAssent.Plug.ReauthorizationTest do
   end
 
   defp with_reauthorization_condition(conn), do: Conn.put_private(conn, :reauthorize?, true)
+
+  defp with_clear_reauthorization_condition(conn), do: Conn.put_private(conn, :clear_reauthorization?, true)
 
   defp with_reauthorization_cookie(conn, provider \\ "test_provider", key \\ @cookie_key) do
     cookies = Map.new([{key, provider}])
