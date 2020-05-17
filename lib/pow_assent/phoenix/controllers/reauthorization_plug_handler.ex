@@ -59,7 +59,7 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandler do
   defp check_conn!(_conn, config), do: raise_missing_phoenix_router(config)
 
   @doc """
-  Checks the reauthorization should be cleared.
+  Checks if the reauthorization should be cleared.
 
   Returns true when the request path matches
   `Routes.pow_session_path(conn, :delete)`.
