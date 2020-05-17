@@ -386,7 +386,30 @@ Provider links will have an `invitation_token` query param if an invited user ex
 
 ### PowPersistentSession
 
-PowAssent doesn't support `PowPersistentSession`. However you can enable `PowPersistentSession` by using the `PowAssent.Plug.put_create_session_callback/2` method:
+PowAssent doesn't support `PowPersistentSession`, as it's recommended to let the provider handle persistent session. `PowAssent.Plug.Reauthorization` can be used for this purpose.
+
+You can enable the reauthorization plug in your `WEB_PATH/router.ex` by adding it to a pipeline:
+
+```elixir
+defmodule MyAppWeb.Router do
+  use Phoenix.Router
+  # ...
+
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+  end
+
+  # ...
+end
+```
+
+You can also enable `PowPersistentSession` by using the `PowAssent.Plug.put_create_session_callback/2` method:
 
 ```elixir
 PowAssent.Plug.put_create_session_callback(conn, fn conn, _provider, _config ->

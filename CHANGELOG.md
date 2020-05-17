@@ -7,6 +7,7 @@
 * [`PowAssent.Plug`] Added `PowAssent.Plug.put_create_session_callback/2`
 * [`PowAssent.Plug`] Added `PowAssent.Plug.fetch_config/1`
 * [`PowAssent.Plug`] Now calls create session callbacks set with `PowAssent.Plug.put_create_session_callback/2` when a session is created
+* [`PowAssent.Plug.Reauthorization`] Added plug to enable reauthorization
 
 ## v0.4.7 (2020-04-22)
 
