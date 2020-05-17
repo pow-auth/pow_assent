@@ -384,6 +384,56 @@ PowAssent works out of the box with PowInvitation.
 
 Provider links will have an `invitation_token` query param if an invited user exists in the connection. This will be used in the authorization callback flow to load the invited user. If a user identity is created, the invited user will have the `:invitation_accepted_at` set.
 
+### PowPersistentSession
+
+PowAssent doesn't support `PowPersistentSession`, as it's recommended to let the provider handle persistent session. `PowAssent.Plug.Reauthorization` can be used for this purpose.
+
+You can enable the reauthorization plug in your `WEB_PATH/router.ex` by adding it to a pipeline:
+
+```elixir
+defmodule MyAppWeb.Router do
+  use Phoenix.Router
+  # ...
+
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+  end
+
+  # ...
+end
+```
+
+You can also enable `PowPersistentSession` by using the `PowAssent.Plug.put_create_session_callback/2` method:
+
+```elixir
+defmodule MyAppWeb.Router do
+  use Phoenix.Router
+  # ...
+
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug :pow_assent_persistent_session
+  end
+
+  defp pow_assent_persistent_session(conn, _opts) do
+    PowAssent.Plug.put_create_session_callback(conn, fn conn, _provider, _config ->
+      PowPersistentSession.Plug.create(conn, Pow.Plug.current_user(conn))
+    end)
+  end
+
+  # ...
+```
+
 ## Security concerns
 
 All sessions created through PowAssent provider authentication are temporary. However, it's a good idea to do some housekeeping in your app and make sure that you have the level of security as warranted by the scope of your app. That may include requiring users to re-authenticate before viewing or editing their user details.
