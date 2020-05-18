@@ -27,43 +27,60 @@ defmodule PowAssent.Phoenix.Messages do
 
   See `Pow.Extension.Phoenix.Messages` for more.
   """
-
   alias Phoenix.Naming
-  alias Plug.Conn
-  alias PowAssent.Phoenix.Messages
 
-  @type message :: Messages.message()
+  @doc """
+  Message for when user has signed in.
 
-  @spec signed_in(Conn.t()) :: message()
+  Defaults to nil.
+  """
   def signed_in(_conn), do: nil
 
-  @spec could_not_sign_in(Conn.t()) :: message()
+  @doc """
+  Message for when user couldn't be signed in.
+  """
   def could_not_sign_in(_conn),
     do: "Something went wrong, and you couldn't be signed in. Please try again."
 
-  @spec user_has_been_created(Conn.t()) :: message()
+  @doc """
+  Message for when user has signed up successfully.
+
+  Defaults to nil.
+  """
   def user_has_been_created(_conn), do: nil
 
-  @spec account_already_bound_to_other_user(Conn.t()) :: message()
+  @doc """
+  Message for when provider account already exists for another user.
+  """
   def account_already_bound_to_other_user(conn),
     do: interpolate("The %{provider} account is already bound to another user.", provider: Naming.humanize(conn.params["provider"]))
 
-  @spec authentication_has_been_removed(Conn.t()) :: message()
+  @doc """
+  Message for when provider identity has been deleted for user.
+  """
   def authentication_has_been_removed(conn),
     do: interpolate("Authentication with %{provider} has been removed", provider: Naming.humanize(conn.params["provider"]))
 
-  @spec identity_cannot_be_removed_missing_user_password(Conn.t()) :: message()
+  @doc """
+  Message for when user password is required to delete provider identity.
+  """
   def identity_cannot_be_removed_missing_user_password(_conn),
     do: "Authentication cannot be removed until you've entered a password for your account."
 
-  @spec invalid_request(Conn.t()) :: message()
+  @doc """
+  Message for invalid request.
+  """
   def invalid_request(_conn), do: "Invalid Request."
 
-  @spec login_with_provider(Conn.t()) :: message()
+  @doc """
+  Message for provider login button.
+  """
   def login_with_provider(conn),
     do: interpolate("Sign in with %{provider}", provider: Naming.humanize(conn.params["provider"]))
 
-  @spec remove_provider_authentication(Conn.t()) :: message()
+  @doc """
+  Message for provider identity deletion button.
+  """
   def remove_provider_authentication(conn),
     do: interpolate("Remove %{provider} authentication", provider: Naming.humanize(conn.params["provider"]))
 
