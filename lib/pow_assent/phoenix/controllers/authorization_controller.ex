@@ -2,6 +2,8 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   @moduledoc false
   use Pow.Extension.Phoenix.Controller.Base
 
+  require Logger
+
   alias Plug.Conn
   alias PowAssent.{Phoenix.AuthorizationController, Phoenix.RegistrationController, Plug}
   alias Pow.Extension.Config, as: ExtensionConfig
@@ -29,7 +31,7 @@ defmodule PowAssent.Phoenix.AuthorizationController do
     |> maybe_store_invitation_token()
     |> redirect(external: url)
   end
-  def respond_new({:error, error, _conn}), do: handle_strategy_error(error)
+  def respond_new({:error, error, conn}), do: handle_strategy_error(conn, error)
 
   defp maybe_store_session_params(%{private: %{pow_assent_session_params: params}} = conn),
     do: Plug.put_session(conn, :session_params, params)
@@ -63,8 +65,8 @@ defmodule PowAssent.Phoenix.AuthorizationController do
       |> redirect(to: routes(conn).after_sign_in_path(conn))
     end)
   end
-  def respond_callback({:error, %{private: %{pow_assent_callback_state: {:error, :strategy}, pow_assent_callback_error: error}}}),
-    do: handle_strategy_error(error)
+  def respond_callback({:error, %{private: %{pow_assent_callback_state: {:error, :strategy}, pow_assent_callback_error: error}} = conn}),
+    do: handle_strategy_error(conn, error)
   def respond_callback({:error, %{private: %{pow_assent_callback_error: {:bound_to_different_user, _changeset}}} = conn}) do
     conn
     |> put_flash(:error, extension_messages(conn).account_already_bound_to_other_user(conn))
@@ -204,5 +206,11 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   end
   defp load_user_by_invitation_token(conn, _opts), do: conn
 
-  defp handle_strategy_error(error), do: raise error
+  defp handle_strategy_error(conn, error) do
+    Logger.error("Strategy failed with error: #{inspect error}")
+
+    conn
+    |> put_flash(:error, extension_messages(conn).could_not_sign_in(conn))
+    |> redirect(to: routes(conn).session_path(conn, :new))
+  end
 end
