@@ -8,7 +8,10 @@ defmodule PowAssent.Test.TestProvider do
       site: "http://localhost:4000/",
       authorize_url: "/oauth/authorize",
       token_url: "/oauth/token",
-      user_url: "/api/user"
+      user_url: "/api/user",
+      authorization_params: [
+        scope: "user:read user:write"
+      ]
     ]
   end
 
@@ -34,7 +37,7 @@ defmodule PowAssent.Test.TestProvider do
           client_id: "client_id",
           client_secret: "abc123",
           site: "http://localhost:#{bypass.port}",
-          strategy: __MODULE__,
+          strategy: __MODULE__
         ], config)
       ],
       # We suppress the SSL warnings here as Bypass doesn't support SSL

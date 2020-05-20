@@ -9,6 +9,9 @@
 * [`PowAssent.Plug`] Now calls create session callbacks set with `PowAssent.Plug.put_create_session_callback/2` when a session is created
 * [`PowAssent.Plug.Reauthorization`] Added plug to enable reauthorization
 * [`PowAssent.Phoenix.AuthorizationController`] Now instead of raising an exception for strategy errors, the user is redirected to the sign in page with a generic error message
+* [`PowAssent.Config`] Added `PowAssent.Config.merge_provider_config/3`
+* [`PowAssent.Plug`] Added `PowAssent.Plug.merge_provider_config/3`
+
 
 ## v0.4.7 (2020-04-22)
 
