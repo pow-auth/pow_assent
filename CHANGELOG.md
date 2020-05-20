@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.8 (TBA)
+## v0.4.8 (2020-05-18)
 
 ### Enhancements
 
