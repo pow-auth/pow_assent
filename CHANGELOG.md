@@ -12,7 +12,6 @@
 * [`PowAssent.Config`] Added `PowAssent.Config.merge_provider_config/3`
 * [`PowAssent.Plug`] Added `PowAssent.Plug.merge_provider_config/3`
 
-
 ## v0.4.7 (2020-04-22)
 
 Now support Phoenix 1.5 and requires Pow `~> 1.0.19` and Elixir 1.7.
