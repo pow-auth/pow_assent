@@ -77,7 +77,7 @@ defmodule PowAssent.Ecto.SchemaTest do
     use PowAssent.Ecto.Schema
 
     schema "users" do
-      has_many :identities, PowAssent.Test.Ecto.UserIdentities.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
+      has_many :identities, PowAssent.Test.Ecto.Users.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
 
       field :email, :string
 
@@ -162,7 +162,7 @@ defmodule PowAssent.Ecto.SchemaTest do
 
     schema "users" do
       has_many :identities,
-        MyApp.UserIdentities.UserIdentity,
+        MyApp.Users.UserIdentity,
         on_delete: :nothing
 
       pow_user_fields()
@@ -182,6 +182,6 @@ defmodule PowAssent.Ecto.SchemaTest do
     user = %PowAssent.NoContextUser{}
 
     assert Map.has_key?(user, :identities)
-    assert %{queryable: PowAssent.UserIdentities.UserIdentity} = PowAssent.NoContextUser.__schema__(:association, :identities)
+    assert %{queryable: PowAssent.Users.UserIdentity} = PowAssent.NoContextUser.__schema__(:association, :identities)
   end
 end

@@ -3,16 +3,16 @@ defmodule PowAssent.Operations do
   Operation methods that glues operation calls to context module.
 
   A custom context module can be used instead of the default
-  `PowAssent.Ecto.UserIdentities.Context` if a `:user_identities_context` key
+  `PowAssent.Ecto.Identities.Context` if a `:identities_context` key
   is passed in the PowAssent configuration.
   """
-  alias PowAssent.{Config, Ecto.UserIdentities.Context}
+  alias PowAssent.{Config, Ecto.Identities.Context}
   alias Pow.Config, as: PowConfig
 
   @doc """
   Retrieve a user with the strategy provider name and uid.
 
-  This calls `Pow.Ecto.UserIdentities.Context.get_user_by_provider_uid/3` or
+  This calls `Pow.Ecto.Identities.Context.get_user_by_provider_uid/3` or
   `get_user_by_provider_uid/2` on a custom context module.
   """
   @spec get_user_by_provider_uid(binary(), binary(), Config.t()) :: map() | nil | no_return
@@ -32,7 +32,7 @@ defmodule PowAssent.Operations do
   @doc """
   Upserts user identity for the user, and strategy provider name and uid.
 
-  This calls `Pow.Ecto.UserIdentities.Context.upsert/3` or
+  This calls `Pow.Ecto.Identities.Context.upsert/3` or
   `upsert/2` on a custom context module.
   """
   @spec upsert(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
@@ -46,7 +46,7 @@ defmodule PowAssent.Operations do
   @doc """
   Creates user with user identity with the provided user params.
 
-  This calls `Pow.Ecto.UserIdentities.Context.create_user/4` or
+  This calls `Pow.Ecto.Identities.Context.create_user/4` or
   `create_user/3` on a custom context module.
   """
   @spec create_user(map(), map(), map() | nil, Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()}} | {:error, map()} | no_return
@@ -75,7 +75,7 @@ defmodule PowAssent.Operations do
   @doc """
   Deletes the user identity for user and strategy provider name.
 
-  This calls `Pow.Ecto.UserIdentities.Context.delete/3` or
+  This calls `Pow.Ecto.Identities.Context.delete/3` or
   `delete/2` on a custom context module.
   """
   @spec delete(map(), binary(), Config.t()) :: {:ok, {number(), nil}} | {:error, {:no_password, map()}} | no_return
@@ -89,7 +89,7 @@ defmodule PowAssent.Operations do
   @doc """
   Lists all user identity associations for user.
 
-  This calls `Pow.Ecto.UserIdentities.Context.all/2` or
+  This calls `Pow.Ecto.Identities.Context.all/2` or
   `all/1` on a custom context module.
   """
   @spec all(map(), Config.t()) :: [map()] | no_return
@@ -101,6 +101,6 @@ defmodule PowAssent.Operations do
   end
 
   defp context_module(config) do
-    Config.get(config, :user_identities_context, Context)
+    Config.get(config, :identities_context, Context)
   end
 end

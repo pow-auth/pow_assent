@@ -11,7 +11,7 @@ defmodule PowAssent.Plug do
         pow_assent: [
           http_adapter: PowAssent.HTTPAdapter.Mint,
           json_library: Poison,
-          user_identities_context: MyApp.UserIdentities
+          identities_context: MyApp.UserIdentities
         ]
   """
   alias Plug.Conn

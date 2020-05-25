@@ -19,7 +19,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.Migration do
   """
   use Mix.Task
 
-  alias PowAssent.Ecto.UserIdentities.Schema.Migration, as: UserIdentitiesMigration
+  alias PowAssent.Ecto.Identities.Schema.Migration, as: IdentitiesMigration
   alias Mix.{Ecto, Pow, Pow.Ecto.Migration, PowAssent}
 
   @switches [binary_id: :boolean, users_table: :string]
@@ -52,8 +52,8 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.Migration do
 
   defp create_migration_file(%{repo: repo, binary_id: binary_id, users_table: users_table, schema_plural: schema_plural}) do
     context_base  = Pow.app_base(Pow.otp_app())
-    schema        = UserIdentitiesMigration.new(context_base, schema_plural, repo: repo, binary_id: binary_id, users_table: users_table)
-    content       = UserIdentitiesMigration.gen(schema)
+    schema        = IdentitiesMigration.new(context_base, schema_plural, repo: repo, binary_id: binary_id, users_table: users_table)
+    content       = IdentitiesMigration.gen(schema)
 
     Migration.create_migration_file(repo, schema.migration_name, content)
   end

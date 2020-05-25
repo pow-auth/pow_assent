@@ -1,4 +1,4 @@
-defmodule PowAssent.Ecto.UserIdentities.Schema do
+defmodule PowAssent.Ecto.Identities.Schema do
   @moduledoc """
   Handles the Ecto schema for user identity.
 
@@ -7,11 +7,11 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
 
   ## Usage
 
-  Configure `lib/my_project/user_identities/user_identity.ex` the following way:
+  Configure `LIB_PATH/users/user_identity.ex` the following way:
 
-      defmodule MyApp.UserIdentities.UserIdentity do
+      defmodule MyApp.Users.UserIdentity do
         use Ecto.Schema
-        use PowAssent.Ecto.UserIdentities.Schema,
+        use PowAssent.Ecto.Identities.Schema,
           user: MyApp.Users.User
 
         schema "user_identities" do

@@ -1,4 +1,4 @@
-defmodule PowAssent.Test.Ecto.Users.UserWithoutUserIdentities do
+defmodule PowAssent.Test.Ecto.Users.UserWithoutIdentities do
   @moduledoc false
   use Ecto.Schema
   use Pow.Ecto.Schema
@@ -9,27 +9,27 @@ defmodule PowAssent.Test.Ecto.Users.UserWithoutUserIdentities do
   end
 end
 
-defmodule PowAssent.Test.Ecto.Users.UserWithAccessTokenUserIdentities do
+defmodule PowAssent.Test.Ecto.Users.UserWithAccessTokenIdentities do
   @moduledoc false
   use Ecto.Schema
   use Pow.Ecto.Schema
   use PowAssent.Ecto.Schema
 
   schema "users" do
-    has_many :identities, PowAssent.Test.WithAccessToken.UserIdentities.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
+    has_many :identities, PowAssent.Test.WithAccessToken.Users.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
 
     pow_user_fields()
     timestamps()
   end
 end
 
-defmodule PowAssent.Ecto.UserIdentities.ContextTest do
+defmodule PowAssent.Ecto.Identities.ContextTest do
   use PowAssent.Test.Ecto.TestCase
-  doctest PowAssent.Ecto.UserIdentities.Context
+  doctest PowAssent.Ecto.Identities.Context
 
   alias Ecto.Changeset
-  alias PowAssent.Ecto.UserIdentities.Context
-  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithoutUserIdentities, Users.UserWithAccessTokenUserIdentities, Users.User}
+  alias PowAssent.Ecto.Identities.Context
+  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithoutIdentities, Users.UserWithAccessTokenIdentities, Users.User}
 
   @config [repo: Repo, user: User]
   @identity_params %{provider: "test_provider", uid: "1"}
@@ -58,18 +58,18 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
 
     test "requires user has :identities assoc" do
       assert_raise PowAssent.Config.ConfigError, "The `:user` configuration option doesn't have a `:identities` association.", fn ->
-        Context.get_user_by_provider_uid("test_provider", "2", repo: Repo, user: UserWithoutUserIdentities)
+        Context.get_user_by_provider_uid("test_provider", "2", repo: Repo, user: UserWithoutIdentities)
       end
     end
   end
 
-  @config_with_access_token [repo: Repo, user: UserWithAccessTokenUserIdentities]
+  @config_with_access_token [repo: Repo, user: UserWithAccessTokenIdentities]
   @identity_params_with_access_token Map.put(@identity_params, :token, %{access_token: "access_token"})
 
   describe "upsert/3" do
     setup do
       user =
-        %UserWithAccessTokenUserIdentities{}
+        %UserWithAccessTokenIdentities{}
         |> Changeset.change(email: "test@example.com")
         |> Repo.insert!()
 
@@ -112,7 +112,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
 
     test "when other user has provider uid", %{user: user} do
       _second_user =
-        %UserWithAccessTokenUserIdentities{}
+        %UserWithAccessTokenIdentities{}
         |> Changeset.change(email: "test-2@example.com")
         |> Changeset.cast(%{identities: [@identity_params_with_access_token]}, [])
         |> Changeset.cast_assoc(:identities)

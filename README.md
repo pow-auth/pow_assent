@@ -67,7 +67,7 @@ mix pow_assent.install
 This will add the following files to your app:
 
 ```bash
-LIB_PATH/user_identities/user_identity.ex
+LIB_PATH/users/user_identity.ex
 PRIV_PATH/repo/migrations/TIMESTAMP_create_user_identities.ex
 ```
 
@@ -357,7 +357,7 @@ end
 Otherwise you'll get an error that reads:
 
 ```elixir
-warning: invalid association `identities` in schema MyApp.Lib.User: associated schema MyApp.UserIdentities.UserIdentity does not exist
+warning: invalid association `identities` in schema MyApp.Lib.User: associated schema MyApp.Users.UserIdentity does not exist
 ```
 
 ## Callback URL with HTTPS behind proxy

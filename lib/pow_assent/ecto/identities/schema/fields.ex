@@ -1,4 +1,4 @@
-defmodule PowAssent.Ecto.UserIdentities.Schema.Fields do
+defmodule PowAssent.Ecto.Identities.Schema.Fields do
   @moduledoc """
   Handles the Ecto schema fields for user.
   """

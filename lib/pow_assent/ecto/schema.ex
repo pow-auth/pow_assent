@@ -75,7 +75,7 @@ defmodule PowAssent.Ecto.Schema do
       [_schema, _context | rest] -> rest
     end
     |> Enum.reverse()
-    |> Enum.concat([UserIdentities, UserIdentity])
+    |> Enum.concat([Users, UserIdentity])
     |> Module.concat()
   end
 

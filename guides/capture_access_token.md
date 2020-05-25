@@ -17,10 +17,10 @@ end
 ```
 
 ```elixir
-# lib/my_app/user_identities/user_identity.ex
-defmodule MyApp.UserIdentities.UserIdentity do
+# lib/my_app/users/user_identity.ex
+defmodule MyApp.Users.UserIdentity do
   use Ecto.Schema
-  use PowAssent.Ecto.UserIdentities.Schema,
+  use PowAssent.Ecto.Identities.Schema,
     user: MyApp.Users.User
 
   schema "user_identities" do
@@ -46,5 +46,5 @@ end
 Now access tokens can be retrieved by loading the user identity:
 
 ```elixir
-identity = MyApp.Repo.get_by(MyApp.UserIdentities.UserIdentity, provider: provider, user_id: user.id)
+identity = MyApp.Repo.get_by(MyApp.Users.UserIdentity, provider: provider, user_id: user.id)
 ```

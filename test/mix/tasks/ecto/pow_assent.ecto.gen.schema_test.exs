@@ -4,7 +4,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
   alias Mix.Tasks.PowAssent.Ecto.Gen.Schema
 
   @tmp_path      Path.join(["tmp", inspect(Schema)])
-  @expected_file Path.join(["lib", "pow_assent", "user_identities", "user_identity.ex"])
+  @expected_file Path.join(["lib", "pow_assent", "users", "user_identity.ex"])
 
   setup do
     File.rm_rf!(@tmp_path)
@@ -21,7 +21,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
 
       content = File.read!(@expected_file)
 
-      assert content =~ "defmodule PowAssent.UserIdentities.UserIdentity do"
+      assert content =~ "defmodule PowAssent.Users.UserIdentity do"
       assert content =~ "user: PowAssent.Users.User"
       assert content =~ "timestamps()"
     end)
@@ -46,7 +46,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
     File.cd!(@tmp_path, fn ->
       Schema.run([])
 
-      assert_raise Mix.Error, "schema file can't be created, there is already a schema file in lib/pow_assent/user_identities/user_identity.ex.", fn ->
+      assert_raise Mix.Error, "schema file can't be created, there is already a schema file in lib/pow_assent/users/user_identity.ex.", fn ->
         Schema.run([])
       end
     end)

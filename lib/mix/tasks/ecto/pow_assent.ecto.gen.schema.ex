@@ -9,7 +9,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.Schema do
       mix pow_assent.ecto.gen.schema -r MyApp.Repo Accounts.Identity identities
 
   This generator will add a schema module file in
-  `lib/my_app/user_identities/user_identity.ex`.
+  `lib/my_app/users/user_identity.ex`.
 
   ## Arguments
 
@@ -18,7 +18,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.Schema do
   """
   use Mix.Task
 
-  alias PowAssent.Ecto.UserIdentities.Schema.Module, as: SchemaModule
+  alias PowAssent.Ecto.Identities.Schema.Module, as: SchemaModule
   alias Mix.{Generator, Pow, PowAssent}
 
   @switches [context_app: :string, binary_id: :boolean]

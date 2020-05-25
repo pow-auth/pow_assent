@@ -1,4 +1,4 @@
-defmodule PowAssent.Ecto.UserIdentities.Context do
+defmodule PowAssent.Ecto.Identities.Context do
   @moduledoc """
   Handles pow assent user identity context for user identities.
 
@@ -6,10 +6,10 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   This module will be used by PowAssent by default. If you wish to have control
   over context methods, you can do configure
-  `lib/my_project/user_identities/user_identities.ex` the following way:
+  `LIB_PATH/user_identities.ex` the following way:
 
       defmodule MyApp.UserIdentities do
-        use PowAssent.Ecto.UserIdentities.Context,
+        use PowAssent.Ecto.Identities.Context,
           repo: MyApp.Repo,
           user: MyApp.Users.User
 
@@ -19,7 +19,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
       end
 
   Remember to update the PowAssent configuration with
-  `user_identities_context: MyApp.UserIdentities`.
+  `identities_context: MyApp.Identities`.
 
   The following Pow methods can be accessed:
 

@@ -5,7 +5,7 @@ defmodule PowAssent.PlugTest do
   alias Plug.{Conn, ProcessStore, Session, Test}
   alias Pow.Plug.Session, as: PowSession
   alias PowAssent.Plug
-  alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
+  alias PowAssent.Test.{Ecto.Users.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
 
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 

@@ -45,7 +45,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "shows with changeset stored in session", %{conn: conn} do
-      {:error, {:invalid_user_id_field, changeset}} = PowAssent.Ecto.UserIdentities.Context.create_user(@identity_params, Map.put(@user_params, "email", "taken@example.com"), nil, repo: PowAssent.Test.RepoMock, user: PowAssent.Test.Ecto.Users.User)
+      {:error, {:invalid_user_id_field, changeset}} = PowAssent.Ecto.Identities.Context.create_user(@identity_params, Map.put(@user_params, "email", "taken@example.com"), nil, repo: PowAssent.Test.RepoMock, user: PowAssent.Test.Ecto.Users.User)
       conn =
         conn
         |> Conn.put_private(:pow_assent_session, %{changeset: changeset, callback_params: provider_params()})
