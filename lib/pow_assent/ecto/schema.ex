@@ -67,15 +67,13 @@ defmodule PowAssent.Ecto.Schema do
 
   @doc false
   def __identities_module__(module) do
-    module
-    |> Module.split()
-    |> Enum.reverse()
-    |> case do
-      [_schema, base] -> [base]
-      [_schema, _context | rest] -> rest
-    end
-    |> Enum.reverse()
-    |> Enum.concat([Users, UserIdentity])
+    {_schema, base} =
+      module
+      |> Module.split()
+      |> List.pop_at(-1)
+
+    base
+    |> Kernel.++([UserIdentity])
     |> Module.concat()
   end
 

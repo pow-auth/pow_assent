@@ -23,7 +23,9 @@ defmodule PowAssent.Ecto.SchemaTest do
     user = %User{}
 
     assert Map.has_key?(user, :identities)
-    assert %{on_delete: :delete_all} = User.__schema__(:association, :identities)
+    assert %{on_delete: on_delete, queryable: queryable} = User.__schema__(:association, :identities)
+    assert on_delete == :delete_all
+    assert queryable == PowAssent.Test.Ecto.Users.UserIdentity
   end
 
   @identity %{
@@ -175,13 +177,16 @@ defmodule PowAssent.Ecto.SchemaTest do
     user = %OverrideAssocUser{}
 
     assert Map.has_key?(user, :identities)
-    assert %{on_delete: :nothing} = OverrideAssocUser.__schema__(:association, :identities)
+    assert %{on_delete: on_delete, queryable: queryable} = OverrideAssocUser.__schema__(:association, :identities)
+    assert on_delete == :nothing
+    assert queryable == MyApp.Users.UserIdentity
   end
 
   test "schema/2 with no context user module name" do
     user = %PowAssent.NoContextUser{}
 
     assert Map.has_key?(user, :identities)
-    assert %{queryable: PowAssent.Users.UserIdentity} = PowAssent.NoContextUser.__schema__(:association, :identities)
+    assert %{queryable: queryable} = PowAssent.NoContextUser.__schema__(:association, :identities)
+    assert queryable == PowAssent.UserIdentity
   end
 end
