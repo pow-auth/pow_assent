@@ -23,12 +23,6 @@ defmodule PowAssent.Operations do
     end
   end
 
-  # TODO: Remove by 0.4.0
-  @doc false
-  @deprecated "Use `upsert/3` instead"
-  @spec create(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
-  def create(user, user_identity_params, config), do: upsert(user, user_identity_params, config)
-
   @doc """
   Upserts user identity for the user, and strategy provider name and uid.
 

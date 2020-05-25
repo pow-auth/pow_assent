@@ -290,12 +290,6 @@ defmodule PowAssent.Plug do
     Conn.put_private(conn, :pow_assent_create_session_callbacks, callbacks)
   end
 
-  # TODO: Remove by 0.4.0
-  @doc false
-  @deprecated "Use `upsert_identity/2` instead"
-  @spec create_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
-  def create_identity(conn, user_identity_params), do: upsert_identity(conn, user_identity_params)
-
   @doc """
   Will upsert identity for the current user.
 
