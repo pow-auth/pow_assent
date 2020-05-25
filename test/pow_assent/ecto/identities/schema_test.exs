@@ -61,7 +61,7 @@ defmodule PowAssent.Ecto.Identities.SchemaTest do
         |> UserIdentity.changeset(@valid_params)
         |> Repo.insert()
 
-      assert changeset.errors[:uid_provider] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
+      assert changeset.errors[:uid] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
     end
   end
 end

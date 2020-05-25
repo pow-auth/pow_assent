@@ -58,7 +58,7 @@ defmodule PowAssent.Ecto.SchemaTest do
         |> Repo.insert()
 
       assert [identity] = changeset.changes.identities
-      assert identity.errors[:uid_provider] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
+      assert identity.errors[:uid] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
     end
 
     test "uses case insensitive value for user id" do

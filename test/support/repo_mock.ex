@@ -17,7 +17,7 @@ defmodule PowAssent.Test.RepoMock do
   @spec insert(%{action: any, valid?: boolean}, any) ::
           {:error, %{action: :insert, valid?: false}} | {:ok, %{id: 1}}
   def insert(%{changes: %{provider: "test_provider", uid: "identity_taken"}} = changeset, _opts) do
-    changeset = Ecto.Changeset.add_error(changeset, :uid_provider, "has already been taken", constraint: :unique, constraint_name: "user_identities_uid_provider_index")
+    changeset = Ecto.Changeset.add_error(changeset, :uid, "has already been taken", constraint: :unique, constraint_name: "user_identities_uid_provider_index")
 
     {:error, %{changeset | action: :insert}}
   end
@@ -27,7 +27,7 @@ defmodule PowAssent.Test.RepoMock do
     {:error, %{changeset | action: :insert}}
   end
   def insert(%{valid?: true, changes: %{identities: [%{changes: %{provider: "test_provider", uid: "identity_taken"}} = identity_changeset]}} = changeset, _opts) do
-    identity_changeset = Ecto.Changeset.add_error(identity_changeset, :uid_provider, "has already been taken", constraint: :unique, constraint_name: "user_identities_uid_provider_index")
+    identity_changeset = Ecto.Changeset.add_error(identity_changeset, :uid, "has already been taken", constraint: :unique, constraint_name: "user_identities_uid_provider_index")
     identity_changeset = %{identity_changeset | action: :insert}
     changeset          = Ecto.Changeset.put_change(changeset, :identities, [identity_changeset])
 

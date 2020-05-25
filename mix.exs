@@ -34,7 +34,7 @@ defmodule PowAssent.MixProject do
       {:pow, "~> 1.0.19"},
       {:assent, "~> 0.1.2"},
 
-      {:ecto, "~> 2.2 or ~> 3.0"},
+      {:ecto, "~> 3.4.2 or ~> 3.5"},
       {:phoenix, ">= 1.3.0 and < 1.6.0"},
       {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},
       {:plug, ">= 1.5.0 and < 2.0.0", optional: true},
@@ -45,8 +45,8 @@ defmodule PowAssent.MixProject do
 
       {:ex_doc, "~> 0.21.0", only: :dev},
 
-      {:ecto_sql, "~> 3.1", only: :test},
-      {:postgrex, "~> 0.14.0", only: :test},
+      {:ecto_sql, "~> 3.4", only: :test},
+      {:postgrex, "~> 0.15.0", only: :test},
       {:bypass, "~> 1.0.0", only: :test}
     ]
   end
