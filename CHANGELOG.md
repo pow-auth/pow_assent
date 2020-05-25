@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.5.0 (TBA)
+
+This release contains a large refactoring changing the user identity naming to just identity.
+
+To upgrade, please update the following:
+
+1. In your PowAssent config change `:user_identities_context` key, if it exists, to `:identities_context`
+2. In your user schema module change:
+    - `user_identity_changeset` method name to `identity_changeset`
+    - `pow_assent_user_identity_changeset` method call to `pow_assent_identity_changeset`
+    - `:user_identities` association name to `:identities` in the user schema module
+3. In your user identity schema module:
+    - Change the module name from `MyApp.UserIdentities.UserIdentity` to `MyApp.Users.UserIdentity`
+    - Change `PowAssent.Ecto.UserIdentities.Schema` module to `PowAssent.Ecto.Identities.Schema`
+    - Change `pow_assent_user_identity_fields` method call to `pow_assent_identity_fields`
+    - Move the file from `user_identities` to `users` directory
+4. In your context identity modue, if any, change:
+    - `PowAssent.Ecto.UserIdentities.Context` module to `PowAssent.Ecto.Identities.Context`
+
 ## v0.4.8 (2020-05-18)
 
 ### Enhancements
