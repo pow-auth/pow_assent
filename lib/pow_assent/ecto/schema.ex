@@ -27,29 +27,29 @@ defmodule PowAssent.Ecto.Schema do
           |> pow_changeset(attrs)
         end
 
-        def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
+        def identity_changeset(user_or_changeset, identity, attrs, user_id_attrs) do
           user_or_changeset
           |> Ecto.Changeset.cast(attrs, [:custom_field])
-          |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
+          |> pow_assent_identity_changeset(identity, attrs, user_id_attrs)
         end
       end
   """
   alias Ecto.{Changeset, Schema}
   alias Pow.UUID
 
-  @callback user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
+  @callback identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
 
   @doc false
   defmacro __using__(_config) do
     quote do
       @behaviour unquote(__MODULE__)
 
-      @spec user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
-      def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs), do: pow_assent_user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs)
+      @spec identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
+      def identity_changeset(user_or_changeset, identity, attrs, user_id_attrs), do: pow_assent_identity_changeset(user_or_changeset, identity, attrs, user_id_attrs)
 
-      @spec pow_assent_user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
-      def pow_assent_user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
-        unquote(__MODULE__).changeset(user_or_changeset, user_identity, attrs, user_id_attrs, @pow_config)
+      @spec pow_assent_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
+      def pow_assent_identity_changeset(user_or_changeset, identity, attrs, user_id_attrs) do
+        unquote(__MODULE__).changeset(user_or_changeset, identity, attrs, user_id_attrs, @pow_config)
       end
 
       unquote(__MODULE__).__has_many__()
@@ -61,12 +61,12 @@ defmodule PowAssent.Ecto.Schema do
   @doc false
   defmacro __has_many__() do
     quote do
-      @pow_assocs {:has_many, :user_identities, unquote(__MODULE__).__user_identities_module__(__MODULE__), foreign_key: :user_id, on_delete: :delete_all}
+      @pow_assocs {:has_many, :identities, unquote(__MODULE__).__identities_module__(__MODULE__), foreign_key: :user_id, on_delete: :delete_all}
     end
   end
 
   @doc false
-  def __user_identities_module__(module) do
+  def __identities_module__(module) do
     module
     |> Module.split()
     |> Enum.reverse()
@@ -86,14 +86,14 @@ defmodule PowAssent.Ecto.Schema do
   validation as password is not required.
   """
   @spec changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil, Config.t()) :: Changeset.t()
-  def changeset(user_or_changeset, user_identity, attrs, user_id_attrs, _config) do
+  def changeset(user_or_changeset, identity, attrs, user_id_attrs, _config) do
     user_or_changeset
     |> Changeset.change()
     |> maybe_accept_invitation()
     |> user_id_field_changeset(attrs, user_id_attrs)
     |> maybe_email_confirmation_changeset(attrs)
-    |> Changeset.cast(%{user_identities: [user_identity]}, [])
-    |> Changeset.cast_assoc(:user_identities)
+    |> Changeset.cast(%{identities: [identity]}, [])
+    |> Changeset.cast_assoc(:identities)
   end
 
   defp maybe_accept_invitation(%Changeset{data: %user_mod{invitation_token: token, invitation_accepted_at: nil} = changeset}) when not is_nil(token) do

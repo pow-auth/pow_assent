@@ -7,7 +7,7 @@ defmodule PowAssent.Test.Invitation.Users.User do
   use PowAssent.Ecto.Schema
 
   schema "users" do
-    has_many :user_identities,
+    has_many :identities,
       PowAssent.Test.Invitation.UserIdentities.UserIdentity,
       on_delete: :delete_all,
       foreign_key: :user_id

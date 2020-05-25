@@ -27,7 +27,7 @@ defmodule PowAssent.Operations do
   @doc false
   @deprecated "Use `upsert/3` instead"
   @spec create(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
-  def create(user, user_identity_params, config), do: upsert(user, user_identity_params, config)
+  def create(user, identity_params, config), do: upsert(user, identity_params, config)
 
   @doc """
   Upserts user identity for the user, and strategy provider name and uid.
@@ -36,10 +36,10 @@ defmodule PowAssent.Operations do
   `upsert/2` on a custom context module.
   """
   @spec upsert(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
-  def upsert(user, user_identity_params, config) do
+  def upsert(user, identity_params, config) do
     case context_module(config) do
-      Context -> Context.upsert(user, user_identity_params, config)
-      module  -> module.upsert(user, user_identity_params)
+      Context -> Context.upsert(user, identity_params, config)
+      module  -> module.upsert(user, identity_params)
     end
   end
 
@@ -50,10 +50,10 @@ defmodule PowAssent.Operations do
   `create_user/3` on a custom context module.
   """
   @spec create_user(map(), map(), map() | nil, Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()}} | {:error, map()} | no_return
-  def create_user(user_identity_params, user_params, user_id_params, config) do
+  def create_user(identity_params, user_params, user_id_params, config) do
     case context_module(config) do
-      Context -> Context.create_user(user_identity_params, user_params, user_id_params, config)
-      module  -> module.create_user(user_identity_params, user_params, user_id_params)
+      Context -> Context.create_user(identity_params, user_params, user_id_params, config)
+      module  -> module.create_user(identity_params, user_params, user_id_params)
     end
   end
 
@@ -61,15 +61,15 @@ defmodule PowAssent.Operations do
   Build a changeset from a blank user struct.
 
   It'll use the schema module fetched from the config through
-  `Pow.Config.user!/1` and call `user_identity_changeset/4` on it.
+  `Pow.Config.user!/1` and call `identity_changeset/4` on it.
   """
-  @spec user_identity_changeset(map(), map(), map(), Config.t()) :: map() | nil
-  def user_identity_changeset(params, user_params, user_id_params, config) do
+  @spec identity_changeset(map(), map(), map(), Config.t()) :: map() | nil
+  def identity_changeset(params, user_params, user_id_params, config) do
     user_mod = PowConfig.user!(config)
 
     user_mod
     |> struct()
-    |> user_mod.user_identity_changeset(params, user_params, user_id_params)
+    |> user_mod.identity_changeset(params, user_params, user_id_params)
   end
 
   @doc """

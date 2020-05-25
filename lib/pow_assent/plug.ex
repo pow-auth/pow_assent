@@ -77,8 +77,8 @@ defmodule PowAssent.Plug do
 
   - `{:error, :strategy}` - An error ocurred during strategy callback
       phase. `:pow_assent_callback_error` will be populated with the error.
-  - `{:ok, :upsert_user_identity}` - User identity was created or updated.
-  - `{:error, :upsert_user_identity}` - User identity could not be created
+  - `{:ok, :upsert_identity}` - User identity was created or updated.
+  - `{:error, :upsert_identity}` - User identity could not be created
     or updated. `:pow_assent_callback_error` will be populated with the
     changeset.
   - `{:ok, :create_user}` - User was created.
@@ -96,7 +96,7 @@ defmodule PowAssent.Plug do
     |> callback(provider, params, redirect_uri)
     |> handle_callback()
     |> maybe_authenticate()
-    |> maybe_upsert_user_identity()
+    |> maybe_upsert_identity()
     |> maybe_create_user()
     |> case do
       %{private: %{pow_assent_callback_state: {:ok, _method}}} = conn ->
@@ -107,10 +107,10 @@ defmodule PowAssent.Plug do
     end
   end
 
-  defp handle_callback({:ok, user_identity_params, user_params, conn}) do
+  defp handle_callback({:ok, identity_params, user_params, conn}) do
     conn
     |> Conn.put_private(:pow_assent_callback_state, {:ok, :strategy})
-    |> Conn.put_private(:pow_assent_callback_params, %{user_identity: user_identity_params, user: user_params})
+    |> Conn.put_private(:pow_assent_callback_params, %{identity: identity_params, user: user_params})
   end
   defp handle_callback({:error, error, conn})  do
     conn
@@ -119,12 +119,12 @@ defmodule PowAssent.Plug do
   end
 
   defp maybe_authenticate(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
-    user_identity_params = Map.fetch!(params, :user_identity)
+    identity_params = Map.fetch!(params, :identity)
 
     case Pow.Plug.current_user(conn) do
       nil ->
         conn
-        |> authenticate(user_identity_params)
+        |> authenticate(identity_params)
         |> case do
           {:ok, conn}    -> conn
           {:error, conn} -> conn
@@ -136,8 +136,8 @@ defmodule PowAssent.Plug do
   end
   defp maybe_authenticate(conn), do: conn
 
-  defp maybe_upsert_user_identity(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
-    user_identity_params = Map.fetch!(params, :user_identity)
+  defp maybe_upsert_identity(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
+    identity_params = Map.fetch!(params, :identity)
 
     case Pow.Plug.current_user(conn) do
       nil ->
@@ -145,19 +145,19 @@ defmodule PowAssent.Plug do
 
       _user ->
         conn
-        |> upsert_identity(user_identity_params)
+        |> upsert_identity(identity_params)
         |> case do
-          {:ok, _user_identity, conn} ->
-            Conn.put_private(conn, :pow_assent_callback_state, {:ok, :upsert_user_identity})
+          {:ok, _identity, conn} ->
+            Conn.put_private(conn, :pow_assent_callback_state, {:ok, :upsert_identity})
 
           {:error, changeset, conn} ->
             conn
-            |> Conn.put_private(:pow_assent_callback_state, {:error, :upsert_user_identity})
+            |> Conn.put_private(:pow_assent_callback_state, {:error, :upsert_identity})
             |> Conn.put_private(:pow_assent_callback_error, changeset)
         end
     end
   end
-  defp maybe_upsert_user_identity(conn), do: conn
+  defp maybe_upsert_identity(conn), do: conn
 
   defp maybe_create_user(%{private: %{pow_assent_registration: false}} = conn) do
     conn
@@ -165,13 +165,13 @@ defmodule PowAssent.Plug do
     |> Conn.put_private(:pow_assent_callback_error, nil)
   end
   defp maybe_create_user(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
-    user_params          = Map.fetch!(params, :user)
-    user_identity_params = Map.fetch!(params, :user_identity)
+    user_params     = Map.fetch!(params, :user)
+    identity_params = Map.fetch!(params, :identity)
 
     case Pow.Plug.current_user(conn) do
       nil ->
         conn
-        |> create_user(user_identity_params, user_params)
+        |> create_user(identity_params, user_params)
         |> case do
           {:ok, _user, conn} ->
             Conn.put_private(conn, :pow_assent_callback_state, {:ok, :create_user})
@@ -214,8 +214,8 @@ defmodule PowAssent.Plug do
 
     user
     |> normalize_username()
-    |> split_user_identity_params()
-    |> handle_user_identity_params(other_params, provider, conn)
+    |> split_identity_params()
+    |> handle_identity_params(other_params, provider, conn)
   end
   defp parse_callback_response({:error, error}, _provider, conn), do: {:error, error, conn}
 
@@ -226,22 +226,22 @@ defmodule PowAssent.Plug do
   end
   defp normalize_username(params), do: params
 
-  defp split_user_identity_params(%{"sub" => uid} = params) do
+  defp split_identity_params(%{"sub" => uid} = params) do
     user_params = Map.delete(params, "sub")
 
     {%{"uid" => uid}, user_params}
   end
 
-  defp handle_user_identity_params({user_identity_params, user_params}, other_params, provider, conn) do
-    user_identity_params = Map.put(user_identity_params, "provider", provider)
-    other_params         = for {key, value} <- other_params, into: %{}, do: {Atom.to_string(key), value}
+  defp handle_identity_params({identity_params, user_params}, other_params, provider, conn) do
+    identity_params = Map.put(identity_params, "provider", provider)
+    other_params    = for {key, value} <- other_params, into: %{}, do: {Atom.to_string(key), value}
 
-    user_identity_params =
-      user_identity_params
+    identity_params =
+      identity_params
       |> Map.put("provider", provider)
       |> Map.merge(other_params)
 
-    {:ok, user_identity_params, user_params, conn}
+    {:ok, identity_params, user_params, conn}
   end
 
   @doc """
@@ -294,7 +294,7 @@ defmodule PowAssent.Plug do
   @doc false
   @deprecated "Use `upsert_identity/2` instead"
   @spec create_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
-  def create_identity(conn, user_identity_params), do: upsert_identity(conn, user_identity_params)
+  def create_identity(conn, identity_params), do: upsert_identity(conn, identity_params)
 
   @doc """
   Will upsert identity for the current user.
@@ -303,15 +303,15 @@ defmodule PowAssent.Plug do
   the callbacks stored with `put_create_session_callback/2` will run.
   """
   @spec upsert_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
-  def upsert_identity(conn, user_identity_params) do
+  def upsert_identity(conn, identity_params) do
     config = fetch_config(conn)
     user   = Plug.current_user(conn)
 
     user
-    |> Operations.upsert(user_identity_params, config)
+    |> Operations.upsert(identity_params, config)
     |> case do
-      {:ok, user_identity} -> {:ok, user_identity, create_session(conn, user, user_identity_params, config)}
-      {:error, error}      -> {:error, error, conn}
+      {:ok, identity} -> {:ok, identity, create_session(conn, user, identity_params, config)}
+      {:error, error} -> {:error, error, conn}
     end
   end
 
@@ -322,13 +322,13 @@ defmodule PowAssent.Plug do
   the callbacks stored with `put_create_session_callback/2` will run.
   """
   @spec create_user(Conn.t(), map(), map(), map() | nil) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()} | map(), Conn.t()}
-  def create_user(conn, user_identity_params, user_params, user_id_params \\ nil) do
+  def create_user(conn, identity_params, user_params, user_id_params \\ nil) do
     config = fetch_config(conn)
 
-    user_identity_params
+    identity_params
     |> Operations.create_user(user_params, user_id_params, config)
     |> case do
-      {:ok, user}     -> {:ok, user, create_session(conn, user, user_identity_params, config)}
+      {:ok, user}     -> {:ok, user, create_session(conn, user, identity_params, config)}
       {:error, error} -> {:error, error, conn}
     end
   end
@@ -340,7 +340,7 @@ defmodule PowAssent.Plug do
   def change_user(conn, params \\ %{}, user_params \\ %{}, user_id_params \\ %{}) do
     config = fetch_config(conn)
 
-    Operations.user_identity_changeset(params, user_params, user_id_params, config)
+    Operations.identity_changeset(params, user_params, user_id_params, config)
   end
 
   @doc """

@@ -15,13 +15,13 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
           user: MyApp.Users.User
 
         schema "user_identities" do
-          pow_assent_user_identity_fields()
+          pow_assent_identity_fields()
 
           timestamps()
         end
 
-        def changeset(user_identity_or_changeset, attrs) do
-          pow_assent_changeset(user_identity_or_changeset, attrs)
+        def changeset(identity_or_changeset, attrs) do
+          pow_assent_changeset(identity_or_changeset, attrs)
         end
       end
 
@@ -44,7 +44,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
       @pow_assent_config unquote(config)
 
       @spec changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
-      def changeset(user_identity_or_changeset, attrs), do: pow_assent_changeset(user_identity_or_changeset, attrs)
+      def changeset(identity_or_changeset, attrs), do: pow_assent_changeset(identity_or_changeset, attrs)
 
       defoverridable unquote(__MODULE__)
 
@@ -57,8 +57,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @doc """
   Macro for adding user identity schema fields.
   """
-  @spec pow_assent_user_identity_fields :: Macro.t()
-  defmacro pow_assent_user_identity_fields do
+  @spec pow_assent_identity_fields :: Macro.t()
+  defmacro pow_assent_identity_fields do
     quote do
       Enum.each(@pow_assent_assocs, fn
         {:belongs_to, name, :users} ->
@@ -75,11 +75,11 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @doc false
   defmacro __pow_assent_methods__ do
     quote do
-      import unquote(__MODULE__), only: [pow_assent_user_identity_fields: 0]
+      import unquote(__MODULE__), only: [pow_assent_identity_fields: 0]
 
       @spec pow_assent_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
-      def pow_assent_changeset(user_identity_or_changeset, attrs) do
-        unquote(__MODULE__).changeset(user_identity_or_changeset, attrs, @pow_assent_config)
+      def pow_assent_changeset(identity_or_changeset, attrs) do
+        unquote(__MODULE__).changeset(identity_or_changeset, attrs, @pow_assent_config)
       end
     end
   end
@@ -101,8 +101,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @doc """
   Validates a user identity.
   """
-  def changeset(user_identity_or_changeset, params, _config) do
-    user_identity_or_changeset
+  def changeset(identity_or_changeset, params, _config) do
+    identity_or_changeset
     |> Changeset.cast(params, [:provider, :uid, :user_id])
     |> Changeset.validate_required([:provider, :uid])
     |> Changeset.assoc_constraint(:user)

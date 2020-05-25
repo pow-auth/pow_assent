@@ -26,10 +26,10 @@ defmodule PowAssent.Test.RepoMock do
 
     {:error, %{changeset | action: :insert}}
   end
-  def insert(%{valid?: true, changes: %{user_identities: [%{changes: %{provider: "test_provider", uid: "identity_taken"}} = user_identity_changeset]}} = changeset, _opts) do
-    user_identity_changeset = Ecto.Changeset.add_error(user_identity_changeset, :uid_provider, "has already been taken", constraint: :unique, constraint_name: "user_identities_uid_provider_index")
-    user_identity_changeset = %{user_identity_changeset | action: :insert}
-    changeset               = Ecto.Changeset.put_change(changeset, :user_identities, [user_identity_changeset])
+  def insert(%{valid?: true, changes: %{identities: [%{changes: %{provider: "test_provider", uid: "identity_taken"}} = identity_changeset]}} = changeset, _opts) do
+    identity_changeset = Ecto.Changeset.add_error(identity_changeset, :uid_provider, "has already been taken", constraint: :unique, constraint_name: "user_identities_uid_provider_index")
+    identity_changeset = %{identity_changeset | action: :insert}
+    changeset          = Ecto.Changeset.put_change(changeset, :identities, [identity_changeset])
 
     {:error, %{changeset | action: :insert}}
   end
@@ -54,8 +54,8 @@ defmodule PowAssent.Test.RepoMock do
 
   def get_by!(struct, [id: id], _opts), do: Process.get({struct, id})
 
-  def preload(%User{id: :multiple_identities} = user, :user_identities, force: true), do: %{user | user_identities: [%UserIdentity{id: 1, provider: "test_provider"}, %UserIdentity{id: 2, provider: "other_provider"}]}
-  def preload(user, :user_identities, force: true), do: %{user | user_identities: [%UserIdentity{id: 1, provider: "test_provider"}]}
+  def preload(%User{id: :multiple_identities} = user, :identities, force: true), do: %{user | identities: [%UserIdentity{id: 1, provider: "test_provider"}, %UserIdentity{id: 2, provider: "other_provider"}]}
+  def preload(user, :identities, force: true), do: %{user | identities: [%UserIdentity{id: 1, provider: "test_provider"}]}
 
   def delete_all(query, _opts) do
     case inspect(query) =~ "where: u0.user_id == ^1, where: u0.id in ^[1]" do

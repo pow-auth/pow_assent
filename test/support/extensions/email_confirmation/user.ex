@@ -14,10 +14,10 @@ defmodule PowAssent.Test.EmailConfirmation.Users.User do
     timestamps()
   end
 
-  def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
+  def identity_changeset(user_or_changeset, identity, attrs, user_id_attrs) do
     user_or_changeset
     |> validate_name(attrs)
-    |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
+    |> pow_assent_identity_changeset(identity, attrs, user_id_attrs)
   end
 
   defp validate_name(changeset, attrs) do

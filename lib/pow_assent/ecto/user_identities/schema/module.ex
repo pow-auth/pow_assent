@@ -16,7 +16,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
     @primary_key {:id, :binary_id, autogenerate: true}
     @foreign_key_type :binary_id<% end %>
     schema <%= inspect schema.table %> do
-      pow_assent_user_identity_fields()
+      pow_assent_identity_fields()
 
       timestamps()
     end
