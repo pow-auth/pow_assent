@@ -67,7 +67,7 @@ mix pow_assent.install
 This will add the following files to your app:
 
 ```bash
-LIB_PATH/user_identities/user_identity.ex
+LIB_PATH/users/user_identity.ex
 PRIV_PATH/repo/migrations/TIMESTAMP_create_user_identities.ex
 ```
 
@@ -236,7 +236,7 @@ Add `messages_backend: MyAppWeb.Pow.Messages` to your Pow configuration. You can
 
 ## Populate fields
 
-To populate fields in your user struct that are fetched from the provider, you can override the `user_identity_changeset/4` method to cast them:
+To populate fields in your user struct that are fetched from the provider, you can override the `identity_changeset/4` method to cast them:
 
 ```elixir
 defmodule MyApp.Users.User do
@@ -252,10 +252,10 @@ defmodule MyApp.Users.User do
     timestamps()
   end
 
-  def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
+  def identity_changeset(user_or_changeset, identity, attrs, user_id_attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:custom_field])
-    |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
+    |> pow_assent_identity_changeset(identity, attrs, user_id_attrs)
   end
 end
 ```
@@ -338,7 +338,7 @@ defmodule MyApp.Lib.User do
   use PowAssent.Ecto.Schema
 
   schema "users" do
-    has_many :user_identities,
+    has_many :identities,
       MyApp.Lib.UserIdentity,
       on_delete: :delete_all,
       foreign_key: :user_id
@@ -357,7 +357,7 @@ end
 Otherwise you'll get an error that reads:
 
 ```elixir
-warning: invalid association `user_identities` in schema MyApp.Lib.User: associated schema MyApp.UserIdentities.UserIdentity does not exist
+warning: invalid association `identities` in schema MyApp.Lib.User: associated schema MyApp.Users.UserIdentity does not exist
 ```
 
 ## Callback URL with HTTPS behind proxy

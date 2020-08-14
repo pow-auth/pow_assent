@@ -5,7 +5,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
 
   @provider "test_provider"
   @token_params %{"access_token" => "access_token"}
-  @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}
+  @identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}
   @user_params %{"name" => "John Doe"}
 
   setup %{conn: conn} do
@@ -45,7 +45,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "shows with changeset stored in session", %{conn: conn} do
-      {:error, {:invalid_user_id_field, changeset}} = PowAssent.Ecto.UserIdentities.Context.create_user(@user_identity_params, Map.put(@user_params, "email", "taken@example.com"), nil, repo: PowAssent.Test.RepoMock, user: PowAssent.Test.Ecto.Users.User)
+      {:error, {:invalid_user_id_field, changeset}} = PowAssent.Ecto.Identities.Context.create_user(@identity_params, Map.put(@user_params, "email", "taken@example.com"), nil, repo: PowAssent.Test.RepoMock, user: PowAssent.Test.Ecto.Users.User)
       conn =
         conn
         |> Conn.put_private(:pow_assent_session, %{changeset: changeset, callback_params: provider_params()})
@@ -100,7 +100,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "with identity already bound to another user", %{conn: conn} do
-      params = provider_params(user_identity_params: %{"uid" => "identity_taken"})
+      params = provider_params(identity_params: %{"uid" => "identity_taken"})
       conn   =
         conn
         |> Conn.put_private(:pow_assent_session, %{callback_params: params})
@@ -164,15 +164,15 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
 
       assert redirected_to(conn) == "/registration_created"
       assert user = Pow.Plug.current_user(conn)
-      assert [user_identity] = user.user_identities
-      assert user_identity.access_token == "access_token"
+      assert [identity] = user.identities
+      assert identity.access_token == "access_token"
     end
   end
 
   defp provider_params(opts \\ []) do
-    user_identity_params = Map.merge(@user_identity_params, Keyword.get(opts, :user_identity_params, %{}))
+    identity_params = Map.merge(@identity_params, Keyword.get(opts, :identity_params, %{}))
     user_params = Map.merge(@user_params, Keyword.get(opts, :user_params, %{}))
 
-    %{@provider => %{user_identity: user_identity_params, user: user_params}}
+    %{@provider => %{identity: identity_params, user: user_params}}
   end
 end

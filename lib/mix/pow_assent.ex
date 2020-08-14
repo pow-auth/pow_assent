@@ -30,11 +30,11 @@ defmodule Mix.PowAssent do
     #{msg}
 
     mix #{task} accepts both a module name and the plural of the resource:
-        mix #{task} UserIdentities.UserIdentity user_identities
+        mix #{task} Users.UserIdentity user_identities
     """)
   end
 
   defp schema_options_from_args(_opts \\ [])
   defp schema_options_from_args([schema, plural | _rest]), do: %{schema_name: schema, schema_plural: plural}
-  defp schema_options_from_args(_any), do: %{schema_name: "UserIdentities.UserIdentity", schema_plural: "user_identities"}
+  defp schema_options_from_args(_any), do: %{schema_name: "Users.UserIdentity", schema_plural: "user_identities"}
 end

@@ -1,7 +1,7 @@
 defmodule PowAssent.Test.EmailConfirmation.RepoMock do
   @moduledoc false
 
-  alias PowAssent.Test.EmailConfirmation.{UserIdentities.UserIdentity, Users.User}
+  alias PowAssent.Test.EmailConfirmation.{Users.UserIdentity, Users.User}
   alias PowAssent.Test.RepoMock
 
   def one(query, _opts) do

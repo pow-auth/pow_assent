@@ -1,17 +1,17 @@
 module_raised_with =
   try do
-    defmodule PowAssent.Test.UserIdentities.InvalidUserIdentity do
-      use PowAssent.Ecto.UserIdentities.Schema
+    defmodule PowAssent.Test.Users.InvalidUserIdentity do
+      use PowAssent.Ecto.Identities.Schema
     end
   rescue
     e in PowAssent.Config.ConfigError -> e.message
   end
 
-defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
+defmodule PowAssent.Ecto.Identities.SchemaTest do
   use PowAssent.Test.Ecto.TestCase
-  doctest PowAssent.Ecto.UserIdentities.Schema
+  doctest PowAssent.Ecto.Identities.Schema
 
-  alias PowAssent.Test.Ecto.{Repo, UserIdentities.UserIdentity, Users.User}
+  alias PowAssent.Test.Ecto.{Repo, Users.UserIdentity, Users.User}
 
   test "raises error during compile when there's no `:user` configuration" do
     assert unquote(module_raised_with) =~  "No :user configuration option found for user identity schema module."
@@ -61,7 +61,7 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
         |> UserIdentity.changeset(@valid_params)
         |> Repo.insert()
 
-      assert changeset.errors[:uid_provider] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
+      assert changeset.errors[:uid] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
     end
   end
 end

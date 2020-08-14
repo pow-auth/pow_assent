@@ -5,7 +5,7 @@ defmodule PowAssent.PlugTest do
   alias Plug.{Conn, ProcessStore, Session, Test}
   alias Pow.Plug.Session, as: PowSession
   alias PowAssent.Plug
-  alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
+  alias PowAssent.Test.{Ecto.Users.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
 
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
 
@@ -72,16 +72,16 @@ defmodule PowAssent.PlugTest do
         assert params["redirect_uri"] == "https://example.com/"
       end)
 
-      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
-      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert {:ok, identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
+      assert identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user_params == %{"name" => "John Doe", "email" => "test@example.com"}
     end
 
     test "returns user params with preferred username as username", %{conn: conn, bypass: bypass} do
       expect_oauth2_flow(bypass, user: %{preferred_username: "john.doe"})
 
-      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
-      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert {:ok, identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
+      assert identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user_params == %{"username" => "john.doe", "name" => "John Doe", "email" => "test@example.com"}
     end
   end
@@ -124,16 +124,16 @@ defmodule PowAssent.PlugTest do
     end
 
     test "creates user identity", %{conn: conn} do
-      assert {:ok, user_identity, conn} = Plug.upsert_identity(conn, @new_identity_params)
+      assert {:ok, identity, conn} = Plug.upsert_identity(conn, @new_identity_params)
 
-      assert user_identity.id == :inserted
+      assert identity.id == :inserted
       assert fetch_session_id(conn)
     end
 
     test "updates user identity", %{conn: conn} do
-      assert {:ok, user_identity, conn} = Plug.upsert_identity(conn, @existing_identity_params)
+      assert {:ok, identity, conn} = Plug.upsert_identity(conn, @existing_identity_params)
 
-      assert user_identity.id == :updated
+      assert identity.id == :updated
 
       assert fetch_session_id(conn)
     end
@@ -148,10 +148,10 @@ defmodule PowAssent.PlugTest do
     test "calls create session callback", %{conn: init_conn} do
       init_conn = Plug.put_create_session_callback(init_conn, &Conn.put_private(&1, :callback_called, {&2, &3}))
 
-      assert {:ok, _user_identity, conn} = Plug.upsert_identity(init_conn, @new_identity_params)
+      assert {:ok, _identity, conn} = Plug.upsert_identity(init_conn, @new_identity_params)
       assert {"test_provider", _config} = conn.private[:callback_called]
 
-      assert {:ok, _user_identity, conn} = Plug.upsert_identity(init_conn, @existing_identity_params)
+      assert {:ok, _identity, conn} = Plug.upsert_identity(init_conn, @existing_identity_params)
       assert {"test_provider", _config} = conn.private[:callback_called]
 
       assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.upsert_identity(init_conn, @identity_taken_params)
@@ -160,44 +160,44 @@ defmodule PowAssent.PlugTest do
   end
 
   describe "create_user/3" do
-    @user_identity_attrs       %{"provider" => "test_provider", "uid" => "new_user"}
-    @user_identity_attrs_taken %{"provider" => "test_provider", "uid" => "identity_taken"}
-    @user_attrs                %{"name" => "John Doe", "email" => "test@example.com"}
-    @user_attrs_no_user_id     %{"name" => "John Doe"}
+    @identity_attrs        %{"provider" => "test_provider", "uid" => "new_user"}
+    @identity_attrs_taken  %{"provider" => "test_provider", "uid" => "identity_taken"}
+    @user_attrs            %{"name" => "John Doe", "email" => "test@example.com"}
+    @user_attrs_no_user_id %{"name" => "John Doe"}
 
     test "creates user", %{conn: conn} do
-      assert {:ok, user, conn} = Plug.create_user(conn, @user_identity_attrs, @user_attrs)
+      assert {:ok, user, conn} = Plug.create_user(conn, @identity_attrs, @user_attrs)
 
       assert user.id == :inserted
       assert fetch_session_id(conn)
     end
 
     test "with missing user id", %{conn: conn} do
-      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, @user_identity_attrs, @user_attrs_no_user_id)
+      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, @identity_attrs, @user_attrs_no_user_id)
       refute fetch_session_id(conn)
     end
 
     test "with identity already taken", %{conn: conn} do
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, @user_identity_attrs_taken, @user_attrs)
+      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, @identity_attrs_taken, @user_attrs)
       refute fetch_session_id(conn)
     end
 
     test "calls create session callback", %{conn: init_conn} do
       init_conn = Plug.put_create_session_callback(init_conn, &Conn.put_private(&1, :callback_called, {&2, &3}))
 
-      assert {:ok, _user, conn} = Plug.create_user(init_conn, @user_identity_attrs, @user_attrs)
+      assert {:ok, _user, conn} = Plug.create_user(init_conn, @identity_attrs, @user_attrs)
       assert {"test_provider", _config} = conn.private[:callback_called]
 
-      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(init_conn, @user_identity_attrs, @user_attrs_no_user_id)
+      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(init_conn, @identity_attrs, @user_attrs_no_user_id)
       refute conn.private[:callback_called]
 
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(init_conn, @user_identity_attrs_taken, @user_attrs)
+      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(init_conn, @identity_attrs_taken, @user_attrs)
       refute conn.private[:callback_called]
     end
   end
 
   describe "delete_identity/3" do
-    @user %User{id: 1, password_hash: "", user_identities: [%UserIdentity{id: 1, provider: "test_provider"}, %UserIdentity{id: 2, provider: "other_provider"}]}
+    @user %User{id: 1, password_hash: "", identities: [%UserIdentity{id: 1, provider: "test_provider"}, %UserIdentity{id: 2, provider: "other_provider"}]}
 
     test "deletes", %{conn: conn} do
       conn = Pow.Plug.assign_current_user(conn, @user, @default_config)

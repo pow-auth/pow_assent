@@ -1,7 +1,7 @@
 defmodule PowAssent.Test.Invitation.RepoMock do
   @moduledoc false
 
-  alias PowAssent.Test.Invitation.{Users.User, UserIdentities.UserIdentity}
+  alias PowAssent.Test.Invitation.{Users.User, Users.UserIdentity}
   alias PowAssent.Test.RepoMock
 
   @user %User{id: 1, email: "test@example.com"}

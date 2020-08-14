@@ -16,7 +16,7 @@ defmodule Mix.Tasks.PowAssent.InstallTest do
     File.cd!(@tmp_path, fn ->
       Install.run([])
 
-      assert File.ls!("lib/pow_assent/user_identities") == ["user_identity.ex"]
+      assert File.ls!("lib/pow_assent/users") == ["user_identity.ex"]
     end)
   end
 
@@ -51,19 +51,19 @@ defmodule Mix.Tasks.PowAssent.InstallTest do
   test "raises error on invalid schema name or table" do
     File.cd!(@tmp_path, fn ->
       assert_raise Mix.Error, ~r/Invalid arguments/, fn ->
-        Install.run(~w(UserIdentities.UserIdentity))
+        Install.run(~w(Users.UserIdentity))
       end
 
-      assert_raise Mix.Error, ~r/Expected the schema argument, "useridentities.useridentity", to be a valid module name/, fn ->
-        Install.run(~w(useridentities.useridentity useridentities))
+      assert_raise Mix.Error, ~r/Expected the schema argument, "users.useridentity", to be a valid module name/, fn ->
+        Install.run(~w(users.useridentity useridentities))
       end
 
       assert_raise Mix.Error, ~r/Expected the plural argument, "UserIdentities", to be all lowercase using snake_case convention/, fn ->
-        Install.run(~w(UserIdentities.UserIdentity UserIdentities))
+        Install.run(~w(Users.UserIdentity UserIdentities))
       end
 
       assert_raise Mix.Error, ~r/Expected the plural argument, "useridentities:", to be all lowercase using snake_case convention/, fn ->
-        Install.run(~w(UserIdentities.UserIdentity useridentities:))
+        Install.run(~w(Users.UserIdentity useridentities:))
       end
     end)
   end

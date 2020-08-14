@@ -1,7 +1,7 @@
 defmodule PowAssent.Test.WithAccessToken.RepoMock do
   @moduledoc false
 
-  alias PowAssent.Test.WithAccessToken.{UserIdentities.UserIdentity, Users.User}
+  alias PowAssent.Test.WithAccessToken.{Users.UserIdentity, Users.User}
   alias PowAssent.Test.RepoMock
 
   def one(query, _opts) do
