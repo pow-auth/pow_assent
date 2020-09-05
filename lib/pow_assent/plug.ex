@@ -121,7 +121,7 @@ defmodule PowAssent.Plug do
   defp maybe_authenticate(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
     user_identity_params = Map.fetch!(params, :user_identity)
 
-    case Pow.Plug.current_user(conn) do
+    case Plug.current_user(conn) do
       nil ->
         conn
         |> authenticate(user_identity_params)
@@ -139,7 +139,7 @@ defmodule PowAssent.Plug do
   defp maybe_upsert_user_identity(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
     user_identity_params = Map.fetch!(params, :user_identity)
 
-    case Pow.Plug.current_user(conn) do
+    case Plug.current_user(conn) do
       nil ->
         conn
 
@@ -168,7 +168,7 @@ defmodule PowAssent.Plug do
     user_params          = Map.fetch!(params, :user)
     user_identity_params = Map.fetch!(params, :user_identity)
 
-    case Pow.Plug.current_user(conn) do
+    case Plug.current_user(conn) do
       nil ->
         conn
         |> create_user(user_identity_params, user_params)
@@ -431,6 +431,7 @@ defmodule PowAssent.Plug do
   end
   defp provider_to_atom!(provider) when is_atom(provider), do: provider
 
+  @cookie_key "auth_session"
   @private_session_key :pow_assent_session
   @private_session_info_key :pow_assent_session_info
 
@@ -438,35 +439,65 @@ defmodule PowAssent.Plug do
   Initializes session.
 
   Session data will be fetched and deleted from the PowAssent session store if
-  a `pow_assent_session` key was found in the Plug session. The session data is
-  set for the `:pow_assent_session` key in in `conn.private`.
+  an auth session cookie was found. The session data is set for the
+  `:pow_assent_session_info` key in in `conn.private`.
 
   A `:before_send` callback will be set to store session data. If
   `:pow_assent_session` key in `conn.private` has been populated, a random UUID
   is generated and used as the key for the stored session data. The UUID is
-  then stored as `pow_assent_session` key in the Plug session.
+  then stored as the value for the auth session cookie.
 
-  The session store can be changed by setting `:session_store` config option.
-  By default it's
-  `{PowAssent.Store.SessionCache, backend: Pow.Store.Backend.EtsCache}`. The
-  backend store can be changed by setting `:cache_store_backend` for the Pow
-  configuration.
+  ## Configuration options
+
+  The configuration is fetched with `fetch_config/1`.
+
+    * `:session_store` - the session store. This value
+      defaults to
+      `{PowAssent.Store.SessionCache, backend: Pow.Store.Backend.EtsCache}`.
+      The `Pow.Store.Backend.EtsCache` backend store can be changed with the
+      `:cache_store_backend` option.
+
+    * `:auth_session_cookie_key` - The cookie key name to use. Defaults to
+      "auth_session". If `:otp_app` is used it'll automatically prepend the key
+      with the `:otp_app` value.
+
+    * `:auth_session_cookie_opts` - keyword list of cookie options, see
+      `Plug.Conn.put_resp_cookie/4` for options. The default options are
+      `[path: "/"]`.
   """
   @spec init_session(Conn.t()) :: Conn.t()
   def init_session(conn) do
-    config     = fetch_config(conn)
-    pow_config = Plug.fetch_config(conn)
-    key        = Conn.get_session(conn, @private_session_key)
-    value      = get_session_value(key, config, pow_config) || default_value(conn)
+    config      = fetch_config(conn)
+    pow_config  = Plug.fetch_config(conn)
+    {key, conn} = client_store_fetch(conn, config, pow_config)
+    value       = get_session_value(key, config, pow_config) || default_value(conn)
 
     conn
-    |> Conn.delete_session(@private_session_key)
+    |> maybe_client_store_delete(config)
     |> Conn.put_private(@private_session_key, value)
     |> Conn.register_before_send(& put_session_value(&1, config, pow_config))
   end
 
-  defp default_value(%{private: %{@private_session_key => session}}), do: session
-  defp default_value(_conn), do: %{}
+  defp client_store_fetch(conn, config, pow_config) do
+    conn = Conn.fetch_cookies(conn)
+
+    with token when is_binary(token) <- conn.cookies[cookie_key(config)],
+         {:ok, token}                <- Plug.verify_token(conn, signing_salt(), token, pow_config) do
+      {token, conn}
+    else
+      _any -> {nil, conn}
+    end
+  end
+
+  defp signing_salt(), do: Atom.to_string(__MODULE__)
+
+  defp cookie_key(config) do
+    Config.get(config, :auth_session_cookie_key, default_cookie_key(config))
+  end
+
+  defp default_cookie_key(config) do
+    Plug.prepend_with_namespace(config, @cookie_key)
+  end
 
   defp get_session_value(nil, _config, _pow_config), do: nil
   defp get_session_value(key, config, pow_config) do
@@ -495,15 +526,47 @@ defmodule PowAssent.Plug do
     {SessionCache, [backend: backend]}
   end
 
+  defp default_value(%{private: %{@private_session_key => session}}), do: session
+  defp default_value(_conn), do: %{}
+
+  defp maybe_client_store_delete(conn, config) do
+    conn = Conn.fetch_cookies(conn)
+
+    case Map.has_key?(conn.cookies, cookie_key(config)) do
+      true  -> client_store_delete(conn, config)
+      false -> conn
+    end
+  end
+
+  defp client_store_delete(conn, config) do
+    conn
+    |> Conn.fetch_cookies()
+    |> Conn.delete_resp_cookie(cookie_key(config), cookie_opts(config))
+  end
+
+  defp cookie_opts(config) do
+    config
+    |> Config.get(:auth_session_cookie_opts, [])
+    |> Keyword.put_new(:path, "/")
+  end
+
   defp put_session_value(%{private: %{@private_session_info_key => :write, @private_session_key => session}} = conn, config, pow_config) when session != %{} do
     {store, store_config} = store(config, pow_config)
     key                   = UUID.generate()
 
     store.put(store_config, key, session)
 
-    Conn.put_session(conn, @private_session_key, key)
+    client_store_put(conn, key, config, pow_config)
   end
   defp put_session_value(conn, _config, _pow_config), do: conn
+
+  defp client_store_put(conn, token, config, pow_config) do
+    signed_token = Plug.sign_token(conn, signing_salt(), token, pow_config)
+
+    conn
+    |> Conn.fetch_cookies()
+    |> Conn.put_resp_cookie(cookie_key(config), signed_token, cookie_opts(config))
+  end
 
   @doc """
   Inserts value for key in session.

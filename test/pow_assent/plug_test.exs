@@ -4,7 +4,7 @@ defmodule PowAssent.PlugTest do
 
   alias Plug.{Conn, ProcessStore, Session, Test}
   alias Pow.Plug.Session, as: PowSession
-  alias PowAssent.Plug
+  alias PowAssent.{Plug, Store.SessionCache}
   alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
 
   import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
@@ -93,11 +93,11 @@ defmodule PowAssent.PlugTest do
     test "authenticates existing user", %{conn: init_conn} do
       assert {:error, conn} = Plug.authenticate(init_conn, @new_user_params)
       refute Pow.Plug.current_user(conn)
-      refute fetch_session_id(conn)
+      refute fetch_pow_session_id(conn)
 
       assert {:ok, conn} = Plug.authenticate(init_conn, @existing_user_params)
       assert Pow.Plug.current_user(conn) == %User{id: 1, email: "test@example.com"}
-      assert fetch_session_id(conn)
+      assert fetch_pow_session_id(conn)
     end
 
     test "calls create session callback", %{conn: init_conn} do
@@ -127,7 +127,7 @@ defmodule PowAssent.PlugTest do
       assert {:ok, user_identity, conn} = Plug.upsert_identity(conn, @new_identity_params)
 
       assert user_identity.id == :inserted
-      assert fetch_session_id(conn)
+      assert fetch_pow_session_id(conn)
     end
 
     test "updates user identity", %{conn: conn} do
@@ -135,14 +135,14 @@ defmodule PowAssent.PlugTest do
 
       assert user_identity.id == :updated
 
-      assert fetch_session_id(conn)
+      assert fetch_pow_session_id(conn)
     end
 
     test "with identity already taken", %{conn: conn} do
       assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.upsert_identity(conn, @identity_taken_params)
 
       assert Pow.Plug.current_user(conn) == @user
-      refute fetch_session_id(conn)
+      refute fetch_pow_session_id(conn)
     end
 
     test "calls create session callback", %{conn: init_conn} do
@@ -169,17 +169,17 @@ defmodule PowAssent.PlugTest do
       assert {:ok, user, conn} = Plug.create_user(conn, @user_identity_attrs, @user_attrs)
 
       assert user.id == :inserted
-      assert fetch_session_id(conn)
+      assert fetch_pow_session_id(conn)
     end
 
     test "with missing user id", %{conn: conn} do
       assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, @user_identity_attrs, @user_attrs_no_user_id)
-      refute fetch_session_id(conn)
+      refute fetch_pow_session_id(conn)
     end
 
     test "with identity already taken", %{conn: conn} do
       assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, @user_identity_attrs_taken, @user_attrs)
-      refute fetch_session_id(conn)
+      refute fetch_pow_session_id(conn)
     end
 
     test "calls create session callback", %{conn: init_conn} do
@@ -240,13 +240,15 @@ defmodule PowAssent.PlugTest do
     end
   end
 
-  describe "init_session/1" do
-    @store_config [namespace: "pow_assent_sessions"]
+  @cookie_key "auth_session"
+  @custom_cookie_opts [domain: "domain.com", max_age: 1, path: "/path", http_only: false, secure: true, extra: "SameSite=Lax"]
 
+  describe "init_session/1" do
     test "initializes new session", %{conn: conn} do
       init_conn = Plug.init_session(conn)
 
       assert init_conn.private[:pow_assent_session] == %{}
+      refute conn.resp_cookies["pow_assent_" <> @cookie_key]
     end
 
     test "stores session if not empty and pow_assent_session_info: :write", %{conn: init_conn} do
@@ -256,7 +258,7 @@ defmodule PowAssent.PlugTest do
         |> Conn.put_private(:pow_assent_session_info, :write)
         |> Conn.send_resp(200, "")
 
-      assert conn.private[:plug_session] == %{}
+      refute conn.resp_cookies["pow_assent_" <> @cookie_key]
       refute_received {:ets, :put, _any, _config}
 
       conn =
@@ -265,7 +267,7 @@ defmodule PowAssent.PlugTest do
         |> Conn.put_private(:pow_assent_session, %{a: 1})
         |> Conn.send_resp(200, "")
 
-      assert conn.private[:plug_session] == %{}
+      refute conn.resp_cookies["pow_assent_" <> @cookie_key]
       refute_received {:ets, :put, _any, _config}
 
       conn =
@@ -275,27 +277,86 @@ defmodule PowAssent.PlugTest do
         |> Conn.put_private(:pow_assent_session_info, :write)
         |> Conn.send_resp(200, "")
 
-      assert key = conn.private[:plug_session]["pow_assent_session"]
-      assert EtsCacheMock.get(@store_config, key) == %{a: 1}
+      assert %{value: id} = conn.resp_cookies["pow_assent_" <> @cookie_key]
+      assert conn.resp_cookies["pow_assent_" <> @cookie_key] == %{value: id, path: "/"}
+      assert get_from_cache(conn, id) == %{a: 1}
     end
 
     test "initializes existing session", %{conn: conn} do
-      key = "test"
-
-      EtsCacheMock.put(@store_config, [{key, %{a: 1}}])
+      id = store_in_cache(conn, "test", %{a: 1})
 
       conn =
         conn
-        |> Conn.put_session(:pow_assent_session, key)
-        |> Conn.send_resp(200, "")
-        |> recycle_session_conn()
-        |> init_session_conn()
+        |> session_cookie("pow_assent_" <> @cookie_key, id)
         |> Plug.init_session()
         |> Conn.send_resp(200, "")
 
-      refute conn.private[:plug_session]["pow_assent_session"]
+      assert conn.resp_cookies["pow_assent_" <> @cookie_key] == %{max_age: 0, path: "/", universal_time: {{1970, 1, 1}, {0, 0, 0}}}
       assert conn.private[:pow_assent_session] == %{a: 1}
-      assert EtsCacheMock.get(@store_config, key) == :not_found
+      assert get_from_cache(conn, id) == :not_found
+    end
+
+    test "with prepended `:otp_app`", %{conn: init_conn} do
+      config = Keyword.put(@default_config, :otp_app, :test_app)
+      init_conn = Conn.put_private(init_conn, :pow_config, config)
+
+      conn =
+        init_conn
+        |> Plug.init_session()
+        |> Conn.put_private(:pow_assent_session, %{a: 1})
+        |> Conn.put_private(:pow_assent_session_info, :write)
+        |> Conn.send_resp(200, "")
+
+      assert %{value: id} = conn.resp_cookies["test_app_" <> @cookie_key]
+      assert conn.resp_cookies["test_app_" <> @cookie_key] == %{value: id, path: "/"}
+      assert get_from_cache(conn, id) == %{a: 1}
+
+      conn =
+        init_conn
+        |> session_cookie("test_app_" <> @cookie_key, id)
+        |> Plug.init_session()
+        |> Conn.send_resp(200, "")
+
+      assert conn.resp_cookies["test_app_" <> @cookie_key] == %{max_age: 0, path: "/", universal_time: {{1970, 1, 1}, {0, 0, 0}}}
+      assert conn.private[:pow_assent_session] == %{a: 1}
+    end
+
+    test "with custom cookie options", %{conn: init_conn} do
+      config = Keyword.put(@default_config, :pow_assent, auth_session_cookie_opts: @custom_cookie_opts)
+      conn   =
+        init_conn
+        |> Conn.put_private(:pow_config, config)
+        |> Plug.init_session()
+        |> Conn.put_private(:pow_assent_session, %{a: 1})
+        |> Conn.put_private(:pow_assent_session_info, :write)
+        |> Conn.send_resp(200, "")
+
+      assert %{
+        value: id,
+        domain: "domain.com",
+        extra: "SameSite=Lax",
+        http_only: false,
+        max_age: 1,
+        path: "/path",
+        secure: true
+      } = conn.resp_cookies["pow_assent_" <> @cookie_key]
+
+      conn =
+        init_conn
+        |> Conn.put_private(:pow_config, config)
+        |> session_cookie("pow_assent_" <> @cookie_key, id)
+        |> Plug.init_session()
+        |> Conn.send_resp(200, "")
+
+      assert conn.resp_cookies["pow_assent_" <> @cookie_key] == %{
+        max_age: 0,
+        universal_time: {{1970, 1, 1}, {0, 0, 0}},
+        domain: "domain.com",
+        extra: "SameSite=Lax",
+        http_only: false,
+        path: "/path",
+        secure: true
+      }
     end
   end
 
@@ -330,8 +391,9 @@ defmodule PowAssent.PlugTest do
     assert get_query_param(url, "scope") == "user:read user:write"
   end
 
-  defp init_session_conn(conn \\ nil) do
-    (conn || conn(@default_config))
+  defp init_session_conn() do
+    @default_config
+    |> conn()
     |> Session.call(Session.init(store: ProcessStore, key: "foobar"))
     |> PowSession.call(PowSession.init(@default_config))
   end
@@ -339,17 +401,11 @@ defmodule PowAssent.PlugTest do
   defp conn(config) do
     :get
     |> Test.conn("/")
+    |> Map.put(:secret_key_base, String.duplicate("abcdefghijklmnopqrstuvxyz0123456789", 2))
     |> Conn.put_private(:pow_config, config)
   end
 
-  defp recycle_session_conn(old_conn) do
-    []
-    |> conn()
-    |> Test.recycle_cookies(old_conn)
-    |> init_session_conn()
-  end
-
-  defp fetch_session_id(conn) do
+  defp fetch_pow_session_id(conn) do
     conn =
       conn
       |> Map.put(:secret_key_base, String.duplicate("abcdefghijklmnopqrstuvxyz0123456789", 2))
@@ -362,5 +418,22 @@ defmodule PowAssent.PlugTest do
     %{query: query} = URI.parse(uri)
 
     URI.decode_query(query)[param]
+  end
+
+  defp store_in_cache(conn, token, value) do
+    SessionCache.put([backend: EtsCacheMock], token, value)
+
+    Pow.Plug.sign_token(conn, Atom.to_string(Plug), token)
+  end
+
+  defp get_from_cache(conn, token) do
+    assert {:ok, token} = Pow.Plug.verify_token(conn, Atom.to_string(Plug), token)
+
+    SessionCache.get([backend: EtsCacheMock], token)
+  end
+
+  defp session_cookie(conn, cookie_key, id) do
+    cookies = Map.new([{cookie_key, id}])
+    %{conn | cookies: cookies}
   end
 end
