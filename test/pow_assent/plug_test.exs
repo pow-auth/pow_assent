@@ -38,7 +38,7 @@ defmodule PowAssent.PlugTest do
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
-      assert %{private: %{pow_assent_session_params: %{state: state, nonce: nonce}}} = conn
+      assert %{private: %{pow_assent_session_params: %{state: _state, nonce: nonce}}} = conn
       assert nonce == "nonce"
       assert get_query_param(url, "nonce") == "nonce"
     end
@@ -48,7 +48,7 @@ defmodule PowAssent.PlugTest do
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
-      assert %{private: %{pow_assent_session_params: %{state: state, nonce: nonce}}} = conn
+      assert %{private: %{pow_assent_session_params: %{state: _state, nonce: nonce}}} = conn
       assert get_query_param(url, "nonce") == URI.encode(nonce)
     end
   end
