@@ -39,15 +39,18 @@ defmodule PowAssent.MixProject do
       {:phoenix_html, ">= 2.0.0 and <= 3.0.0"},
       {:plug, ">= 1.5.0 and < 2.0.0", optional: true},
 
-      {:phoenix_ecto, "~> 4.0.0", only: [:dev, :test]},
-      {:credo, "~> 1.1.0", only: [:dev, :test]},
+      {:phoenix_ecto, "~> 4.0", only: [:dev, :test]},
+      {:credo, "~> 1.1", only: [:dev, :test]},
       {:jason, "~> 1.0", only: [:dev, :test]},
 
-      {:ex_doc, "~> 0.21.0", only: :dev},
+      {:ex_doc, "~> 0.21", only: :dev},
 
       {:ecto_sql, "~> 3.1", only: :test},
-      {:postgrex, "~> 0.14.0", only: :test},
-      {:bypass, "~> 1.0.0", only: :test}
+      {:postgrex, "~> 0.14", only: :test},
+      {:cowboy, "~> 2.8", only: :test, override: true},
+      {:cowlib, "~> 2.9", only: :test, override: true},
+      {:ranch, "~> 1.7", only: :test, override: true},
+      {:bypass, "~> 2.0", only: :test}
     ]
   end
 
