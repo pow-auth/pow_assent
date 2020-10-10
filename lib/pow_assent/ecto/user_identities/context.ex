@@ -59,9 +59,6 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
               {:ok, {number(), nil}} | {:error, {:no_password, changeset()}}
   @callback all(user()) :: [user_identity()]
 
-  # TODO: Remove by 0.4.0
-  @callback create(user(), user_identity_params()) :: any()
-
   @doc false
   defmacro __using__(config) do
     quote do
@@ -97,14 +94,6 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
         unquote(__MODULE__).all(user, @pow_config)
       end
 
-      # TODO: Remove by 0.4.0
-      @deprecated "Please use `upsert/2` instead"
-      defdelegate create(user, user_identity_params), to: __MODULE__, as: :upsert
-
-      # TODO: Remove by 0.4.0
-      @deprecated "Please use `pow_assent_upsert/2` instead"
-      defdelegate pow_assent_create(user, user_identity_params), to: __MODULE__, as: :pow_assent_upsert
-
       defoverridable unquote(__MODULE__)
     end
   end
@@ -127,12 +116,6 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     |> select([_, u], u)
     |> repo!(config).one(opts)
   end
-
-  # TODO: Remove by 0.4.0
-  @doc false
-  @deprecated "Use `upsert/3` instead"
-  @spec create(user(), user_identity_params(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, changeset()}} | {:error, changeset()}
-  def create(user, user_identity_params, config), do: upsert(user, user_identity_params, config)
 
   @doc """
   Upserts a user identity.

@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.5.0 (TBA)
+
+### Deprecations
+
+* [`PowAssent.Ecto.UserIdentities.Context`] Deprecated `create/2` callback removed
+* [`PowAssent.Ecto.UserIdentities.Context`] Deprecated `create/2` method in macro
+* [`PowAssent.Ecto.UserIdentities.Context`] Deprecated `pow_assent_create/2` method in macro
+* [`PowAssent.Ecto.UserIdentities.Context`] Deprecated `PowAssent.Ecto.UserIdentities.Context.create/3` method removed
+* [`PowAssent.Operations`] Deprecated `PowAssent.Operations.create/3` method removed
+* [`PowAssent.Plug`] Deprecated `PowAssent.Plug.create/2` method removed
+
 ## v0.4.8 (2020-05-18)
 
 ### Enhancements
