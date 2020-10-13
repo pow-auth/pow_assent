@@ -64,7 +64,7 @@ defmodule MyAppWeb.API.V1.AuthorizationController do
     |> Plug.callback_upsert(provider, params, redirect_uri(conn))
     |> case do
       {:ok, conn} ->
-        json(conn, %{data: %{token: conn.private[:api_auth_token], renew_token: conn.private[:api_renew_token]}})
+        json(conn, %{data: %{access_token: conn.private[:api_access_token], renewal_token: conn.private[:api_renewal_token]}})
 
       {:error, conn} ->
         conn
@@ -151,8 +151,8 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
       conn = post conn, Routes.api_v1_authorization_path(conn, :callback, :test_provider, @valid_params)
 
       assert json = json_response(conn, 200)
-      assert json["data"]["token"]
-      assert json["data"]["renew_token"]
+      assert json["data"]["access_token"]
+      assert json["data"]["renewal_token"]
     end
 
     test "with invalid params", %{conn: conn} do
