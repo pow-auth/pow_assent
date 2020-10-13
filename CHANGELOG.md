@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.9 (TBA)
+
+* [`PowAssent.Plug`] Now stores a session cookie instead of using `Plug.Session` to prevent SameSite policy issue in `form_post` flow
+
 ## v0.4.8 (2020-05-18)
 
 ### Enhancements

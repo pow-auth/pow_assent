@@ -31,14 +31,14 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider)
 
       assert redirected_to(conn) =~ "http://localhost:#{bypass.port}/oauth/authorize?client_id=client_id&"
-      assert conn.private[:plug_session]["pow_assent_session"]
+      assert conn.resp_cookies["pow_assent_auth_session"]
       assert get_pow_assent_session(conn, :session_params)[:state]
     end
 
     test "redirects with stored request_path", %{conn: conn} do
       conn = get(conn, Routes.pow_assent_authorization_path(conn, :new, @provider, request_path: "/custom-uri"))
 
-      assert conn.private[:plug_session]["pow_assent_session"]
+      assert conn.resp_cookies["pow_assent_auth_session"]
       assert get_pow_assent_session(conn, :request_path) == "/custom-uri"
     end
 
@@ -47,7 +47,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider, invitation_token: signed_token)
 
-      assert conn.private[:plug_session]["pow_assent_session"]
+      assert conn.resp_cookies["pow_assent_auth_session"]
       assert get_pow_assent_session(conn, :invitation_token) == signed_token
     end
 
@@ -59,7 +59,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
         assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
-        refute conn.private[:plug_session]["pow_assent_session"]
+        refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
       end) =~ "Strategy failed with error: \"fail\""
     end
@@ -86,7 +86,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
         assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
-        refute conn.private[:plug_session]["pow_assent_session"]
+        refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
       end) =~ "Strategy failed with error: %Assent.RequestError{error: :invalid_server_response, message: \"Server responded with status: 401"
     end
@@ -99,7 +99,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
         assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
-        refute conn.private[:plug_session]["pow_assent_session"]
+        refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
       end) =~ "Strategy failed with error: %Assent.RequestError{error: :unreachable, message: \"Server was unreachable with Assent.HTTPAdapter.Httpc."
     end
@@ -110,7 +110,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
         assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
-        refute conn.private[:plug_session]["pow_assent_session"]
+        refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
       end) =~ "Strategy failed with error: %Assent.CallbackCSRFError{message: \"CSRF detected with param key \\\"state\\\"\"}"
     end
@@ -122,7 +122,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == "/session_created"
 
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
     end
 
@@ -136,7 +136,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == "/session_created"
       assert get_flash(conn, :info) == "signed_in_test_provider"
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
     end
 
@@ -150,7 +150,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
       assert get_flash(conn, :error) == "The Test provider account is already bound to another user."
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
     end
 
@@ -164,7 +164,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert [user_identity] = user.user_identities
       assert user_identity.uid == "new_user"
       assert user_identity.provider == "test_provider"
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
     end
 
@@ -175,7 +175,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
       assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
     end
 
@@ -185,7 +185,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert conn.private[:plug_session]["pow_assent_session"]
+      assert conn.resp_cookies["pow_assent_auth_session"]
       assert %{"test_provider" => %{user_identity: user_identity, user: user}} = get_pow_assent_session(conn, :callback_params)
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user == %{"name" => "John Doe", "email" => ""}
@@ -200,7 +200,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert conn.private[:plug_session]["pow_assent_session"]
+      assert conn.resp_cookies["pow_assent_auth_session"]
       assert %{"test_provider" => %{user_identity: user_identity, user: user}} = get_pow_assent_session(conn, :callback_params)
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user == %{"name" => "John Doe", "email" => "taken@example.com"}
@@ -218,7 +218,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/custom-uri"
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :request_path)
     end
   end
@@ -245,7 +245,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert [user_identity] = user.user_identities
       assert user_identity.uid == "new_user"
       assert user_identity.provider == "test_provider"
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
     end
   end
@@ -285,7 +285,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert redirected_to(conn) == "/registration_created"
       assert user = Pow.Plug.current_user(conn)
       assert user.email_confirmed_at
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
     end
 
@@ -308,7 +308,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == Routes.pow_assent_registration_path(conn, :add_user_id, "test_provider")
-      assert conn.private[:plug_session]["pow_assent_session"]
+      assert conn.resp_cookies["pow_assent_auth_session"]
       assert %{"test_provider" => %{user_identity: user_identity, user: user}} = get_pow_assent_session(conn, :callback_params)
       assert user_identity == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
       assert user == %{"name" => "John Doe", "email" => "taken@example.com", "email_verified" => true}
@@ -349,7 +349,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert get_flash(conn, :info) == "signed_in_test_provider"
       assert user = Pow.Plug.current_user(conn)
       assert user.invitation_token == "token"
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :invitation_token)
       refute get_pow_assent_session(conn, :session_params)
     end
@@ -368,7 +368,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         |> Phoenix.ConnTest.dispatch(NoRegistrationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       refute Pow.Plug.current_user(conn)
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
 
       assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
@@ -403,7 +403,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = Phoenix.ConnTest.dispatch(conn, WithAccessTokenEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/registration_created"
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
       assert user = Pow.Plug.current_user(conn)
       assert [user_identity] = user.user_identities
@@ -416,7 +416,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       conn = Phoenix.ConnTest.dispatch(conn, WithAccessTokenEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
       assert redirected_to(conn) == "/session_created"
-      refute conn.private[:plug_session]["pow_assent_session"]
+      refute conn.resp_cookies["pow_assent_auth_session"]
       refute get_pow_assent_session(conn, :session_params)
       assert Pow.Plug.current_user(conn)
     end
