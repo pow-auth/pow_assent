@@ -6,6 +6,9 @@
 
 * [`PowAssent.Plug`] Now stores a session cookie instead of using `Plug.Session` to prevent SameSite policy issue in `form_post` flow
 * [`PowAssent.Plug`] `PowAssent.Plug.callback/4` now adds the `userinfo` with claims to the user identity params
+* [`PowAssent.Phoenix.ViewHelpers`] `PowAssent.Phoenix.ViewHelpers.authorization_link/3` now accepts block argument
+* [`PowAssent.Phoenix.ViewHelpers`] `PowAssent.Phoenix.ViewHelpers.deauthorization_link/3` now accepts block argument
+* [`PowAssent.Phoenix.ViewHelpers`] `PowAssent.Phoenix.ViewHelpers.authorization_links/2` now accepts link options or callback method as second argument
 
 ## v0.4.8 (2020-05-18)
 
