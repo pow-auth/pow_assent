@@ -5,7 +5,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
 
   @provider "test_provider"
   @token_params %{"access_token" => "access_token"}
-  @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params}
+  @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params, "userinfo" => %{"sub" => "new_user", "name" => "John Doe"}}
   @user_params %{"name" => "John Doe"}
 
   setup %{conn: conn} do
@@ -154,10 +154,10 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
   end
 
-  alias PowAssent.Test.WithAccessToken.Phoenix.Endpoint, as: WithAccessTokenEndpoint
+  alias PowAssent.Test.WithCustomChangeset.Phoenix.Endpoint, as: WithCustomChangesetEndpoint
   describe "POST /auth/:provider/create recording strategy params" do
     test "records", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch(conn, WithAccessTokenEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
+      conn = Phoenix.ConnTest.dispatch(conn, WithCustomChangesetEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
@@ -166,6 +166,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert user = Pow.Plug.current_user(conn)
       assert [user_identity] = user.user_identities
       assert user_identity.access_token == "access_token"
+      assert user_identity.name == "John Doe"
     end
   end
 

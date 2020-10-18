@@ -73,7 +73,7 @@ defmodule PowAssent.PlugTest do
       end)
 
       assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
-      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"sub" => "new_user", "name" => "John Doe", "email" => "test@example.com"}}
       assert user_params == %{"name" => "John Doe", "email" => "test@example.com"}
     end
 
@@ -81,7 +81,7 @@ defmodule PowAssent.PlugTest do
       expect_oauth2_flow(bypass, user: %{preferred_username: "john.doe"})
 
       assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
-      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}}
+      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"sub" => "new_user", "name" => "John Doe", "email" => "test@example.com", "preferred_username" => "john.doe"}}
       assert user_params == %{"username" => "john.doe", "name" => "John Doe", "email" => "test@example.com"}
     end
   end

@@ -1,4 +1,4 @@
-defmodule PowAssent.Test.Ecto.Repo.Migrations.AddAccessRefreshTokenToUsers do
+defmodule PowAssent.Test.Ecto.Repo.Migrations.AddAccessRefreshTokenToUserIdentities do
   use Ecto.Migration
 
   def change do
