@@ -157,7 +157,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   end
 
   defp user_identity_bound_different_user_error({:error, %{errors: errors} = changeset}) do
-    case unique_constraint_error?(errors, :uid_provider) do
+    case unique_constraint_error?(errors, :uid) do
       true  -> {:error, {:bound_to_different_user, changeset}}
       false -> {:error, changeset}
     end
@@ -214,7 +214,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   end
 
   defp user_user_identity_bound_different_user_error({:error, %{changes: %{user_identities: [%{errors: errors}]}} = changeset}) do
-    case unique_constraint_error?(errors, :uid_provider) do
+    case unique_constraint_error?(errors, :uid) do
       true  -> {:error, {:bound_to_different_user, changeset}}
       false -> {:error, changeset}
     end
