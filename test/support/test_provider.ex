@@ -2,6 +2,8 @@ defmodule PowAssent.Test.TestProvider do
   @moduledoc false
   use Assent.Strategy.OAuth2.Base
 
+  alias PowAssent.Test.OAuth2TestCase
+
   @impl true
   def default_config(_config) do
     [
@@ -25,8 +27,8 @@ defmodule PowAssent.Test.TestProvider do
     token_params = Keyword.get(opts, :token, %{"access_token" => "access_token"})
     user_params  = Map.merge(%{sub: "new_user", name: "John Doe", email: "test@example.com"}, Keyword.get(opts, :user, %{}))
 
-    PowAssent.Test.OAuth2TestCase.expect_oauth2_access_token_request(bypass, [params: token_params], opts[:access_token_assert_fn])
-    PowAssent.Test.OAuth2TestCase.expect_oauth2_user_request(bypass, user_params)
+    OAuth2TestCase.expect_oauth2_access_token_request(bypass, [params: token_params], opts[:access_token_assert_fn])
+    OAuth2TestCase.expect_oauth2_user_request(bypass, user_params)
   end
 
   @spec put_oauth2_env(Bypass.t(), keyword()) :: :ok

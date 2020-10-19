@@ -37,9 +37,9 @@ defmodule PowAssent.Plug.Reauthorization do
       `[max_age: max_age, path: "/"]` where `:max_age` is 30 days.
   """
   alias Plug.Conn
-  alias PowAssent.Plug
   alias Pow.Config
   alias Pow.Plug, as: PowPlug
+  alias PowAssent.Plug
 
   @cookie_key "reauthorization_provider"
   @cookie_max_age Integer.floor_div(:timer.hours(24) * 30, 1000)

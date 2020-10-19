@@ -3,5 +3,5 @@ defmodule PowAssent do
   use Pow.Extension.Base
 
   @impl true
-  def phoenix_messages?(), do: true
+  def phoenix_messages?, do: true
 end

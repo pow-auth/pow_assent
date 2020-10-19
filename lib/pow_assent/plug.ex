@@ -45,7 +45,7 @@ defmodule PowAssent.Plug do
     end
   end
 
-  defp gen_nonce() do
+  defp gen_nonce do
     16
     |> :crypto.strong_rand_bytes()
     |> Base.encode64(padding: false)
@@ -425,12 +425,9 @@ defmodule PowAssent.Plug do
   end
 
   defp provider_to_atom!(provider) when is_binary(provider) do
-    try do
-      String.to_existing_atom(provider)
-    rescue
-      ArgumentError ->
-        Config.raise_no_provider_config_error(provider)
-    end
+    String.to_existing_atom(provider)
+  rescue
+    ArgumentError -> Config.raise_no_provider_config_error(provider)
   end
   defp provider_to_atom!(provider) when is_atom(provider), do: provider
 
@@ -492,7 +489,7 @@ defmodule PowAssent.Plug do
     end
   end
 
-  defp signing_salt(), do: Atom.to_string(__MODULE__)
+  defp signing_salt, do: Atom.to_string(__MODULE__)
 
   defp cookie_key(config) do
     Config.get(config, :auth_session_cookie_key, default_cookie_key(config))

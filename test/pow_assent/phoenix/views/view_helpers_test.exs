@@ -1,10 +1,10 @@
 defmodule PowAssent.ViewHelpersTest do
   use PowAssent.Test.Phoenix.ConnCase
 
-  alias Plug.Conn
   alias Phoenix.HTML.Link
+  alias Plug.Conn
   alias PowAssent.Phoenix.ViewHelpers
-  alias PowAssent.Test.{Phoenix.Router, Ecto.Users.User, RepoMock}
+  alias PowAssent.Test.{Ecto.Users.User, Phoenix.Router, RepoMock}
 
   setup %{conn: conn} do
     config = [

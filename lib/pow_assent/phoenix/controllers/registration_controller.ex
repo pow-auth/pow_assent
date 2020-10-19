@@ -3,9 +3,9 @@ defmodule PowAssent.Phoenix.RegistrationController do
   use Pow.Extension.Phoenix.Controller.Base
 
   alias Plug.Conn
-  alias PowAssent.Plug
   alias Pow.Extension.Config, as: ExtensionConfig
   alias Pow.Plug, as: PowPlug
+  alias PowAssent.Plug
   alias PowEmailConfirmation.Phoenix.ControllerCallbacks, as: EmailConfirmationCallbacks
 
   plug :init_session

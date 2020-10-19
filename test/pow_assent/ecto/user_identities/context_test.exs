@@ -29,7 +29,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
 
   alias Ecto.Changeset
   alias PowAssent.Ecto.UserIdentities.Context
-  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithoutUserIdentities, Users.UserWithCustomChangesetUserIdentities, Users.User}
+  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithCustomChangesetUserIdentities, Users.UserWithoutUserIdentities}
 
   @config [repo: Repo, user: User]
   @user_identity_params %{"provider" => "test_provider", "uid" => "1", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"name" => "John Doe"}}

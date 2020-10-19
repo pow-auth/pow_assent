@@ -6,8 +6,8 @@ defmodule PowAssent.Operations do
   `PowAssent.Ecto.UserIdentities.Context` if a `:user_identities_context` key
   is passed in the PowAssent configuration.
   """
-  alias PowAssent.{Config, Ecto.UserIdentities.Context}
   alias Pow.Config, as: PowConfig
+  alias PowAssent.{Config, Ecto.UserIdentities.Context}
 
   @doc """
   Retrieve a user with the strategy provider name and uid.

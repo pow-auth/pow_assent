@@ -13,8 +13,8 @@ defmodule Mix.Tasks.PowAssent.Ecto.Install do
   """
   use Mix.Task
 
-  alias Mix.Tasks.PowAssent.Ecto.Gen.Schema, as: SchemaTask
   alias Mix.Tasks.PowAssent.Ecto.Gen.Migration, as: MigrationTask
+  alias Mix.Tasks.PowAssent.Ecto.Gen.Schema, as: SchemaTask
   alias Mix.{Pow, PowAssent}
 
   @switches []
@@ -31,7 +31,6 @@ defmodule Mix.Tasks.PowAssent.Ecto.Install do
     |> run_gen_migration(args)
     |> run_gen_schema(args)
   end
-
 
   defp parse({config, parsed, _invalid}) do
     PowAssent.validate_schema_args!(parsed, @mix_task)

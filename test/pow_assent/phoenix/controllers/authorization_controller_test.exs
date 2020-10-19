@@ -5,8 +5,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   import ExUnit.CaptureLog
 
   alias Plug.Conn
-  alias PowAssent.Test.Ecto.Users.User
   alias Pow.Plug, as: PowPlug
+  alias PowAssent.Test.Ecto.Users.User
   alias PowInvitation.Plug, as: PowInvitationPlug
 
   @provider "test_provider"

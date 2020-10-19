@@ -59,7 +59,7 @@ defmodule PowAssent.Ecto.Schema do
   end
 
   @doc false
-  defmacro __has_many__() do
+  defmacro __has_many__ do
     quote do
       @pow_assocs {:has_many, :user_identities, unquote(__MODULE__).__user_identities_module__(__MODULE__), foreign_key: :user_id, on_delete: :delete_all}
     end

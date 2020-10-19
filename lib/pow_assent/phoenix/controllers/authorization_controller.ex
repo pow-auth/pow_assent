@@ -5,9 +5,9 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   require Logger
 
   alias Plug.Conn
-  alias PowAssent.{Phoenix.AuthorizationController, Phoenix.RegistrationController, Plug}
   alias Pow.Extension.Config, as: ExtensionConfig
   alias Pow.Plug, as: PowPlug
+  alias PowAssent.{Phoenix.AuthorizationController, Phoenix.RegistrationController, Plug}
   alias PowEmailConfirmation.Phoenix.ControllerCallbacks, as: EmailConfirmationCallbacks
 
   plug :require_authenticated when action in [:delete]

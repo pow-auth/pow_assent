@@ -2,6 +2,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   use PowAssent.Test.Phoenix.ConnCase
 
   alias Plug.Conn
+  alias PowAssent.Ecto.UserIdentities.Context
 
   @provider "test_provider"
   @token_params %{"access_token" => "access_token"}
@@ -45,7 +46,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "shows with changeset stored in session", %{conn: conn} do
-      {:error, {:invalid_user_id_field, changeset}} = PowAssent.Ecto.UserIdentities.Context.create_user(@user_identity_params, Map.put(@user_params, "email", "taken@example.com"), nil, repo: PowAssent.Test.RepoMock, user: PowAssent.Test.Ecto.Users.User)
+      {:error, {:invalid_user_id_field, changeset}} = Context.create_user(@user_identity_params, Map.put(@user_params, "email", "taken@example.com"), nil, repo: PowAssent.Test.RepoMock, user: PowAssent.Test.Ecto.Users.User)
       conn =
         conn
         |> Conn.put_private(:pow_assent_session, %{changeset: changeset, callback_params: provider_params()})

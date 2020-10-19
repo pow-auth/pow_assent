@@ -391,7 +391,7 @@ defmodule PowAssent.PlugTest do
     assert get_query_param(url, "scope") == "user:read user:write"
   end
 
-  defp init_session_conn() do
+  defp init_session_conn do
     @default_config
     |> conn()
     |> Session.call(Session.init(store: ProcessStore, key: "foobar"))

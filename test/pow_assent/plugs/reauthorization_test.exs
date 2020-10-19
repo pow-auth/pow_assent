@@ -3,10 +3,10 @@ defmodule PowAssent.Plug.ReauthorizationTest do
   doctest PowAssent.Plug.Reauthorization
 
   alias Plug.{Conn, Test}
-  alias PowAssent.{Plug, Plug.Reauthorization}
   alias Pow.Config.ConfigError
   alias Pow.Plug, as: PowPlug
   alias Pow.Plug.Session, as: PowSession
+  alias PowAssent.{Plug, Plug.Reauthorization}
   alias PowAssent.Test.{Ecto.Users.User, RepoMock}
 
   defmodule ReauthorizationPlugHandler do
