@@ -170,7 +170,7 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "when user id field is missing" do
-      assert {:error, {:invalid_user_id_field, _changeset}} =  Context.create_user(@user_identity_params, Map.delete(@user_params, :email), nil, @config)
+      assert {:error, {:invalid_user_id_field, _changeset}} = Context.create_user(@user_identity_params, Map.delete(@user_params, :email), nil, @config)
     end
   end
 
