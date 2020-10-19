@@ -1,3 +1,18 @@
+<!--
+font name: Philosopher-Bold
+font link: https://fonts.google.com/specimen/Philosopher
+font author: Jovanny Lemonad
+font author site: http://jovanny.ru/
+
+
+icon designer: Gregor Cresnar
+icon designer link: /grega.cresnar
+        
+
+fontColor: {"gradient-0":"#0D7CE9","gradient-1":"#28C4E0"}
+bgColor: {"hex":"transparent"}
+iconColor: {"gradient-0":"#0D7CE9","gradient-1":"#28C4E0"}
+-->
 <svg width="480" height="100" xmlns="http://www.w3.org/2000/svg" style="vector-effect: non-scaling-stroke;" stroke="null">
  <!---->
  <defs style="vector-effect: non-scaling-stroke;" stroke="null">

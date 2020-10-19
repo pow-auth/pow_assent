@@ -68,7 +68,6 @@ defmodule PowAssent.MixProject do
 
   defp docs do
     [
-      markdown_processor: ExDoc.PowAssent.Markdown,
       source_ref: "v#{@version}",
       main: "README",
       canonical: "http://hexdocs.pm/pow_assent",
