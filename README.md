@@ -10,7 +10,7 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
 * Multiple providers can be used for accounts
   * When removing authentication, user is validated for password or alternative provider
 * You can add your custom strategy with ease
-* Includes the following strategies from [`Assent`](https://github.com/pow-auth/assent):
+* Includes all strategies from [`Assent`](https://github.com/pow-auth/assent):
   * OAuth 1.0 - `Assent.Strategy.OAuth`
   * OAuth 2.0 - `Assent.Strategy.OAuth2`
   * OIDC - `Assent.Strategy.OIDC`
@@ -27,6 +27,7 @@ Use Google, Github, Twitter, Facebook, or add your custom strategy for authoriza
   * Slack - `Assent.Strategy.Slack`
   * Twitter - `Assent.Strategy.Twitter`
   * VK - `Assent.Strategy.VK`
+  * LINE Login - `Assent.Strategy.LINE`
 
 ## Installation
 
