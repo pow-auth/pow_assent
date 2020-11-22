@@ -403,7 +403,7 @@ defmodule PowAssent.Plug do
     config = Plug.fetch_config(conn)
 
     config
-    |> Keyword.take([:otp_app, :plug, :repo, :user])
+    |> Keyword.take([:otp_app, :plug, :repo, :user, :cache_store_backend])
     |> Keyword.merge(Keyword.get(config, :pow_assent, []))
   end
 
