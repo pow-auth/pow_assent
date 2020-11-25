@@ -2,6 +2,8 @@
 
 ## v0.4.10 (2020-11-24)
 
+### Bug fixes
+
 * [`PowAssent.Plug`] Fixed bug where the `:cache_store_backend` was not being loaded from the application environment correctly
 
 ## v0.4.9 (2020-10-18)
