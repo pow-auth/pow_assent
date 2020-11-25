@@ -16,6 +16,7 @@ defmodule PowAssent.Plug do
   """
   alias Plug.Conn
   alias PowAssent.{Config, Operations, Store.SessionCache}
+  alias Pow.Config, as: PowConfig
   alias Pow.{Plug, Store.Backend.EtsCache, UUID}
 
   @doc """
@@ -403,7 +404,7 @@ defmodule PowAssent.Plug do
     config = Plug.fetch_config(conn)
 
     config
-    |> Keyword.take([:otp_app, :plug, :repo, :user, :cache_store_backend])
+    |> Keyword.take([:otp_app, :plug, :repo, :user])
     |> Keyword.merge(Keyword.get(config, :pow_assent, []))
   end
 
@@ -521,7 +522,7 @@ defmodule PowAssent.Plug do
   end
 
   defp default_store(pow_config) do
-    backend = Config.get(pow_config, :cache_store_backend, EtsCache)
+    backend = PowConfig.get(pow_config, :cache_store_backend, EtsCache)
 
     {SessionCache, [backend: backend]}
   end

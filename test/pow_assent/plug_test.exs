@@ -358,6 +358,23 @@ defmodule PowAssent.PlugTest do
         secure: true
       }
     end
+
+    test "pulls `:cache_store_backend` from Pow environment config", %{conn: conn} do
+      Application.put_env(:pow_assent, :pow, cache_store_backend: EtsCacheMock)
+
+      pow_config = Keyword.delete(@default_config, :cache_store_backend)
+
+      conn =
+        conn
+        |> Conn.put_private(:pow_config, pow_config)
+        |> Plug.init_session()
+        |> Conn.put_private(:pow_assent_session, %{a: 1})
+        |> Conn.put_private(:pow_assent_session_info, :write)
+        |> Conn.send_resp(200, "")
+
+      assert %{value: id} = conn.resp_cookies["pow_assent_" <> @cookie_key]
+      assert get_from_cache(conn, id) == %{a: 1}
+    end
   end
 
   test "put_session/3", %{conn: conn} do
