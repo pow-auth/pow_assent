@@ -15,8 +15,8 @@ defmodule PowAssent.Plug do
         ]
   """
   alias Plug.Conn
-  alias PowAssent.{Config, Operations, Store.SessionCache}
   alias Pow.Config, as: PowConfig
+  alias PowAssent.{Config, Operations, Store.SessionCache}
   alias Pow.{Plug, Store.Backend.EtsCache, UUID}
 
   @doc """
