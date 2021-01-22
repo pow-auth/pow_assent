@@ -25,7 +25,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
     * `pow_assent_get_user_by_provider_uid/3`
     * `pow_assent_upsert/2`
-    * `pow_assent_create_user/4`
+    * `pow_assent_create_user/3`
     * `pow_assent_delete/2`
     * `pow_assent_all/1`
 
