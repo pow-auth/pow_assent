@@ -599,7 +599,7 @@ defmodule PowAssent.Plug do
   config will be set as `:pow_assent` config value for the Pow config for the
   conn with `Pow.Plug.put_config/2`.
   """
-  @spec merge_provider_config(Conn.t(), binary(), Keyword.t()) :: Conn.t()
+  @spec merge_provider_config(Conn.t(), binary() | atom(), Keyword.t()) :: Conn.t()
   def merge_provider_config(conn, provider, new_config) do
     pow_config = Pow.Plug.fetch_config(conn)
     provider   = provider_to_atom!(provider)
