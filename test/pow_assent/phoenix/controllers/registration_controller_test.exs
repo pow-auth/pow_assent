@@ -129,7 +129,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       refute Pow.Plug.current_user(conn)
 
       assert redirected_to(conn) == "/registration_created"
-      assert get_flash(conn, :error) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
+      assert get_flash(conn, :info) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
 
       assert user = Process.get({EmailConfirmationUser, :inserted})
       assert user.email == "foo@example.com"
@@ -149,7 +149,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       refute Pow.Plug.current_user(conn)
 
       assert redirected_to(conn) == "/registration_created"
-      assert get_flash(conn, :error) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
+      assert get_flash(conn, :info) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
 
       refute_received {:mail_mock, _mail}
     end
