@@ -99,7 +99,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
       # TODO: Remove by 0.4.0
       @deprecated "Please use `upsert/2` instead"
-      defdelegate create(user, user_identity_params), to: __MODULE__, as: :upsert
+      def create(user, user_identity_params), do: upsert(user, user_identity_params)
 
       # TODO: Remove by 0.4.0
       @deprecated "Please use `pow_assent_upsert/2` instead"
