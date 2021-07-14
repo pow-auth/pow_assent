@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.11 (TBA)
+## v0.4.11 (2021-07-14)
 
 ### Bug fixes
 
