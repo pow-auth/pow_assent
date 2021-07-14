@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.11 (TBA)
+
+### Bug fixes
+
+* [`PowAssent.Ecto.UserIdentities.Context`] The macro no longer throws warning in Elixir 1.12
+
 ## v0.4.10 (2020-11-24)
 
 ### Bug fixes
