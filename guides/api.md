@@ -64,7 +64,7 @@ defmodule MyAppWeb.API.V1.AuthorizationController do
     |> Plug.callback_upsert(provider, params, redirect_uri(conn))
     |> case do
       {:ok, conn} ->
-        json(conn, %{data: %{access_token: conn.private[:api_access_token], renewal_token: conn.private[:api_renewal_token]}})
+        json(conn, %{data: %{access_token: conn.private.api_access_token, renewal_token: conn.private.api_renewal_token}})
 
       {:error, conn} ->
         conn
