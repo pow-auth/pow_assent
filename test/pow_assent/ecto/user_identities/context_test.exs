@@ -3,6 +3,8 @@ defmodule PowAssent.Test.Ecto.Users.UserWithoutUserIdentities do
   use Ecto.Schema
   use Pow.Ecto.Schema
 
+  @ecto_derive_inspect_for_redacted_fields false
+
   schema "users" do
     pow_user_fields()
     timestamps()
@@ -14,6 +16,8 @@ defmodule PowAssent.Test.Ecto.Users.UserWithCustomChangesetUserIdentities do
   use Ecto.Schema
   use Pow.Ecto.Schema
   use PowAssent.Ecto.Schema
+
+  @ecto_derive_inspect_for_redacted_fields false
 
   schema "users" do
     has_many :user_identities, PowAssent.Test.WithCustomChangeset.UserIdentities.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
