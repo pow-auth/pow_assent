@@ -4,6 +4,8 @@ defmodule PowAssent.NoContextUser do
   use Pow.Ecto.Schema
   use PowAssent.Ecto.Schema
 
+  @ecto_derive_inspect_for_redacted_fields false
+
   schema "users" do
     pow_user_fields()
 
@@ -75,6 +77,8 @@ defmodule PowAssent.Ecto.SchemaTest do
     use Pow.Extension.Ecto.Schema,
       extensions: [PowEmailConfirmation]
     use PowAssent.Ecto.Schema
+
+    @ecto_derive_inspect_for_redacted_fields false
 
     schema "users" do
       has_many :user_identities, PowAssent.Test.Ecto.UserIdentities.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
@@ -159,6 +163,8 @@ defmodule PowAssent.Ecto.SchemaTest do
     use Ecto.Schema
     use Pow.Ecto.Schema
     use PowAssent.Ecto.Schema
+
+    @ecto_derive_inspect_for_redacted_fields false
 
     schema "users" do
       has_many :user_identities,
