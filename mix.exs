@@ -61,7 +61,10 @@ defmodule PowAssent.MixProject do
     [
       maintainers: ["Dan Shultzer"],
       licenses: ["MIT"],
-      links: %{github: "https://github.com/pow-auth/pow_assent"},
+      links: %{
+        "GitHub" => "https://github.com/pow-auth/pow_assent",
+        "Sponsor" => "https://github.com/sponsors/danschultzer"
+      },
       files: ~w(lib LICENSE mix.exs README.md)
     ]
   end
