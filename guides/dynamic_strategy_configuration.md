@@ -40,7 +40,7 @@ config :my_app, :pow_assent,
   ]
 ```
 
-But say that once your users have gone through the initial sign-up process, you have opt-in support for a file-sync mechanism that integrates with Google Drive and requires the `https://www.googleapis.com/auth/drive.file` scope. You could include a custom auth link as part of your settings or feature onboarding flow that requests the user to re-authorize with google with the added scope, taking advantage of `merge_provider_config` via a custom Plug.
+But say that once your users have gone through the initial sign-up process, you have opt-in support for a file-sync mechanism that integrates with Google Drive and requires the `https://www.googleapis.com/auth/drive.file` scope. You could include a custom auth link as part of your settings or feature onboarding flow that requests the user to re-authorize with Google with the added scope, taking advantage of `merge_provider_config` via a custom Plug.
 
 In this case, for brevity, we can add a custom [Function plug](https://hexdocs.pm/phoenix/plug.html#function-plugs) to our router's existing `:browser` pipeline, like so:
 
@@ -52,23 +52,26 @@ pipeline :browser do
   plug(:fetch_session)
   plug(:protect_from_forgery)
   plug(:put_secure_browser_headers)
-  # vvv our custom plug
+  # *** our custom function plug, sample implementation below ***
   plug(:put_google_drive_auth_scopes)
 end
 
 scope "/" do
   pipe_through([:browser])
 
-  # make sure your custom plug/pipeline covers your pow assent routes,
-  # so that they pick up the custom strategy configuration 
+  # NOTE: make sure your custom plug or pipeline covers your pow assent routes,
+  # so that they pick up the custom strategy configuration during the provider auth
+  # redirect step
   pow_routes()
   pow_assent_routes()
   pow_extension_routes()
 end
 ```
 
-For our simplified example, we assume you have some application code in your `Users` context that determines whether a given user
-has opted in to your Google Drive integration feature, `Users.should_request_google_drive_auth_scope?(current_user)`. This could just as easily be replaced with something that checks for a query string parameter, or a bit of state in your session storage.
+Below, we assume you have some application code in your `Users` context that determines whether a given user
+has opted in to your Google Drive integration feature, `Users.should_request_google_drive_auth_scope?(current_user)`.
+
+This could just as easily be replaced with something that checks for a query string parameter or a bit of state in your session storage.
 
 Here's our function plug example, `put_google_drive_auth_scopes`:
 
@@ -79,11 +82,12 @@ Here's our function plug example, `put_google_drive_auth_scopes`:
 def put_google_drive_auth_scopes(conn, _opts) do
   current_user = conn.assigns[:current_user]
   if is_nil(current_user) || !Users.should_request_google_drive_auth_scope?(current_user) do
-    # just return the conn unmodified if not logged in or should not request google drive auth scope
+    # just return the conn unmodified if not logged in,
+    # or if the user did not request the additional auth scope
     conn
   else
-    # otherwise, use `merge_provider_config` to override the auth scope config for the google provider,
-    # returning the resulting modified `conn` struct.
+    # otherwise, use `merge_provider_config` to override the auth scope config
+    # for the :google provider, returning the resulting modified `conn` struct.
     PowAssent.Plug.merge_provider_config(conn, :google,
       authorization_params: [
         access_type: "offline",
