@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.13 (TBA)
+
+* Added [dynamic strategy configuration guide](guides/dynamic_strategy_configuration.md)
+
 ## v0.4.12 (2021-09-30)
 
 Now supports Phoenix 1.6.x.
