@@ -1,19 +1,49 @@
 # Dynamic strategy configuration
 
-In most cases, having a single set of configuration options defined per provider strategy is sufficient.
-For more advanced authorization flows, however, you may find the need to customize strategy configuration dynamically on a per-request basis.
+In some cases it'll be necessary to dynamically update the provider strategy based on context. PowAssent includes `PowAssent.Plug.merge_provider_config/3` to dynamically update the provider configuration.
 
-Pow Assent includes a built-in Plug helper function specifically for these more advanced configuration scenarios: [`PowAssent.Plug.merge_provider_config`](https://hexdocs.pm/pow_assent/PowAssent.Plug.html#merge_provider_config/3).
+With this function the configuration can be updated based on attributes within the `conn`. A common use cases would be to update request parameters based on query parameters, such as setting the `connection` for Auth0 strategy:
 
-You can use this as a building block to create your own custom Plugs that modify the strategy configuration for a given provider. Since we have all of the Plug machinery at our disposal, we can alter the configuration on the basis of anything available in the `%Plug.Conn{}` struct. You could customize the strategy configuration for an individual user, or based on query params, or a bit of state stored in the session.
+```elixir
+# lib/my_app_web/pow_assent_auth0_plug.ex
+defmodule MyAppWeb.PowAssentAuth0Plug do
+  def init(opts), do: opts
 
-Below we'll walk through a concrete scenario of one possible dynamic configuration strategy, in order to add [Incremental Authorization](https://developers.google.com/identity/protocols/oauth2/web-server#incrementalAuth) support for the Google provider strategy in your application.
+  def call(conn, _opts) do
+    updated_config = [authorization_params: [connection: conn.params["connection"]]]
 
-## Incremental authorization
+    PowAssent.Plug.merge_provider_config(conn, :auth0, updated_config)
+  end
+end
 
-Google (and many other OAuth 2.0 providers that support granular `scope` configuration) strongly recommends authorizing with the minimum required scopes on first signup to make the initial onboarding experience to your application smooth, to minimize wading through multiple consent modals and asking the user for a bunch of permissions that you may not even need up-front.
+# lib/my_app_web/router.ex
+defmodule MyAppWeb.Router do
+  # ...
 
-In this case, you may set your initial Google provider config in Pow Assent to simply request the `email` and `profile` scopes in the `authorization_params` like so:
+  pipeline :configure_auth0 do
+    plug MyAppWeb.PowAssentAuth0Plug
+  end
+
+  scope "/" do
+    pipe_through [:browser, :configure_auth0]
+
+    pow_routes()
+    pow_assent_routes()
+  end
+
+  # ...
+end
+```
+
+## Incremental authorization with Google
+
+Google (and many other OAuth 2.0 providers that support granular `scope` configuration) strongly recommends to only request authorization with the minimum required scopes on first signup to keep the onboarding experience smooth. This will minimize the number of consent modals for the end-user by not asking for a bunch of permissions that your app won't even need up-front.
+
+The below example will show how you enable [Incremental Authorization with the Google strategy](https://developers.google.com/identity/protocols/oauth2/web-server#incrementalAuth).
+
+In this case, you may only want to request the `email` and `profile` scopes when user signs up, but enable opt-in Google Drive scope. Let's set up a custom plug to add the required scopes based on query param.
+
+First we remove the scope from the config:
 
 ```elixir
 # config/config.exs
@@ -25,90 +55,124 @@ config :my_app, :pow_assent,
       authorization_params: [
         access_type: "offline",
         prompt: "consent",
-        include_granted_scopes: true,
-        scope:
-          Enum.join(
-            [
-              "https://www.googleapis.com/auth/userinfo.email",
-              "https://www.googleapis.com/auth/userinfo.profile"
-            ],
-            " "
-          )
+        include_granted_scopes: true
       ],
       strategy: Assent.Strategy.Google
     ]
   ]
 ```
 
-Say that once your users have gone through the initial sign-up process, you want to have opt-in support for a file-sync mechanism that integrates with Google Drive and requires the `drive.file` scope. You could include a custom auth link as part of your settings page or during a feature onboarding flow that requests the user to re-authorize with Google with the added scope, taking advantage of `merge_provider_config` via a custom Plug.
-
-In this case, for brevity, we can add a custom [Function plug](https://hexdocs.pm/phoenix/plug.html#function-plugs) to our router's existing `:browser` pipeline, like so:
+Then we set up a plug to add optional scopes:
 
 ```elixir
-# lib/my_app/router.ex
-pipeline :browser do
-  # ... misc existing plug pipeline bits
-  plug(:accepts, ["html"])
-  plug(:fetch_session)
-  plug(:protect_from_forgery)
-  plug(:put_secure_browser_headers)
-  # *** our custom function plug, sample implementation below ***
-  plug(:put_google_drive_auth_scopes)
-end
+# lib/my_app_web/pow_assent_google_incremental_auth_plug.ex
+defmodule MyAppWeb.PowAssentGoogleIncrementalAuthPlug do
+  @moduledoc """
+  This plug enables incremental auth scopes for the Google strategy.
 
-scope "/" do
-  pipe_through([:browser])
+  ## Example
 
-  # NOTE: make sure your custom plug or pipeline covers your pow assent routes,
-  # so that they pick up the custom strategy configuration during the provider auth
-  # redirect step
-  pow_routes()
-  pow_assent_routes()
-  pow_extension_routes()
-end
-```
+      plug MyAppWeb.PowAssentGoogleIncrementalAuthPlug
+  """
+  def init(opts), do: opts
 
-Below, we assume you have some application code in your `Users` context that determines whether a given user
-has opted in to your Google Drive integration feature, `Users.should_request_google_drive_auth_scope?(current_user)`.
+  @required_scopes [
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile"
+  ]
 
-This could just as easily be replaced with something that checks for a query string parameter or a bit of state in your session storage.
+  @optional_scopes %{
+    "google_drive" => ["https://www.googleapis.com/auth/drive.file"]
+  }
 
-Here's our function plug example, `put_google_drive_auth_scopes`:
+  def call(conn, _opts) do
+    additional_scopes =
+      @optional_scopes
+      |> Map.keys()
+      |> Enum.filter(& &1 in Map.keys(conn.params))
+      |> Enum.map(& @optional_scopes[&1])
 
-```elixir
-# could be inlined in router.ex or extended into a standalone module plug if you
-# also want to accept custom arguments, or do more elaborate pattern matching
-# and conn transformations
-def put_google_drive_auth_scopes(conn, _opts) do
-  current_user = conn.assigns[:current_user]
-  if is_nil(current_user) || !Users.should_request_google_drive_auth_scope?(current_user) do
-    # just return the conn unmodified if not logged in,
-    # or if the user did not request the additional auth scope
-    conn
-  else
-    # otherwise, use `merge_provider_config` to override the auth scope config
-    # for the :google provider, returning the resulting modified `conn` struct.
-    PowAssent.Plug.merge_provider_config(conn, :google,
-      authorization_params: [
-        access_type: "offline",
-        prompt: "consent",
-        include_granted_scopes: true,
-        scope:
-          Enum.join(
-            [
-              "https://www.googleapis.com/auth/userinfo.email",
-              "https://www.googleapis.com/auth/userinfo.profile",
-              # adding google drive scope request here
-              "https://www.googleapis.com/auth/drive.file"
-            ],
-            " "
-          )
-      ]
-    )
+    scope = Enum.join(@required_scopes ++ additional_scopes, " ")
+
+    PowAssent.Plug.merge_provider_config(conn, :google, authorization_params: [scope: scope])
   end
 end
 ```
 
-Now, assuming you've implemented `Users.should_request_google_drive_auth_scope?(current_user)` for your application, any `authorization_link` you generate for the `:google` provider should result in directing the user to incrementally authorize access to the Google Drive file scope.
+And finally we add this plug to the pipeline:
 
-You could employ a similar strategy for a number of different use-cases outside of Incremental Authorization. Basically, any time you find the need to customize the settings for an individual provider on a per-user, per-request, or other dynamic basis, you can take advantage of `merge_provider_config` and a small bit of custom logic to get the job done.
+```elixir
+# lib/my_app_web/router.ex
+defmodule MyAppWeb.Router do
+  # ...
+
+  pipeline :configure_google do
+    plug MyAppWeb.PowAssentGoogleIncrementalAuthPlug
+  end
+
+  scope "/" do
+    pipe_through [:browser, :configure_google]
+
+    pow_routes()
+    pow_assent_routes()
+  end
+
+  # ...
+end
+```
+
+Now you can generate the authorization url with the `google_drive=true` query to enable `drive.file` permission:
+
+```elixir
+Routes.pow_assent_authorization_path(conn, :new, :google, google_drive: true)
+```
+
+You can add any number of additional optional scopes to the plug.
+
+## Test modules
+
+```elixir
+# test/my_app_web/pow_assent_google_incremental_auth_plug_test.exs
+defmodule MyAppWeb.PowAssentGoogleIncrementalAuthPlugTest do
+  use MyAppWeb.ConnCase
+
+  alias MyAppWeb.PowAssentGoogleIncrementalAuthPlug
+
+  @pow_config [otp_app: :my_app]
+  @provider :google
+  @plug_opts []
+
+  test "call/2 without additional scopes", %{conn: conn} do
+    conn = run_plug(Routes.pow_assent_authorization_path(conn, :new, @provider))
+
+    assert fetch_provider_scope(conn) ==
+      "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"
+  end
+
+  test "call/2 with google_drive=true query", %{conn: conn} do
+    conn = run_plug(Routes.pow_assent_authorization_path(conn, :new, @provider, google_drive: true))
+
+    opts = PowAssentGoogleIncrementalAuthPlug.init(@plug_opts)
+    conn = PowAssentGoogleIncrementalAuthPlug.call(conn, opts)
+
+    assert fetch_provider_scope(conn) ==
+      "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive.file"
+  end
+
+  defp fetch_provider_scope(conn) do
+    config = Pow.Plug.fetch_config(conn)
+
+    config[:pow_assent][:providers][@provider][:authorization_params][:scope]
+  end
+
+  defp run_plug(uri) do
+    opts = PowAssentGoogleIncrementalAuthPlug.init(@plug_opts)
+
+    :get
+    |> build_conn(uri)
+    |> Pow.Plug.put_config(@pow_config)
+    |> Plug.Conn.fetch_query_params()
+    |> PowAssentGoogleIncrementalAuthPlug.call(opts)
+  end
+end
+```
