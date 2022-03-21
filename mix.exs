@@ -32,7 +32,7 @@ defmodule PowAssent.MixProject do
   defp deps do
     [
       {:pow, "~> 1.0.19"},
-      {:assent, "~> 0.1.2"},
+      {:assent, "~> 0.1.2 or ~> 0.2.0"},
 
       {:ecto, "~> 2.2 or ~> 3.0"},
       {:phoenix, ">= 1.3.0 and < 1.7.0"},
@@ -43,13 +43,10 @@ defmodule PowAssent.MixProject do
       {:credo, "~> 1.1", only: [:dev, :test]},
       {:jason, "~> 1.0", only: [:dev, :test]},
 
-      {:ex_doc, "~> 0.21", only: :dev},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
 
       {:ecto_sql, "~> 3.1", only: :test},
       {:postgrex, "~> 0.14", only: :test},
-      {:cowboy, "~> 2.8", only: :test, override: true},
-      {:cowlib, "~> 2.9", only: :test, override: true},
-      {:ranch, "~> 1.7", only: :test, override: true},
       {:bypass, "~> 2.0", only: :test}
     ]
   end
