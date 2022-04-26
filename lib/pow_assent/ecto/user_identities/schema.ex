@@ -66,8 +66,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
       end)
 
       Enum.each(@pow_assent_fields, fn
-        {name, type, defaults} ->
-          field(name, type, defaults)
+        {name, type} ->
+          field(name, type)
       end)
     end
   end

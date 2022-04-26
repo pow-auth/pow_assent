@@ -10,8 +10,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Fields do
   @spec attrs(Config.t()) :: [tuple()]
   def attrs(_config) do
     [
-      {:provider, :string, null: false},
-      {:uid, :string, null: false}
+      {:provider, :string},
+      {:uid, :string}
     ]
   end
 
