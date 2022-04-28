@@ -36,6 +36,7 @@ defmodule PowAssent.Ecto.Schema do
   """
   alias Ecto.{Changeset, Schema}
   alias Pow.UUID
+  alias PowAssent.Config
 
   @callback user_identity_changeset(Schema.t() | Changeset.t(), Schema.t(), map(), map() | nil) :: Changeset.t()
 
