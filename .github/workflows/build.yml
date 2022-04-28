@@ -27,10 +27,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - elixir: 1.12
-            otp: 24.0
+          - elixir: 1.13.3
+            otp: 24.2
           - elixir: 1.7
-            otp: 22.0.2
+            otp: 22.1
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     steps:
       - uses: actions/checkout@v2
