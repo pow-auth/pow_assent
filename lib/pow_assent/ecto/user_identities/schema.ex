@@ -61,8 +61,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   defmacro pow_assent_user_identity_fields do
     quote do
       Enum.each(@pow_assent_assocs, fn
-        {:belongs_to, name, :users} ->
-          belongs_to(name, @pow_user_mod)
+        {:belongs_to, name, :users, defaults} ->
+          belongs_to(name, @pow_user_mod, defaults)
       end)
 
       Enum.each(@pow_assent_fields, fn
@@ -87,14 +87,30 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
   @doc false
   defmacro __register_fields__ do
     quote do
-      @pow_assent_fields unquote(__MODULE__).Fields.attrs(@pow_assent_config)
+      Module.put_attribute(
+        __MODULE__,
+        :pow_assent_fields,
+        @pow_assent_config
+        |> unquote(__MODULE__).Fields.attrs()
+        |> Enum.map(fn {name, type, field_options, _migration_options} ->
+          {name, type, field_options}
+        end)
+      )
     end
   end
 
   @doc false
   defmacro __register_assocs__ do
     quote do
-      @pow_assent_assocs unquote(__MODULE__).Fields.assocs(@pow_assent_config)
+      Module.put_attribute(
+        __MODULE__,
+        :pow_assent_assocs,
+        @pow_assent_config
+        |> unquote(__MODULE__).Fields.assocs()
+        |> Enum.map(fn {type, name, module, field_options, _migration_options} ->
+          {type, name, module, field_options}
+        end)
+      )
     end
   end
 

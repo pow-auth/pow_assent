@@ -7,7 +7,7 @@ defmodule PowAssent.MixProject do
     [
       app: :pow_assent,
       version: @version,
-      elixir: "~> 1.7",
+      elixir: "~> 1.11",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       compilers: [:phoenix] ++ Mix.compilers(),
@@ -31,7 +31,7 @@ defmodule PowAssent.MixProject do
 
   defp deps do
     [
-      {:pow, "~> 1.0.19"},
+      {:pow, "~> 1.0.27"},
       {:assent, "~> 0.1.2 or ~> 0.2.0"},
 
       {:ecto, "~> 2.2 or ~> 3.0"},

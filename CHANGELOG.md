@@ -2,6 +2,8 @@
 
 ## v0.4.13 (TBA)
 
+Now supports `ecto_sql` 3.8.x and requires Elixir 1.11+.
+
 * Added [dynamic strategy configuration guide](guides/dynamic_strategy_configuration.md)
 
 ## v0.4.12 (2021-09-30)

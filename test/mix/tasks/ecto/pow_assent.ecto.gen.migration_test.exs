@@ -30,6 +30,8 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.MigrationTest do
 
       assert file =~ "defmodule #{inspect(Repo)}.Migrations.CreateUserIdentities do"
       assert file =~ "create table(:user_identities)"
+      assert file =~ "add :provider, :string, null: false"
+      assert file =~ "add :uid, :string, null: false"
       assert file =~ "add :user_id, references(\"users\", on_delete: :nothing)"
       assert file =~ "timestamps()"
     end)
