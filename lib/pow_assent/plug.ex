@@ -161,9 +161,14 @@ defmodule PowAssent.Plug do
   defp maybe_upsert_user_identity(conn), do: conn
 
   defp maybe_create_user(%{private: %{pow_assent_registration: false}} = conn) do
-    conn
-    |> Conn.put_private(:pow_assent_callback_state, {:error, :create_user})
-    |> Conn.put_private(:pow_assent_callback_error, nil)
+    case Plug.current_user(conn) do
+      nil ->
+        conn
+        |> Conn.put_private(:pow_assent_callback_state, {:error, :create_user})
+        |> Conn.put_private(:pow_assent_callback_error, nil)
+      _user ->
+        conn
+    end
   end
   defp maybe_create_user(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
     user_params          = Map.fetch!(params, :user)
