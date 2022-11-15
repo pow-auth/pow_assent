@@ -103,6 +103,9 @@ defmodule PowAssent.Plug do
       %{private: %{pow_assent_callback_state: {:ok, _method}}} = conn ->
         {:ok, conn}
 
+      %{private: %{pow_assent_callback_state: {:error, :create_user}, pow_assent_callback_error: nil}} = conn ->
+        {:ok, conn}
+
       conn ->
         {:error, conn}
     end
