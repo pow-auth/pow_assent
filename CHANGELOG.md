@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.14 (TBA)
+
+### Bug fixes
+
+* `:phoenix` removed from the compilers
+
 ## v0.4.13 (2022-04-27)
 
 Now supports `ecto_sql` 3.8.x and requires Elixir 1.11+.
