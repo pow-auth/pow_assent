@@ -7,7 +7,7 @@ defmodule PowAssent.PlugTest do
   alias PowAssent.{Plug, Store.SessionCache}
   alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
 
-  import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
+  import PowAssent.Test.TestProvider, only: [set_oauth2_test_endpoints: 1, put_oauth2_env: 0, put_oauth2_env: 1]
 
   @default_config [
     plug: PowSession,
@@ -25,7 +25,7 @@ defmodule PowAssent.PlugTest do
 
   describe "authorize_url/3" do
     test "generates state", %{conn: conn} do
-      put_oauth2_env(%Bypass{port: 8888})
+      put_oauth2_env(site: "http://localhost:8888")
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
@@ -34,7 +34,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "uses nonce from config", %{conn: conn} do
-      put_oauth2_env(%Bypass{port: 8888}, nonce: "nonce", strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
+      put_oauth2_env(site: "http://localhost:8888", nonce: "nonce", strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
@@ -44,7 +44,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "uses generated nonce when nonce in config set to true", %{conn: conn} do
-      put_oauth2_env(%Bypass{port: 8888}, nonce: true, strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
+      put_oauth2_env(site: "http://localhost:8888", nonce: true, strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
@@ -55,17 +55,17 @@ defmodule PowAssent.PlugTest do
 
   describe "callback/3" do
     setup %{conn: conn} do
-      bypass = Bypass.open()
+      TestServer.start(scheme: :https)
 
-      put_oauth2_env(bypass)
+      put_oauth2_env()
 
       conn = Conn.put_private(conn, :pow_assent_session_params, %{})
 
-      {:ok, conn: conn, bypass: bypass}
+      {:ok, conn: conn}
     end
 
-    test "returns user params", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, access_token_assert_fn: fn conn ->
+    test "returns user params", %{conn: conn} do
+      set_oauth2_test_endpoints(access_token_assert_fn: fn conn ->
         {:ok, body, _conn} = Conn.read_body(conn, [])
         params = URI.decode_query(body)
 
@@ -77,8 +77,8 @@ defmodule PowAssent.PlugTest do
       assert user_params == %{"name" => "John Doe", "email" => "test@example.com"}
     end
 
-    test "returns user params with preferred username as username", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{preferred_username: "john.doe"})
+    test "returns user params with preferred username as username", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{preferred_username: "john.doe"})
 
       assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
       assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"sub" => "new_user", "name" => "John Doe", "email" => "test@example.com", "preferred_username" => "john.doe"}}
@@ -228,7 +228,7 @@ defmodule PowAssent.PlugTest do
 
   describe "available_providers/1" do
     test "lists providers", %{conn: conn} do
-      put_oauth2_env(%Bypass{port: 8888})
+      put_oauth2_env(site: "http://localhost:8888")
 
       assert Plug.available_providers(conn) == [:test_provider]
     end
@@ -392,7 +392,7 @@ defmodule PowAssent.PlugTest do
   end
 
   test "merge_provider_config/3", %{conn: conn} do
-    put_oauth2_env(%Bypass{port: 8888}, authorization_params: [a: 1, b: 2])
+    put_oauth2_env(site: "http://localhost:8888", authorization_params: [a: 1, b: 2])
 
     conn =
       conn

@@ -1,7 +1,7 @@
 defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   use PowAssent.Test.Phoenix.ConnCase
 
-  import PowAssent.Test.TestProvider, only: [expect_oauth2_flow: 2, put_oauth2_env: 1, put_oauth2_env: 2]
+  import PowAssent.Test.TestProvider, only: [set_oauth2_test_endpoints: 1, put_oauth2_env: 0, put_oauth2_env: 1]
   import ExUnit.CaptureLog
 
   alias Plug.Conn
@@ -13,12 +13,12 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   @callback_params %{code: "test", redirect_uri: "", state: "token"}
 
   setup do
-    user   = %User{id: 1}
-    bypass = Bypass.open()
+    user = %User{id: 1}
 
-    put_oauth2_env(bypass)
+    TestServer.start(scheme: :https)
+    put_oauth2_env()
 
-    {:ok, user: user, bypass: bypass}
+    {:ok, user: user}
   end
 
   defmodule FailAuthorizeURL do
@@ -27,10 +27,10 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   end
 
   describe "GET /auth/:provider/new" do
-    test "redirects to authorization url", %{conn: conn, bypass: bypass} do
+    test "redirects to authorization url", %{conn: conn} do
       conn = get conn, Routes.pow_assent_authorization_path(conn, :new, @provider)
 
-      assert redirected_to(conn) =~ "http://localhost:#{bypass.port}/oauth/authorize?client_id=client_id&"
+      assert redirected_to(conn) =~ TestServer.url("/oauth/authorize?client_id=client_id&")
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert get_pow_assent_session(conn, :session_params)[:state]
     end
@@ -51,8 +51,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert get_pow_assent_session(conn, :invitation_token) == signed_token
     end
 
-    test "with error", %{conn: conn, bypass: bypass} do
-      put_oauth2_env(bypass, strategy: FailAuthorizeURL)
+    test "with error", %{conn: conn} do
+      put_oauth2_env(strategy: FailAuthorizeURL)
 
       assert capture_log(fn ->
         conn = get(conn, Routes.pow_assent_authorization_path(conn, :new, @provider))
@@ -74,34 +74,42 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       {:ok, conn: conn}
     end
 
-    test "with failed token response", %{conn: conn, bypass: bypass} do
-      Bypass.expect_once(bypass, "POST", "/oauth/token", fn conn ->
+    test "with failed token response", %{conn: conn} do
+      TestServer.add("/oauth/token", to: fn conn ->
         conn
         |> put_resp_content_type("application/json")
         |> send_resp(401, Jason.encode!(%{error: "invalid_client"}))
       end)
 
-      assert capture_log(fn ->
+      log = capture_log(fn ->
         conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
         assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
         refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
-      end) =~ "Strategy failed with error: %Assent.RequestError{error: :invalid_server_response, message: \"Server responded with status: 401"
+      end)
+
+      assert log =~ "Strategy failed with error: %Assent.RequestError{"
+      assert log =~ "error: :invalid_server_response"
+      assert log =~ "message: \"Server responded with status: 401"
     end
 
-    test "with timeout", %{conn: conn, bypass: bypass} do
-      Bypass.down(bypass)
+    test "with timeout", %{conn: conn} do
+      TestServer.stop()
 
-      assert capture_log(fn ->
+      log = capture_log(fn ->
         conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
         assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
         refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
-      end) =~ "Strategy failed with error: %Assent.RequestError{error: :unreachable, message: \"Server was unreachable with Assent.HTTPAdapter.Httpc."
+      end)
+
+      assert log =~ "Strategy failed with error: %Assent.RequestError{"
+      assert log =~ "error: :unreachable"
+      assert log =~ "message: \"Server was unreachable with Assent.HTTPAdapter.Httpc."
     end
 
     test "with invalid state", %{conn: conn} do
@@ -115,8 +123,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       end) =~ "Strategy failed with error: %Assent.CallbackCSRFError{message: \"CSRF detected with param key \\\"state\\\"\"}"
     end
 
-    test "when identity exists authenticates", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "existing_user"})
+    test "when identity exists authenticates", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "existing_user"})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
@@ -126,8 +134,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute get_pow_assent_session(conn, :session_params)
     end
 
-    test "with current user session when identity doesn't exist creates identity", %{conn: conn, bypass: bypass, user: user} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_identity"})
+    test "with current user session when identity doesn't exist creates identity", %{conn: conn, user: user} do
+      set_oauth2_test_endpoints(user: %{sub: "new_identity"})
 
       conn =
         conn
@@ -140,8 +148,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute get_pow_assent_session(conn, :session_params)
     end
 
-    test "with current user session when identity identity already bound to another user", %{conn: conn, bypass: bypass, user: user} do
-      expect_oauth2_flow(bypass, user: %{sub: "identity_taken"})
+    test "with current user session when identity identity already bound to another user", %{conn: conn, user: user} do
+      set_oauth2_test_endpoints(user: %{sub: "identity_taken"})
 
       conn =
         conn
@@ -154,8 +162,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute get_pow_assent_session(conn, :session_params)
     end
 
-    test "when identity doesn't exist creates user", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user"})
+    test "when identity doesn't exist creates user", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user"})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
@@ -168,8 +176,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute get_pow_assent_session(conn, :session_params)
     end
 
-    test "when identity doesn't exist and missing params", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user", name: ""})
+    test "when identity doesn't exist and missing params", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user", name: ""})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
@@ -179,8 +187,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute get_pow_assent_session(conn, :session_params)
     end
 
-    test "when identity doesn't exist and missing user id", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{email: ""})
+    test "when identity doesn't exist and missing user id", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{email: ""})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
@@ -194,8 +202,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert get_pow_assent_session(conn, :changeset)
     end
 
-    test "when identity doesn't exist and and user id taken by other user", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{email: "taken@example.com"})
+    test "when identity doesn't exist and and user id taken by other user", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{email: "taken@example.com"})
 
       conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
@@ -209,8 +217,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert get_pow_assent_session(conn, :changeset)
     end
 
-    test "with stored request_path assigns to conn", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "existing_user"})
+    test "with stored request_path assigns to conn", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "existing_user"})
 
       conn =
         conn
@@ -235,8 +243,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       {:ok, conn: conn}
     end
 
-    test "when identity doesn't exist creates user", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user"})
+    test "when identity doesn't exist creates user", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user"})
 
       conn = post conn, Routes.pow_assent_authorization_path(conn, :callback, @provider), @callback_params
 
@@ -263,8 +271,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       {:ok, conn: conn}
     end
 
-    test "when user doesn't exist", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user", email: "foo@example.com"})
+    test "when user doesn't exist", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user", email: "foo@example.com"})
 
       conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
@@ -277,8 +285,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       mail.html =~ "http://example.com/confirm-email/"
     end
 
-    test "when user doesn't exist and provider e-mail is verified", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user", email: "foo@example.com", email_verified: true})
+    test "when user doesn't exist and provider e-mail is verified", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user", email: "foo@example.com", email_verified: true})
 
       conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
@@ -289,8 +297,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute get_pow_assent_session(conn, :session_params)
     end
 
-    test "when user doesn't exist and provider e-mail taken", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user", email: "taken@example.com"})
+    test "when user doesn't exist and provider e-mail taken", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user", email: "taken@example.com"})
 
       conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
@@ -302,8 +310,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute_received {:mail_mock, _mail}
     end
 
-    test "when user doesn't exist and provider e-mail taken and provider e-mail is verified", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user", email: "taken@example.com", email_verified: true})
+    test "when user doesn't exist and provider e-mail taken and provider e-mail is verified", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user", email: "taken@example.com", email_verified: true})
 
       conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
@@ -317,8 +325,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert get_pow_assent_session(conn, :changeset)
     end
 
-    test "when user exists with unconfirmed e-mail", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "existing_user-missing_email_confirmation"})
+    test "when user exists with unconfirmed e-mail", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "existing_user-missing_email_confirmation"})
 
       conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
@@ -334,8 +342,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
 
   alias PowAssent.Test.Invitation.Phoenix.Endpoint, as: InvitationEndpoint
   describe "GET /auth/:provider/callback as authentication with invitation" do
-    test "with invitation_token updates user as accepted invitation", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_identity"})
+    test "with invitation_token updates user as accepted invitation", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_identity"})
 
       signed_token = sign_invitation_token(conn, "token")
       session      = %{session_params: %{state: "token"}, invitation_token: signed_token}
@@ -359,8 +367,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
   describe "GET /auth/:provider/callback as authentication with missing registration routes" do
     @pow_assent_session %{session_params: %{state: "token"}}
 
-    test "can't register", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user"})
+    test "can't register", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user"})
 
       conn =
         conn
@@ -386,8 +394,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       {:ok, user: user, conn: conn}
     end
 
-    test "with new identity", %{conn: conn, bypass: bypass, user: user} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_identity"})
+    test "with new identity", %{conn: conn, user: user} do
+      set_oauth2_test_endpoints(user: %{sub: "new_identity"})
 
       conn =
         conn
@@ -397,8 +405,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert redirected_to(conn) == "/session_created"
     end
 
-    test "with new user", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "new_user"})
+    test "with new user", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user"})
 
       conn = Phoenix.ConnTest.dispatch(conn, WithCustomChangesetEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 
@@ -411,8 +419,8 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       assert user_identity.name == "John Doe"
     end
 
-    test "when identity exists updates identity", %{conn: conn, bypass: bypass} do
-      expect_oauth2_flow(bypass, user: %{sub: "existing_user"})
+    test "when identity exists updates identity", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "existing_user"})
 
       conn = Phoenix.ConnTest.dispatch(conn, WithCustomChangesetEndpoint, :get, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
 

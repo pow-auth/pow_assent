@@ -47,7 +47,8 @@ defmodule PowAssent.MixProject do
 
       {:ecto_sql, "~> 3.1", only: :test},
       {:postgrex, "~> 0.14", only: :test},
-      {:bypass, "~> 2.0", only: :test}
+      {:ssl_verify_fun, "~> 1.1", only: :test},
+      {:test_server, "~> 0.1.0", only: :test}
     ]
   end
 

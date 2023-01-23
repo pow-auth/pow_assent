@@ -20,30 +20,42 @@ defmodule PowAssent.Test.TestProvider do
   @impl true
   def normalize(_config, user), do: {:ok, user}
 
-  @spec expect_oauth2_flow(Bypass.t(), Keyword.t()) :: :ok
-  def expect_oauth2_flow(bypass, opts \\ []) do
-    put_oauth2_env(bypass)
+  @spec set_oauth2_test_endpoints(Keyword.t()) :: :ok
+  def set_oauth2_test_endpoints(opts \\ []) do
+    put_oauth2_env()
 
     token_params = Keyword.get(opts, :token, %{"access_token" => "access_token"})
     user_params  = Map.merge(%{sub: "new_user", name: "John Doe", email: "test@example.com"}, Keyword.get(opts, :user, %{}))
 
-    OAuth2TestCase.expect_oauth2_access_token_request(bypass, [params: token_params], opts[:access_token_assert_fn])
-    OAuth2TestCase.expect_oauth2_user_request(bypass, user_params)
+    OAuth2TestCase.add_oauth2_access_token_endpoint([params: token_params], opts[:access_token_assert_fn])
+    OAuth2TestCase.add_oauth2_user_endpoint(user_params)
   end
 
-  @spec put_oauth2_env(Bypass.t(), keyword()) :: :ok
-  def put_oauth2_env(bypass, config \\ []) do
+  @spec put_oauth2_env(keyword()) :: :ok
+  def put_oauth2_env(config \\ []) do
+    url = Keyword.get(config, :site) || TestServer.url()
+    %{host: host} = URI.parse(url)
+
+    httpc_opts = Keyword.get(config, :site) || [
+      ssl: [
+        verify: :verify_peer,
+        depth: 99,
+        cacerts: TestServer.x509_suite().cacerts,
+        verify_fun: {&:ssl_verify_hostname.verify_fun/3, check_hostname: to_charlist(host)},
+        customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
+      ]
+    ]
+
     Application.put_env(:pow_assent, :pow_assent,
       providers: [
         test_provider: Keyword.merge([
           client_id: "client_id",
           client_secret: "abc123",
-          site: "http://localhost:#{bypass.port}",
+          site: url,
           strategy: __MODULE__
         ], config)
       ],
-      # We suppress the SSL warnings here as Bypass doesn't support SSL
-      http_adapter: {Assent.HTTPAdapter.Httpc, ssl: [verify_fun: :ok]}
+      http_adapter: {Assent.HTTPAdapter.Httpc, httpc_opts}
     )
   end
 end

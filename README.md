@@ -1,6 +1,9 @@
 # ![PowAssent](assets/logo-full.svg)
 
-![Build Status](https://img.shields.io/github/workflow/status/pow-auth/pow_assent/CI/master) [![hex.pm](https://img.shields.io/hexpm/v/pow_assent.svg?style=flat)](https://hex.pm/packages/pow_assent)
+[![Github CI](https://github.com/pow-auth/pow_assent/workflows/CI/badge.svg)](https://github.com/pow-auth/pow_assent/actions?query=workflow%3ACI)
+[![hexdocs.pm](https://img.shields.io/badge/api-docs-green.svg?style=flat)](https://hexdocs.pm/pow_assent)
+[![hex.pm](https://img.shields.io/hexpm/v/pow_assent.svg?style=flat)](https://hex.pm/packages/pow_assent)
+
 
 Use Google, Github, Twitter, Facebook, or add your custom strategy for authorization to your Pow enabled Phoenix app.
 
