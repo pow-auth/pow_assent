@@ -81,27 +81,35 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         |> send_resp(401, Jason.encode!(%{error: "invalid_client"}))
       end)
 
-      assert capture_log(fn ->
+      log = capture_log(fn ->
         conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
         assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
         refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
-      end) =~ "Strategy failed with error: %Assent.RequestError{error: :invalid_server_response, message: \"Server responded with status: 401"
+      end)
+
+      assert log =~ "Strategy failed with error: %Assent.RequestError{"
+      assert log =~ "error: :invalid_server_response"
+      assert log =~ "message: \"Server responded with status: 401"
     end
 
     test "with timeout", %{conn: conn, bypass: bypass} do
       Bypass.down(bypass)
 
-      assert capture_log(fn ->
+      log = capture_log(fn ->
         conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
         assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
         refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
-      end) =~ "Strategy failed with error: %Assent.RequestError{error: :unreachable, message: \"Server was unreachable with Assent.HTTPAdapter.Httpc."
+      end)
+
+      assert log =~ "Strategy failed with error: %Assent.RequestError{"
+      assert log =~ "error: :unreachable"
+      assert log =~ "message: \"Server was unreachable with Assent.HTTPAdapter.Httpc."
     end
 
     test "with invalid state", %{conn: conn} do
