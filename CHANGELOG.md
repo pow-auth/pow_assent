@@ -4,6 +4,7 @@
 
 ### Bug fixes
 
+* [`PowAssent.Plug`] Fixed bug in `callback_upsert/4` where users couldn't sign in with disabled registration
 * `:phoenix` removed from the compilers
 
 ## v0.4.13 (2022-04-27)

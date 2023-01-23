@@ -103,9 +103,6 @@ defmodule PowAssent.Plug do
       %{private: %{pow_assent_callback_state: {:ok, _method}}} = conn ->
         {:ok, conn}
 
-      %{private: %{pow_assent_callback_state: {:error, :create_user}, pow_assent_callback_error: nil}} = conn ->
-        {:ok, conn}
-
       conn ->
         {:error, conn}
     end
@@ -163,34 +160,34 @@ defmodule PowAssent.Plug do
   end
   defp maybe_upsert_user_identity(conn), do: conn
 
-  defp maybe_create_user(%{private: %{pow_assent_registration: false}} = conn) do
+  defp maybe_create_user(conn) do
+    conn
+    |> Plug.current_user()
+    |> maybe_create_user(conn)
+  end
+
+  defp maybe_create_user(nil, %{private: %{pow_assent_registration: false}} = conn) do
     conn
     |> Conn.put_private(:pow_assent_callback_state, {:error, :create_user})
     |> Conn.put_private(:pow_assent_callback_error, nil)
   end
-  defp maybe_create_user(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
+  defp maybe_create_user(nil, %{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
     user_params          = Map.fetch!(params, :user)
     user_identity_params = Map.fetch!(params, :user_identity)
 
-    case Plug.current_user(conn) do
-      nil ->
-        conn
-        |> create_user(user_identity_params, user_params)
-        |> case do
-          {:ok, _user, conn} ->
-            Conn.put_private(conn, :pow_assent_callback_state, {:ok, :create_user})
+    conn
+    |> create_user(user_identity_params, user_params)
+    |> case do
+      {:ok, _user, conn} ->
+        Conn.put_private(conn, :pow_assent_callback_state, {:ok, :create_user})
 
-          {:error, changeset, conn} ->
-            conn
-            |> Conn.put_private(:pow_assent_callback_state, {:error, :create_user})
-            |> Conn.put_private(:pow_assent_callback_error, changeset)
-        end
-
-      _user ->
+      {:error, changeset, conn} ->
         conn
+        |> Conn.put_private(:pow_assent_callback_state, {:error, :create_user})
+        |> Conn.put_private(:pow_assent_callback_error, changeset)
     end
   end
-  defp maybe_create_user(conn), do: conn
+  defp maybe_create_user(_user, conn), do: conn
 
   @doc """
   Calls the callback method for the provider strategy.

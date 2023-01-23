@@ -134,6 +134,20 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute get_pow_assent_session(conn, :session_params)
     end
 
+    test "when identity exist and pow_assent_registration: false authenticates", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "existing_user"})
+
+      conn =
+        conn
+        |> Conn.put_private(:pow_assent_registration, false)
+        |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+        assert redirected_to(conn) == "/session_created"
+
+        refute conn.resp_cookies["pow_assent_auth_session"]
+        refute get_pow_assent_session(conn, :session_params)
+    end
+
     test "with current user session when identity doesn't exist creates identity", %{conn: conn, user: user} do
       set_oauth2_test_endpoints(user: %{sub: "new_identity"})
 
@@ -215,6 +229,20 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
       refute get_pow_assent_session(conn, :session_params)
       assert get_pow_assent_session(conn, :callback_params)
       assert get_pow_assent_session(conn, :changeset)
+    end
+
+    test "when identity doesn't exist and pow_assent_registration: false", %{conn: conn} do
+      set_oauth2_test_endpoints(user: %{sub: "new_user"})
+
+      conn =
+        conn
+        |> Conn.put_private(:pow_assent_registration, false)
+        |> get(Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params))
+
+      assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+      assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
+      refute conn.resp_cookies["pow_assent_auth_session"]
+      refute get_pow_assent_session(conn, :session_params)
     end
 
     test "with stored request_path assigns to conn", %{conn: conn} do
