@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.14 (TBA)
+## v0.4.14 (2023-01-22)
 
 ### Bug fixes
 
