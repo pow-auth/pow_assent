@@ -24,6 +24,7 @@ defmodule PowAssent.Plug.ReauthorizationTest do
   end
 
   @cookie_key "reauthorization_provider"
+  @custom_cookie_opts [domain: "domain.com", max_age: 1, path: "/path", http_only: false, secure: true, extra: "SameSite=Lax"]
   @default_config [
     plug: PowSession,
     user: User,
@@ -153,6 +154,25 @@ defmodule PowAssent.Plug.ReauthorizationTest do
 
       assert cookie = conn.resp_cookies["test_app_#{@cookie_key}"]
       assert cookie.value == "test_provider"
+    end
+
+    test "with custom cookie options", %{conn: init_conn} do
+      config = Keyword.put(@default_config, :pow_assent, reauthorization_cookie_opts: @custom_cookie_opts)
+
+      conn =
+        init_conn
+        |> PowPlug.put_config(config)
+        |> init_plug()
+        |> run_callback()
+
+      assert %{
+        domain: "domain.com",
+        extra: "SameSite=Lax",
+        http_only: false,
+        max_age: 1,
+        path: "/path",
+        secure: true
+      } = conn.resp_cookies[@cookie_key]
     end
   end
 
