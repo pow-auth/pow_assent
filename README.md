@@ -305,6 +305,25 @@ end
 
 PowAssent will pick it up in the authorization flow, and prevent creating a user if the registration path is missing.
 
+## Cookie options
+
+Cookie options are passed on to `Plug.Conn.html.put_resp_cookie/4` and can be set by using the `:auth_session_cookie_opts` setting (and `:reauthorization_cookie_opts` for the `PowAssent.Plug.Reauthorization` plug):
+
+```elixir
+config :my_app, :pow_assent,
+    auth_session_cookie_opts: [
+      secure: true,
+      extra: "SameSite=Strict"
+    ]
+
+    # If you are using the reathorization plug:
+    # reauthorization_cookie_opts: [
+    #   secure: true
+    # ]
+  ]
+]
+```
+
 ## HTTP Adapter
 
 By default Erlangs built-in `:httpc` is used for requests. SSL verification is automatically enabled when `:certifi` and `:ssl_verify_fun` packages are available. `:httpc` only supports HTTP/1.1.
