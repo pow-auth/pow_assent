@@ -56,7 +56,7 @@ Run `mix deps.get` to install it.
 
 ### Set up Pow
 
-It's required to set up [Pow](https://github.com/danschultzer/pow#getting-started-phoenix) first. You can [run these quick setup](guides/set_up_pow.md) instructions if Pow hasn't already been set up.
+It's required to set up [Pow](https://github.com/pow-auth/pow#phoenix-app) first. You can [run these quick setup](guides/set_up_pow.md) instructions if Pow hasn't already been set up.
 
 If your user schema uses binary id, then run the PowAssent mix task(s) with the `--binary-id` flag.
 
