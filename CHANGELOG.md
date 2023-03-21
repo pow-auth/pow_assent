@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.16 (TBA)
+
+### Enhancements
+
+* [`Mix.Tasks.Pow.Ecto.Install`] Now injects `CONTEXT_PATH/users/user.ex`
+* [`Mix.Tasks.Pow.Phoenix.Install`] Added to inject `WEB_PATH/router.ex`
+
 ## v0.4.15 (2023-03-20)
 
 Now supports Phoenix 1.7.

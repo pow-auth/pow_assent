@@ -3,33 +3,24 @@ defmodule Mix.Tasks.PowAssent.InstallTest do
 
   alias Mix.Tasks.PowAssent.Install
 
-  @tmp_path Path.join(["tmp", inspect(Install)])
-
-  setup do
-    File.rm_rf!(@tmp_path)
-    File.mkdir_p!(@tmp_path)
-
-    :ok
-  end
-
-  test "generates files" do
-    File.cd!(@tmp_path, fn ->
+  test "generates files", context do
+    File.cd!(context.tmp_path, fn ->
       Install.run([])
 
       assert File.ls!("lib/pow_assent/user_identities") == ["user_identity.ex"]
     end)
   end
 
-  test "with schema name and table" do
-    File.cd!(@tmp_path, fn ->
+  test "with schema name and table", context do
+    File.cd!(context.tmp_path, fn ->
       Install.run(~w(Accounts.Identity identities))
 
       assert File.ls!("lib/pow_assent/accounts") == ["identity.ex"]
     end)
   end
 
-  test "raises error in umbrella app" do
-    File.cd!(@tmp_path, fn ->
+  test "raises error in umbrella app", context do
+    File.cd!(context.tmp_path, fn ->
       File.write!("mix.exs", """
       defmodule Umbrella.MixProject do
         use Mix.Project
@@ -48,8 +39,8 @@ defmodule Mix.Tasks.PowAssent.InstallTest do
     end)
   end
 
-  test "raises error on invalid schema name or table" do
-    File.cd!(@tmp_path, fn ->
+  test "raises error on invalid schema name or table", context do
+    File.cd!(context.tmp_path, fn ->
       assert_raise Mix.Error, ~r/Invalid arguments/, fn ->
         Install.run(~w(UserIdentities.UserIdentity))
       end
