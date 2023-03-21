@@ -61,10 +61,11 @@ defmodule PowAssent.Config do
       |> get_provider_config(provider)
       |> deep_merge(new_provider_config)
 
+    mod = Keyword.get(provider_config, :strategy)
+
     default_config =
       provider_config
-      |> Keyword.get(:strategy)
-      |> apply(:default_config, [provider_config])
+      |> mod.default_config()
       |> Keyword.take(Keyword.keys(provider_config))
 
     updated_provider_config = deep_merge(default_config, provider_config)

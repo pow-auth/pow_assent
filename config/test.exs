@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :pow_assent, PowAssent.Test.Ecto.Repo,
   database: "pow_assent_test",
