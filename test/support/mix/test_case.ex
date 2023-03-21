@@ -46,7 +46,7 @@ defmodule PowAssent.Test.Mix.TestCase do
     paths =
       %{
         web_path: web_path,
-        templates_path: Path.join([web_path, "templates", "pow_assent"]),
+        templates_path: Path.join([web_path, "controllers", "pow_assent"]),
         config_path: Path.join(["config", "config.exs"]),
         endpoint_path: Path.join([web_path, "endpoint.ex"]),
         router_path: Path.join([web_path, "router.ex"]),

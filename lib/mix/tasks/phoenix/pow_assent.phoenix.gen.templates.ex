@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.PowAssent.Phoenix.Gen.Templates do
-  @shortdoc "Generates PowAssent views and templates"
+  @shortdoc "Generates PowAssent templates"
 
   @moduledoc """
   Generates PowAssent templates for Phoenix.
@@ -38,7 +38,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.Templates do
     web_prefix   = structure[:web_prefix]
 
     Enum.each(@templates, fn {name, actions} ->
-      Phoenix.create_view_file(Elixir.PowAssent, name, web_module, web_prefix)
+      Phoenix.create_template_module(Elixir.PowAssent, name, web_module, web_prefix)
       Phoenix.create_templates(Elixir.PowAssent, name, web_prefix, actions)
     end)
 

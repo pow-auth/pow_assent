@@ -7,7 +7,7 @@ defmodule PowAssent.MixProject do
     [
       app: :pow_assent,
       version: @version,
-      elixir: "~> 1.11",
+      elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       compilers: Mix.compilers(),
@@ -31,13 +31,14 @@ defmodule PowAssent.MixProject do
 
   defp deps do
     [
-      {:pow, "~> 1.0.28"},
+      {:pow, "~> 1.0.29"},
       {:assent, "~> 0.1.2 or ~> 0.2.0"},
 
       {:ecto, "~> 2.2 or ~> 3.0"},
       {:phoenix, ">= 1.3.0 and < 1.8.0"},
       {:phoenix_html, ">= 2.0.0 and <= 4.0.0"},
       {:plug, ">= 1.5.0 and < 2.0.0", optional: true},
+      {:phoenix_live_view, ">= 0.18.0", optional: true},
 
       {:phoenix_ecto, "~> 4.0", only: [:dev, :test]},
       {:credo, "~> 1.1", only: [:dev, :test]},
@@ -47,6 +48,7 @@ defmodule PowAssent.MixProject do
 
       {:ecto_sql, "~> 3.1", only: :test},
       {:postgrex, "~> 0.14", only: :test},
+      {:floki, ">= 0.30.0", only: :test},
       {:ssl_verify_fun, "~> 1.1", only: :test},
       {:test_server, "~> 0.1.0", only: :test}
     ]
