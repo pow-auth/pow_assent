@@ -3,18 +3,10 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
 
   alias Mix.Tasks.PowAssent.Ecto.Gen.Schema
 
-  @tmp_path      Path.join(["tmp", inspect(Schema)])
   @expected_file Path.join(["lib", "pow_assent", "user_identities", "user_identity.ex"])
 
-  setup do
-    File.rm_rf!(@tmp_path)
-    File.mkdir_p!(@tmp_path)
-
-    :ok
-  end
-
-  test "generates schema file" do
-    File.cd!(@tmp_path, fn ->
+  test "generates schema file", context do
+    File.cd!(context.tmp_path, fn ->
       Schema.run([])
 
       assert File.exists?(@expected_file)
@@ -27,10 +19,10 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
     end)
   end
 
-  test "generates with :binary_id" do
+  test "generates with :binary_id", context do
     options = ~w(--binary-id)
 
-    File.cd!(@tmp_path, fn ->
+    File.cd!(context.tmp_path, fn ->
       Schema.run(options)
 
       assert File.exists?(@expected_file)
@@ -42,8 +34,8 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
     end)
   end
 
-  test "doesn't make duplicate files" do
-    File.cd!(@tmp_path, fn ->
+  test "doesn't make duplicate files", context do
+    File.cd!(context.tmp_path, fn ->
       Schema.run([])
 
       assert_raise Mix.Error, "schema file can't be created, there is already a schema file in lib/pow_assent/user_identities/user_identity.ex.", fn ->

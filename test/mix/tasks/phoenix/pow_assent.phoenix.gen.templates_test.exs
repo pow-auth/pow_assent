@@ -3,22 +3,13 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.TemplatesTest do
 
   alias Mix.Tasks.PowAssent.Phoenix.Gen.Templates
 
-  @tmp_path Path.join(["tmp", inspect(Templates)])
-
   @expected_template_files %{
     "registration" => ["add_user_id.html.eex"]
   }
   @expected_views Map.keys(@expected_template_files)
 
-  setup do
-    File.rm_rf!(@tmp_path)
-    File.mkdir_p!(@tmp_path)
-
-    :ok
-  end
-
-  test "generates templates" do
-    File.cd!(@tmp_path, fn ->
+  test "generates templates", context do
+    File.cd!(context.tmp_path, fn ->
       Templates.run([])
 
       templates_path = Path.join(["lib", "pow_assent_web", "templates", "pow_assent"])

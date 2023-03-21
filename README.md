@@ -75,62 +75,14 @@ LIB_PATH/user_identities/user_identity.ex
 PRIV_PATH/repo/migrations/TIMESTAMP_create_user_identities.ex
 ```
 
-Update `LIB_PATH/users/user.ex`:
+And also update the following files:
 
-```elixir
-defmodule MyApp.Users.User do
-  use Ecto.Schema
-  use Pow.Ecto.Schema
-  use PowAssent.Ecto.Schema
-
-  schema "users" do
-    pow_user_fields()
-
-    # ...
-
-    timestamps()
-  end
-
-  # ..
-end
+```bash
+CONTEXT_PATH/users/user.ex
+WEB_PATH/router.ex
 ```
 
-Set up `router.ex`:
-
-```elixir
-defmodule MyAppWeb.Router do
-  use MyAppWeb, :router
-  use Pow.Phoenix.Router
-  use PowAssent.Phoenix.Router
-
-  # ...
-
-  pipeline :skip_csrf_protection do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_flash
-    plug :put_secure_browser_headers
-  end
-
-  # ...
-
-  scope "/" do
-    pipe_through :skip_csrf_protection
-
-    pow_assent_authorization_post_callback_routes()
-  end
-
-  scope "/" do
-    pipe_through [:browser]
-    pow_routes()
-    pow_assent_routes()
-  end
-
-  # ...
-end
-```
-
-The following routes will now be available in your app:
+Run migrations with `mix setup`. The following routes will be available in your app:
 
 ```elixir
 pow_assent_post_authorization_path  POST    /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
@@ -139,12 +91,6 @@ pow_assent_authorization_path       DELETE  /auth/:provider              PowAsse
 pow_assent_authorization_path       GET     /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
 pow_assent_registration_path        GET     /auth/:provider/add-user-id  PowAssent.Phoenix.RegistrationController  :add_user_id
 pow_assent_registration_path        POST    /auth/:provider/create       PowAssent.Phoenix.RegistrationController  :create
-```
-
-Remember to run the new migrations with:
-
-```bash
-mix ecto.setup
 ```
 
 ### Modified Pow templates
@@ -294,7 +240,8 @@ defmodule MyAppWeb.Router do
   end
 
   scope "/" do
-    pipe_through [:browser]
+    pipe_through :browser
+
     pow_routes()
     pow_assent_authorization_routes()
   end
