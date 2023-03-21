@@ -114,7 +114,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.InstallTest do
       Install.run(options)
 
       assert File.exists?(context.paths.templates_path)
-      assert [_one] = File.ls!(context.paths.templates_path)
+      assert [_one, _two] = File.ls!(context.paths.templates_path)
     end)
   end
 

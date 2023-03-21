@@ -2,6 +2,8 @@
 
 ## v0.4.16 (TBA)
 
+Now uses Phoenix 1.7 components templating and requires Pow 1.0.29.
+
 ### Enhancements
 
 * [`Mix.Tasks.Pow.Ecto.Install`] Now injects `CONTEXT_PATH/users/user.ex`

@@ -1,6 +1,7 @@
 defmodule PowAssent.Phoenix.RegistrationControllerTest do
   use PowAssent.Test.Phoenix.ConnCase
 
+  alias Phoenix.LiveViewTest.DOM
   alias Plug.Conn
   alias PowAssent.Ecto.UserIdentities.Context
 
@@ -41,8 +42,14 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert conn.private[:pow_assent_session][:callback_params] == provider_params()
       assert html = html_response(conn, 200)
-      assert html =~ "<label for=\"user_email\">Email</label>"
-      assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\">"
+
+      html_tree = DOM.parse(html)
+
+      assert [label_elem] = DOM.all(html_tree, "label[for=user_email]")
+      assert [input_elem] = DOM.all(html_tree, "input[name=\"user[email]\"]")
+      assert DOM.to_text(label_elem) =~ "Email"
+      assert DOM.attribute(input_elem, "type") == "email"
+      assert DOM.attribute(input_elem, "required")
     end
 
     test "shows with changeset stored in session", %{conn: conn} do
@@ -56,9 +63,13 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert conn.private[:pow_assent_session][:callback_params] == provider_params()
       refute conn.private[:pow_assent_session][:changeset]
       assert html = html_response(conn, 200)
-      assert html =~ "<label for=\"user_email\">Email</label>"
-      assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\" value=\"taken@example.com\">"
-      assert html =~ "<span class=\"help-block\">has already been taken</span>"
+
+      html_tree = DOM.parse(html)
+
+      assert [input_elem] = DOM.all(html_tree, "input[name=\"user[email]\"]")
+      assert [error_elem] = DOM.all(html_tree, "*[phx-feedback-for=\"user[email]\"] > p")
+      assert DOM.attribute(input_elem, "value") == "taken@example.com"
+      assert DOM.to_text(error_elem) =~ "has already been taken"
     end
   end
 
@@ -95,9 +106,13 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert conn.private[:pow_assent_session][:callback_params] == provider_params()
       assert html = html_response(conn, 200)
-      assert html =~ "<label for=\"user_email\">Email</label>"
-      assert html =~ "<input id=\"user_email\" name=\"user[email]\" type=\"text\" value=\"taken@example.com\">"
-      assert html =~ "<span class=\"help-block\">has already been taken</span>"
+
+      html_tree = DOM.parse(html)
+
+      assert [input_elem] = DOM.all(html_tree, "input[name=\"user[email]\"]")
+      assert [error_elem] = DOM.all(html_tree, "*[phx-feedback-for=\"user[email]\"] > p")
+      assert DOM.attribute(input_elem, "value") == "taken@example.com"
+      assert DOM.to_text(error_elem) =~ "has already been taken"
     end
 
     test "with identity already bound to another user", %{conn: conn} do
