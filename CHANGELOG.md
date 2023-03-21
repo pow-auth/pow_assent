@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.15 (TBA)
+
+Now supports Phoenix 1.7.
+
 ## v0.4.14 (2023-01-22)
 
 ### Bug fixes
