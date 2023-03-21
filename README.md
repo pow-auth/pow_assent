@@ -40,7 +40,7 @@ Add PowAssent to your list of dependencies in `mix.exs`:
 defp deps do
   [
     # ...
-    {:pow_assent, "~> 0.4.15"},
+    {:pow_assent, "~> 0.4.16"},
 
     # Optional, but recommended for SSL validation with :httpc adapter
     {:certifi, "~> 2.4"},
@@ -112,7 +112,7 @@ You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider lin
   do: content_tag(:span, link) %>
 ```
 
-This can be used in the `WEB_PATH/templates/pow/session/new.html.eex`, `WEB_PATH/templates/pow/registration/new.html.eex` and `WEB_PATH/templates/pow/registration/edit.html.eex` templates.
+This can be used in the `WEB_PATH/controllers/pow/session_html/new.html.heex`, `WEB_PATH/controllers/pow/registration_html/new.html.heex` and `WEB_PATH/controllers/pow/registration_html/edit.html.heex` templates.
 
 By default "Sign in with PROVIDER" link is shown. A "Remove PROVIDER authentication" link will be shown instead if the user is signed in and the user already have authorized with the provider.
 

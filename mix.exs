@@ -1,7 +1,7 @@
 defmodule PowAssent.MixProject do
   use Mix.Project
 
-  @version "0.4.15"
+  @version "0.4.16"
 
   def project do
     [
