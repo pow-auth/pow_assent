@@ -83,7 +83,14 @@ defmodule PowAssent.Phoenix.AuthorizationController do
       |> redirect(to: routes(conn).path_for(conn, RegistrationController, :add_user_id, [provider]))
     end)
   end
-  def respond_callback({:error, conn}) do
+  def respond_callback({:error, %{private: %{pow_assent_callback_state: {:error, :create_user}, pow_assent_registration: false}} = conn}) do
+    conn
+    |> put_flash(:error, extension_messages(conn).could_not_sign_in(conn))
+    |> redirect(to: routes(conn).session_path(conn, :new))
+  end
+  def respond_callback({:error, %{private: %{pow_assent_callback_state: {:error, :create_user}, pow_assent_callback_error: changeset}} = conn}) do
+    Logger.error("Unexpected error inserting user: #{inspect changeset}")
+
     conn
     |> put_flash(:error, extension_messages(conn).could_not_sign_in(conn))
     |> redirect(to: routes(conn).session_path(conn, :new))

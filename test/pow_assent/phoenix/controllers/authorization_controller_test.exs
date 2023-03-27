@@ -193,12 +193,14 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
     test "when identity doesn't exist and missing params", %{conn: conn} do
       set_oauth2_test_endpoints(user: %{sub: "new_user", name: ""})
 
-      conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
+      assert capture_log(fn ->
+        conn = get conn, Routes.pow_assent_authorization_path(conn, :callback, @provider, @callback_params)
 
-      assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
-      assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
-      refute conn.resp_cookies["pow_assent_auth_session"]
-      refute get_pow_assent_session(conn, :session_params)
+        assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+        assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
+        refute conn.resp_cookies["pow_assent_auth_session"]
+        refute get_pow_assent_session(conn, :session_params)
+      end) =~ "Unexpected error inserting user: #Ecto.Changeset<action: :insert"
     end
 
     test "when identity doesn't exist and missing user id", %{conn: conn} do

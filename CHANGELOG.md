@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.17 (TBA)
+
+### Enhancements
+
+* [`PowAssent.Phoenix.AuthorizationController`] Now logs error for when user can't be created
+
 ## v0.4.16 (2023-03-21)
 
 Now uses Phoenix 1.7 components templating and requires Pow 1.0.29.
