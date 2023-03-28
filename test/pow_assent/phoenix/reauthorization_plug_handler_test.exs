@@ -8,7 +8,7 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandlerTest do
   @cookie_key "pow_assent_reauthorization_provider"
 
   test "when at session new path without cookie does not redirect", %{conn: conn} do
-    conn = get(conn, Routes.pow_session_path(conn, :new))
+    conn = get(conn, ~p"/session/new")
 
     assert html_response(conn, 200)
     refute conn.resp_cookies[@cookie_key]
@@ -18,7 +18,7 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandlerTest do
     conn =
       conn
       |> with_reauthorization_cookie()
-      |> get(Routes.pow_registration_path(conn, :new))
+      |> get(~p"/registration/new")
 
     assert html_response(conn, 200)
     refute conn.resp_cookies[@cookie_key]
@@ -28,9 +28,9 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandlerTest do
     conn =
       conn
       |> with_reauthorization_cookie()
-      |> get(Routes.pow_session_path(conn, :new))
+      |> get(~p"/session/new")
 
-    assert redirected_to(conn) == Routes.pow_assent_authorization_path(conn, :new, "test_provider")
+    assert redirected_to(conn) == ~p"/auth/test_provider/new"
     assert conn.resp_cookies[@cookie_key]
   end
 
@@ -38,9 +38,9 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandlerTest do
     conn =
       conn
       |> with_reauthorization_cookie()
-      |> get(Routes.pow_session_path(conn, :new, request_path: "/custom-url"))
+      |> get(~p"/session/new?#{[request_path: "/custom-url"]}")
 
-    assert redirected_to(conn) == Routes.pow_assent_authorization_path(conn, :new, "test_provider", request_path: "/custom-url")
+    assert redirected_to(conn) == ~p"/auth/test_provider/new?#{[request_path: "/custom-url"]}"
     assert conn.resp_cookies[@cookie_key]
   end
 
@@ -48,9 +48,9 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandlerTest do
     conn =
       conn
       |> with_reauthorization_cookie()
-      |> delete(Routes.pow_session_path(conn, :delete))
+      |> delete(~p"/session")
 
-    assert redirected_to(conn) == Routes.pow_session_path(conn, :new)
+    assert redirected_to(conn) == ~p"/session/new"
     assert conn.resp_cookies[@cookie_key]
   end
 

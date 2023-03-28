@@ -21,7 +21,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       conn =
         conn
         |> Conn.put_private(:pow_assent_session, nil)
-        |> get(Routes.pow_assent_registration_path(conn, :add_user_id, @provider))
+        |> get(~p"/auth/#{@provider}/add-user-id")
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       assert redirected_to(conn) == "/logged-out"
@@ -29,7 +29,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "with invalid provider path", %{conn: conn} do
-      conn = get conn, Routes.pow_assent_registration_path(conn, :add_user_id, "invalid")
+      conn = get(conn, ~p"/auth/invalid/add-user-id")
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       assert redirected_to(conn) == "/logged-out"
@@ -37,7 +37,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "shows", %{conn: conn} do
-      conn = get conn, Routes.pow_assent_registration_path(conn, :add_user_id, @provider)
+      conn = get(conn, ~p"/auth/#{@provider}/add-user-id")
 
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert conn.private[:pow_assent_session][:callback_params] == provider_params()
@@ -57,7 +57,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       conn =
         conn
         |> Conn.put_private(:pow_assent_session, %{changeset: changeset, callback_params: provider_params()})
-        |> get(Routes.pow_assent_registration_path(conn, :add_user_id, @provider))
+        |> get(~p"/auth/#{@provider}/add-user-id")
 
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert conn.private[:pow_assent_session][:callback_params] == provider_params()
@@ -81,7 +81,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       conn =
         conn
         |> Conn.put_private(:pow_assent_session, nil)
-        |> post(Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
+        |> post(~p"/auth/#{@provider}/create", @valid_params)
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
@@ -90,7 +90,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "with valid params", %{conn: conn} do
-      conn = post conn, Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params
+      conn = post(conn, ~p"/auth/#{@provider}/create", @valid_params)
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
@@ -101,7 +101,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "with taken user id params", %{conn: conn} do
-      conn = post conn, Routes.pow_assent_registration_path(conn, :create, @provider), @taken_params
+      conn = post(conn, ~p"/auth/#{@provider}/create", @taken_params)
 
       assert conn.resp_cookies["pow_assent_auth_session"]
       assert conn.private[:pow_assent_session][:callback_params] == provider_params()
@@ -120,11 +120,11 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       conn   =
         conn
         |> Conn.put_private(:pow_assent_session, %{callback_params: params})
-        |> post(Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
+        |> post(~p"/auth/#{@provider}/create", @valid_params)
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
-      assert redirected_to(conn) == Routes.pow_registration_path(conn, :new)
+      assert redirected_to(conn) == ~p"/registration/new"
       assert get_flash(conn, :error) == "The Test provider account is already bound to another user."
     end
   end
@@ -136,7 +136,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     @taken_params %{user: %{email: "taken@example.com"}}
 
     test "with email from user", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), @valid_params)
+      conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :post, ~p"/auth/#{@provider}/create", @valid_params)
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
@@ -156,7 +156,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "with taken email", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), @taken_params)
+      conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :post, ~p"/auth/#{@provider}/create", @taken_params)
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
@@ -173,7 +173,7 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   alias PowAssent.Test.WithCustomChangeset.Phoenix.Endpoint, as: WithCustomChangesetEndpoint
   describe "POST /auth/:provider/create recording strategy params" do
     test "records", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch(conn, WithCustomChangesetEndpoint, :post, Routes.pow_assent_registration_path(conn, :create, @provider), %{user: %{email: "foo@example.com"}})
+      conn = Phoenix.ConnTest.dispatch(conn, WithCustomChangesetEndpoint, :post, ~p"/auth/#{@provider}/create", %{user: %{email: "foo@example.com"}})
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]

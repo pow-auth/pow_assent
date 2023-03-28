@@ -127,7 +127,7 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
 
   describe "new/2" do
     test "with valid config", %{conn: conn} do
-      conn = get conn, Routes.api_v1_authorization_path(conn, :new, :test_provider)
+      conn = get(conn, ~p"/api/v1/auth/test_provider/new")
 
       assert json = json_response(conn, 200)
       assert json["data"]["url"] == "https://provider.example.com/oauth/authorize"
@@ -135,7 +135,7 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
     end
 
     test "with error", %{conn: conn} do
-      conn = get conn, Routes.api_v1_authorization_path(conn, :new, :invalid_test_provider)
+      conn = get(conn, ~p"/api/v1/auth/invalid_test_provider/new")
 
       assert json = json_response(conn, 500)
       assert json["error"]["message"] == "An unexpected error occurred"
@@ -148,7 +148,7 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
     @invalid_params %{"code" => "invalid", "session_params" => %{"a" => 2}}
 
     test "with valid params", %{conn: conn} do
-      conn = post conn, Routes.api_v1_authorization_path(conn, :callback, :test_provider, @valid_params)
+      conn = post(conn, ~p"/api/v1/auth/test_provider/callback?#{@valid_params}")
 
       assert json = json_response(conn, 200)
       assert json["data"]["access_token"]
@@ -156,7 +156,7 @@ defmodule MyAppWeb.API.V1.AuthorizationControllerTest do
     end
 
     test "with invalid params", %{conn: conn} do
-      conn = post conn, Routes.api_v1_authorization_path(conn, :callback, :test_provider, @invalid_params)
+      conn = post(conn, ~p"/api/v1/auth/test_provider/callback?#{@invalid_params}")
 
       assert json = json_response(conn, 500)
       assert json["error"]["message"] == "An unexpected error occurred"

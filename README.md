@@ -85,12 +85,11 @@ WEB_PATH/router.ex
 Run migrations with `mix setup`. The following routes will be available in your app:
 
 ```elixir
-pow_assent_post_authorization_path  POST    /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
-pow_assent_authorization_path       GET     /auth/:provider/new          PowAssent.Phoenix.AuthorizationController :new
-pow_assent_authorization_path       DELETE  /auth/:provider              PowAssent.Phoenix.AuthorizationController :delete
-pow_assent_authorization_path       GET     /auth/:provider/callback     PowAssent.Phoenix.AuthorizationController :callback
-pow_assent_registration_path        GET     /auth/:provider/add-user-id  PowAssent.Phoenix.RegistrationController  :add_user_id
-pow_assent_registration_path        POST    /auth/:provider/create       PowAssent.Phoenix.RegistrationController  :create
+GET     /auth/:provider/new                    PowAssent.Phoenix.AuthorizationController :new
+DELETE  /auth/:provider                        PowAssent.Phoenix.AuthorizationController :delete
+GET     /auth/:provider/callback               PowAssent.Phoenix.AuthorizationController :callback
+GET     /auth/:provider/add-user-id            PowAssent.Phoenix.RegistrationController :add_user_id
+POST    /auth/:provider/create                 PowAssent.Phoenix.RegistrationController :create
 ```
 
 ### Modified Pow templates
@@ -362,7 +361,7 @@ You can enable the reauthorization plug in your `WEB_PATH/router.ex` by adding i
 
 ```elixir
 defmodule MyAppWeb.Router do
-  use Phoenix.Router
+  use MyAppWeb, :router
   # ...
 
   pipeline :browser do
@@ -383,7 +382,7 @@ You can also enable `PowPersistentSession` by using the `PowAssent.Plug.put_crea
 
 ```elixir
 defmodule MyAppWeb.Router do
-  use Phoenix.Router
+  use MyAppWeb, :router
   # ...
 
   pipeline :browser do

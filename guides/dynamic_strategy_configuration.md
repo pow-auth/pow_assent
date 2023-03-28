@@ -121,10 +121,10 @@ defmodule MyAppWeb.Router do
 end
 ```
 
-Now you can generate the authorization url with the `google_drive=true` query to enable `drive.file` permission:
+Now you can use the authorization url with the `google_drive=true` query to enable `drive.file` permission:
 
 ```elixir
-Routes.pow_assent_authorization_path(conn, :new, :google, google_drive: true)
+~p"/auth/google/new?#{[google_drive: true]}"
 ```
 
 You can add any number of additional optional scopes to the plug.
@@ -143,14 +143,14 @@ defmodule MyAppWeb.PowAssentGoogleIncrementalAuthPlugTest do
   @plug_opts []
 
   test "call/2 without additional scopes", %{conn: conn} do
-    conn = run_plug(Routes.pow_assent_authorization_path(conn, :new, @provider))
+    conn = run_plug(~p"/auth/#{@provider}/new")
 
     assert fetch_provider_scope(conn) ==
       "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"
   end
 
   test "call/2 with google_drive=true query", %{conn: conn} do
-    conn = run_plug(Routes.pow_assent_authorization_path(conn, :new, @provider, google_drive: true))
+    conn = run_plug(~p"/auth/#{@provider}/new?#{[google_drive: true]}")
 
     opts = PowAssentGoogleIncrementalAuthPlug.init(@plug_opts)
     conn = PowAssentGoogleIncrementalAuthPlug.call(conn, opts)
