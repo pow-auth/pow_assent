@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.17 (TBA)
+## v0.4.17 (2023-03-28)
 
 ### Enhancements
 
