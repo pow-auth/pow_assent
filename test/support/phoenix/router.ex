@@ -1,6 +1,6 @@
 defmodule PowAssent.Test.Phoenix.Router do
   @moduledoc false
-  use Phoenix.Router
+  use PowAssent.Test.Phoenix.Web, :router
   use Pow.Phoenix.Router
   use PowAssent.Phoenix.Router
 

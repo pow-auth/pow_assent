@@ -1,6 +1,6 @@
 defmodule PowAssent.Test.NoRegistration.Phoenix.Router do
   @moduledoc false
-  use Phoenix.Router
+  use Phoenix.Router, helpers: false
   use Pow.Phoenix.Router
   use PowAssent.Phoenix.Router
 

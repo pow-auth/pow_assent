@@ -190,10 +190,19 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   defp set_registration_option(%{private: %{pow_assent_registration: _any}} = conn, _opts), do: conn
   defp set_registration_option(conn, _opts), do: Conn.put_private(conn, :pow_assent_registration, registration_path?(conn))
 
+  # TODO: Force verified routes when Phoenix 1.7 is required
+  if Code.ensure_loaded?(Phoenix.VerifiedRoutes) do
+  defp registration_path?(conn) do
+    Enum.any?(conn.private.phoenix_router.__routes__(), fn route ->
+      route.plug == RegistrationController and route.plug_opts == :create
+    end)
+  end
+  else
   defp registration_path?(conn) do
     [conn.private.phoenix_router, Helpers]
     |> Module.concat()
     |> function_exported?(:pow_assent_registration_path, 3)
+  end
   end
 
   defp load_user_by_invitation_token(%{private: %{pow_assent_session: %{invitation_token: token}}} = conn, _opts) do

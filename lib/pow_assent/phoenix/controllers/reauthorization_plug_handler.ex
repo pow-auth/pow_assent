@@ -61,8 +61,7 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandler do
   @doc """
   Checks if the reauthorization should be cleared.
 
-  Returns true when the request path matches
-  `Routes.pow_session_path(conn, :delete)`.
+  Returns true when the request path matches delete session route.
   """
   @spec clear_reauthorization?(Conn.t(), Config.t()) :: boolean()
   def clear_reauthorization?(conn, config) do

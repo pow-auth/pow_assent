@@ -2,7 +2,7 @@ defmodule PowAssent.Test.Phoenix.ConnCase do
   @moduledoc false
   use ExUnit.CaseTemplate
   alias Phoenix.ConnTest
-  alias PowAssent.Test.Phoenix.{Endpoint, Router}
+  alias PowAssent.Test.Phoenix.{Endpoint, Web}
 
   using do
     quote do
@@ -10,9 +10,9 @@ defmodule PowAssent.Test.Phoenix.ConnCase do
       import Phoenix.ConnTest, except: [get_flash: 2]
       import unquote(__MODULE__), only: [get_flash: 2]
 
-      alias Router.Helpers, as: Routes
-
       @endpoint Endpoint
+
+      use Web, :verified_routes
     end
   end
 
