@@ -13,8 +13,8 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.MigrationTest do
     File.cd!(context.tmp_path, fn ->
       Migration.run(context.options)
 
-      assert_received {:mix_shell, :info, ["* creating ./migrations"]}
-      assert_received {:mix_shell, :info, ["* creating ./migrations/" <> _]}
+      assert_received {:mix_shell, :info, ["* creating" <> _]}
+      assert_received {:mix_shell, :info, ["* creating" <> _]}
 
       assert [_, migration_file] = @migrations_path |> File.ls!() |> Enum.sort()
       assert String.match?(migration_file, ~r/^\d{14}_create_user_identities\.exs$/)

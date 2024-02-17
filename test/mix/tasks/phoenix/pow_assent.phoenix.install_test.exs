@@ -152,7 +152,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.InstallTest do
 
       Mix.Project.in_project(:missing_top_level_phoenix_dep, ".", fn _ ->
         # Insurance that we do test for top level phoenix inclusion
-        assert Enum.any?(Mix.Dep.load_on_environment([]), fn
+        assert Enum.any?(Mix.Pow.__dependencies__([]), fn
           %{app: :phoenix} -> true
           _ -> false
         end), "Phoenix not loaded by dependency"
