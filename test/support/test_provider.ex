@@ -7,7 +7,7 @@ defmodule PowAssent.Test.TestProvider do
   @impl true
   def default_config(_config) do
     [
-      site: "http://localhost:4000/",
+      base_url: "http://localhost:4000/",
       authorize_url: "/oauth/authorize",
       token_url: "/oauth/token",
       user_url: "/api/user",
@@ -33,10 +33,10 @@ defmodule PowAssent.Test.TestProvider do
 
   @spec put_oauth2_env(keyword()) :: :ok
   def put_oauth2_env(config \\ []) do
-    url = Keyword.get(config, :site) || TestServer.url()
+    url = Keyword.get(config, :base_url) || TestServer.url()
     %{host: host} = URI.parse(url)
 
-    httpc_opts = Keyword.get(config, :site) || [
+    httpc_opts = Keyword.get(config, :base_url) || [
       ssl: [
         verify: :verify_peer,
         depth: 99,
@@ -51,7 +51,7 @@ defmodule PowAssent.Test.TestProvider do
         test_provider: Keyword.merge([
           client_id: "client_id",
           client_secret: "abc123",
-          site: url,
+          base_url: url,
           strategy: __MODULE__
         ], config)
       ],

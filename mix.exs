@@ -32,11 +32,11 @@ defmodule PowAssent.MixProject do
   defp deps do
     [
       {:pow, "~> 1.0.29"},
-      {:assent, "~> 0.1.2 or ~> 0.2.0"},
+      {:assent, "~> 0.2.8"},
 
       {:ecto, "~> 2.2 or ~> 3.0"},
       {:phoenix, ">= 1.3.0 and < 1.8.0"},
-      {:phoenix_html, ">= 2.0.0 and <= 4.0.0"},
+      {:phoenix_html, ">= 2.0.0 and <= 5.0.0", optional: true},
       {:plug, ">= 1.5.0 and < 2.0.0", optional: true},
       {:phoenix_live_view, ">= 0.18.0", optional: true},
 

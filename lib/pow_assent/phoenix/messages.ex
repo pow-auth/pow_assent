@@ -75,6 +75,7 @@ defmodule PowAssent.Phoenix.Messages do
   @doc """
   Message for provider login button.
   """
+  #  TODO: Change function name to `log_in_with_provider` or `sign_in_with_provider`.
   def login_with_provider(conn),
     do: interpolate("Sign in with %{provider}", provider: Naming.humanize(conn.params["provider"]))
 

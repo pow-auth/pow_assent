@@ -6,7 +6,7 @@ defmodule PowAssent.Test.OAuth2TestCase do
     TestServer.start(scheme: :https)
 
     params = %{"code" => "test", "state" => "test"}
-    config = [client_secret: "secret", site: TestServer.url(), session_params: %{state: "test"}]
+    config = [client_secret: "secret", base_url: TestServer.url(), session_params: %{state: "test"}]
 
     {:ok, callback_params: params, config: config}
   end

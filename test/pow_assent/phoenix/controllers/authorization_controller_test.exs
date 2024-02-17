@@ -61,7 +61,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
         refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
-      end) =~ "Strategy failed with error: \"fail\""
+      end) =~ "Strategy failed with error: fail"
     end
   end
 
@@ -90,9 +90,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         refute get_pow_assent_session(conn, :session_params)
       end)
 
-      assert log =~ "Strategy failed with error: %Assent.RequestError{"
-      assert log =~ "error: :invalid_server_response"
-      assert log =~ "message: \"Server responded with status: 401"
+      assert log =~ "Strategy failed with error: An invalid response was received."
+      assert log =~ "HTTP Adapter: Assent.HTTPAdapter.Httpc"
+      assert log =~ "Response status: 401"
     end
 
     test "with timeout", %{conn: conn} do
@@ -107,9 +107,9 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         refute get_pow_assent_session(conn, :session_params)
       end)
 
-      assert log =~ "Strategy failed with error: %Assent.RequestError{"
-      assert log =~ "error: :unreachable"
-      assert log =~ "message: \"Server was unreachable with Assent.HTTPAdapter.Httpc."
+      assert log =~ "Strategy failed with error: The server was unreachable."
+      assert log =~ "HTTP Adapter: Assent.HTTPAdapter.Httpc"
+      assert log =~ ":econnrefused"
     end
 
     test "with invalid state", %{conn: conn} do
@@ -120,7 +120,7 @@ defmodule PowAssent.Phoenix.AuthorizationControllerTest do
         assert get_flash(conn, :error) == "Something went wrong, and you couldn't be signed in. Please try again."
         refute conn.resp_cookies["pow_assent_auth_session"]
         refute get_pow_assent_session(conn, :session_params)
-      end) =~ "Strategy failed with error: %Assent.CallbackCSRFError{message: \"CSRF detected with param key \\\"state\\\"\"}"
+      end) =~ "Strategy failed with error: CSRF detected with param key \"state\""
     end
 
     test "when identity exists authenticates", %{conn: conn} do

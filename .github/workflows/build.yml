@@ -16,8 +16,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: 25.0
-          elixir-version: 1.14.0
+          otp-version: 26.0
+          elixir-version: 1.16.0
       - run: mix deps.get
       - run: mix compile --warnings-as-errors
       - run: mix credo --strict --ignore design.tagtodo,readability.maxlinelength
@@ -40,8 +40,8 @@ jobs:
     strategy:
       matrix:
         version:
-          - otp: 25.0
-            elixir: 1.14.0
+          - otp: 26.0
+            elixir: 1.16.0
             os: ubuntu-latest
           - otp: 22.0
             elixir: 1.12.0

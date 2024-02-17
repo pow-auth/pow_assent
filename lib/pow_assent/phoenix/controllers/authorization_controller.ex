@@ -223,10 +223,16 @@ defmodule PowAssent.Phoenix.AuthorizationController do
   defp load_user_by_invitation_token(conn, _opts), do: conn
 
   defp handle_strategy_error(conn, error) do
-    Logger.error("Strategy failed with error: #{inspect error}")
+    log_strategy_error(error)
 
     conn
     |> put_flash(:error, extension_messages(conn).could_not_sign_in(conn))
     |> redirect(to: routes(conn).session_path(conn, :new))
+  end
+
+  defp log_strategy_error(error) when is_exception(error), do: log_strategy_error(Exception.message(error))
+
+  defp log_strategy_error(error) when is_binary(error) do
+    Logger.error("Strategy failed with error: #{error}")
   end
 end

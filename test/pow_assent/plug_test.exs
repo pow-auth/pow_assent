@@ -25,7 +25,7 @@ defmodule PowAssent.PlugTest do
 
   describe "authorize_url/3" do
     test "generates state", %{conn: conn} do
-      put_oauth2_env(site: "http://localhost:8888")
+      put_oauth2_env(base_url: "http://localhost:8888")
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
@@ -34,7 +34,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "uses nonce from config", %{conn: conn} do
-      put_oauth2_env(site: "http://localhost:8888", nonce: "nonce", strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
+      put_oauth2_env(base_url: "http://localhost:8888", nonce: "nonce", strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
@@ -44,7 +44,7 @@ defmodule PowAssent.PlugTest do
     end
 
     test "uses generated nonce when nonce in config set to true", %{conn: conn} do
-      put_oauth2_env(site: "http://localhost:8888", nonce: true, strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
+      put_oauth2_env(base_url: "http://localhost:8888", nonce: true, strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
@@ -228,7 +228,7 @@ defmodule PowAssent.PlugTest do
 
   describe "available_providers/1" do
     test "lists providers", %{conn: conn} do
-      put_oauth2_env(site: "http://localhost:8888")
+      put_oauth2_env(base_url: "http://localhost:8888")
 
       assert Plug.available_providers(conn) == [:test_provider]
     end
@@ -392,7 +392,7 @@ defmodule PowAssent.PlugTest do
   end
 
   test "merge_provider_config/3", %{conn: conn} do
-    put_oauth2_env(site: "http://localhost:8888", authorization_params: [a: 1, b: 2])
+    put_oauth2_env(base_url: "http://localhost:8888", authorization_params: [a: 1, b: 2])
 
     conn =
       conn

@@ -104,18 +104,27 @@ Otherwise, Pow will raise an error about missing template when the user id field
 
 ### Provider links
 
-You can use `PowAssent.Phoenix.ViewHelpers.provider_links/1` to add provider links to your template files:
+You can use helpers from `PowAssent.Phoenix.HTML.CoreComponents` to render provider links:
 
 ```elixir
-<%= for link <- PowAssent.Phoenix.ViewHelpers.provider_links(@conn),
-  do: content_tag(:span, link) %>
+# Minimal
+<PowAssent.Phoenix.HTML.CoreComponents.provider_links conn={@conn} />
+
+# With styling
+<div class="space-y-4 bg-white mt-10">
+  <PowAssent.Phoenix.HTML.CoreComponents.provider_links conn={@conn}>
+    <:authorization_link :let={provider} class="block rounded-lg bg-zinc-600 hover:bg-zinc-700 py-2 px-3 text-sm font-semibold leading-6 text-white w-full text-center">
+      <%= Phoenix.Naming.humanize(provider) %> <span aria-hidden="true">→</span>
+    </:authorization_link>
+  </PowAssent.Phoenix.HTML.CoreComponents.provider_links>
+</div>
 ```
 
-This can be used in the `WEB_PATH/controllers/pow/session_html/new.html.heex`, `WEB_PATH/controllers/pow/registration_html/new.html.heex` and `WEB_PATH/controllers/pow/registration_html/edit.html.heex` templates.
+This can be used in the `WEB_PATH/controllers/pow/session_html/new.html.heex`, `WEB_PATH/controllers/pow/registration_html/new.html.heex` and `WEB_PATH/controllers/pow/registration_html/edit.html.heex` templates. You may want to import or alias the module in your web module.
 
-By default "Sign in with PROVIDER" link is shown. A "Remove PROVIDER authentication" link will be shown instead if the user is signed in and the user already have authorized with the provider.
+By default "Sign in with PROVIDER" link is shown. A "Remove PROVIDER authentication" link will be shown instead if the user is signed in and the user already is authorized with the provider.
 
-You can also call `PowAssent.Phoenix.ViewHelpers.authorization_link/2` and `PowAssent.Phoenix.ViewHelpers.deauthorization_link/2` to generate a link for a single provider.
+You can also use `<.authorization_link conn={@conn} provider={provider} />` and `<.deauthorization_link conn={@conn} provider={provider} />` to generate a link for a single provider.
 
 ### Setting up a provider
 
@@ -145,7 +154,7 @@ config :my_app, :pow_assent,
   providers: [
     example: [
       client_id: "REPLACE_WITH_CLIENT_ID",
-      site: "https://server.example.com",
+      base_url: "https://server.example.com",
       authorization_params: [scope: "user:read user:write"],
       nonce: true,
       strategy: Assent.Strategy.OIDC
