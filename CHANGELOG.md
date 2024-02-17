@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.18 (TBA)
+## v0.4.18 (2024-02-17)
 
 Now supports Phoenix HTML 4.0.
 
