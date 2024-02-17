@@ -1,22 +1,12 @@
+# TODO: Remove this when Phoenix 1.7+ is required
+if Pow.dependency_vsn_match?(:phoenix, "< 1.7.0") do
 defmodule PowAssent.Phoenix.ViewHelpers do
-  @moduledoc """
-  View helpers to render authorization links.
-  """
+  @moduledoc false
   alias PowAssent.Plug
 
   alias Phoenix.{HTML, HTML.Link}
   alias PowAssent.Phoenix.AuthorizationController
 
-  @doc """
-  Generates list of authorization links for all configured providers.
-
-  The list of providers will be fetched from the PowAssent configuration, and
-  `authorization_link/2` will be called on each.
-
-  If a user is assigned to the conn, the authorized providers for a user will
-  be looked up with `PowAssent.Plug.providers_for_current_user/1`.
-  `deauthorization_link/2` will be used for any already authorized providers.
-  """
   @spec provider_links(Conn.t(), keyword()) :: [HTML.safe()]
   def provider_links(conn, link_opts \\ []) do
     available_providers = Plug.available_providers(conn)
@@ -30,13 +20,6 @@ defmodule PowAssent.Phoenix.ViewHelpers do
     end)
   end
 
-  @doc """
-  Generates an authorization link for a provider.
-
-  The link is used to sign up or register a user using a provider. If
-  `:invited_user` is assigned to the conn, the invitation token will be passed
-  on through the URL query params.
-  """
   @spec authorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
   def authorization_link(conn, provider, opts \\ []) do
     query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
@@ -54,11 +37,6 @@ defmodule PowAssent.Phoenix.ViewHelpers do
   defp request_path_query_params(%{assigns: %{request_path: request_path}}), do: [request_path: request_path]
   defp request_path_query_params(_conn), do: []
 
-  @doc """
-  Generates a provider deauthorization link.
-
-  The link is used to remove authorization with the provider.
-  """
   @spec deauthorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
   def deauthorization_link(conn, provider, opts \\ []) do
     msg  = AuthorizationController.extension_messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
@@ -67,4 +45,5 @@ defmodule PowAssent.Phoenix.ViewHelpers do
 
     Link.link(msg, opts)
   end
+end
 end

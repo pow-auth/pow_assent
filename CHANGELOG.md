@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.4.18 (TBA)
+
+Now supports Phoenix HTML 4.0.
+
+`PowAssent.Phoenix.ViewHelpers` has been replaced with `PowAssent.Phoenix.HTML.CoreComponents` for Phoenix 1.7. The following functions be used in place of the previous view helper functions:
+
+- `PowAssent.Phoenix.HTML.CoreComponents.provider_links/1`
+- `PowAssent.Phoenix.HTML.CoreComponents.authorization_link/1`
+- `PowAssent.Phoenix.HTML.CoreComponents.deauthorization_link/1`
+
+### Enhancements
+
+* [`PowAssent.Phoenix.HTML.CoreComponents`] added with template functions for authorization links
+
+### Deprecations
+
+* [`PowAssent.Phoenix.ViewHelpers`] has been deprecated and removed from Phoenix 1.7
+
 ## v0.4.17 (2023-03-28)
 
 ### Enhancements
