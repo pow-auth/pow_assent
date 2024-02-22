@@ -122,7 +122,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema do
     |> Changeset.cast(params, [:provider, :uid, :user_id])
     |> Changeset.validate_required([:provider, :uid])
     |> Changeset.assoc_constraint(:user)
-    |> Changeset.unique_constraint(:uid_provider, name: :user_identities_uid_provider_index)
+    |> Changeset.unique_constraint([:uid, :provider], match: :suffix)
   end
 
   @spec raise_no_user_error :: no_return
