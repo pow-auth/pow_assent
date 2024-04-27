@@ -41,7 +41,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
 
     expected = fn assigns ->
       ~H"""
-      <.link navigate={"/auth/test_provider"} method="delete">
+      <.link href={"/auth/test_provider"} method="delete">
         Remove Test provider authentication
       </.link><.link navigate={"/auth/other_provider/new"}>
         Sign in with Other provider
@@ -66,7 +66,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
 
     expected = fn assigns ->
       ~H"""
-      <.link navigate={"/auth/test_provider"} method="delete" class="deauth">
+      <.link href={"/auth/test_provider"} method="delete" class="deauth">
         Remove Test provider authentication
       </.link><.link navigate={"/auth/other_provider/new"} class="auth">
         Sign in with Other provider
@@ -91,7 +91,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
 
     expected = fn assigns ->
       ~H"""
-      <.link navigate={"/auth/test_provider"} method="delete">
+      <.link href={"/auth/test_provider"} method="delete">
         Deauthorization
       </.link><.link navigate={"/auth/other_provider/new"}>
         Authorization
@@ -114,7 +114,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
 
     expected = fn assigns ->
       ~H"""
-      <.link navigate={"/auth/test_provider"} method="delete">
+      <.link href={"/auth/test_provider"} method="delete">
         Remove Test provider authentication
       </.link><.link navigate={"/auth/other_provider/new?request_path=%2Fcustom-url"}>
         Sign in with Other provider
@@ -137,7 +137,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
 
     expected = fn assigns ->
       ~H"""
-      <.link navigate={"/auth/test_provider"} method="delete">
+      <.link href={"/auth/test_provider"} method="delete">
         Remove Test provider authentication
       </.link><.link navigate={"/auth/other_provider/new?invitation_token=token"}>
         Sign in with Other provider
@@ -196,7 +196,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
 
     expected = fn assigns ->
       ~H"""
-      <.link navigate={"/auth/my_provider"} class="example">Remove My provider authentication</.link>
+      <.link href={"/auth/my_provider"} method="delete" class="example">Remove My provider authentication</.link>
       """
     end
 
@@ -215,7 +215,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
 
     expected = fn assigns ->
       ~H"""
-      <.link navigate={"/auth/my_provider"}>
+      <.link href={"/auth/my_provider"} method="delete">
         Deauthorize
       </.link>
       """

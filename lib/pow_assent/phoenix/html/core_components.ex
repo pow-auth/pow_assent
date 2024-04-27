@@ -155,7 +155,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponents do
     assigns = assign(assigns, navigate: path)
 
     ~H"""
-    <.link navigate={@navigate} method="delete" {@rest}><%= render_slot(@inner_block) || remove_provider_authentication_label(@conn, @provider) %></.link>
+    <.link href={@navigate} method="delete" {@rest}><%= render_slot(@inner_block) || remove_provider_authentication_label(@conn, @provider) %></.link>
     """
   end
 end
