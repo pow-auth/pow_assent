@@ -1,6 +1,7 @@
 defmodule PowAssent.Test.Invitation.UserIdentities.UserIdentity do
   @moduledoc false
   use Ecto.Schema
+
   use PowAssent.Ecto.UserIdentities.Schema,
     user: PowAssent.Test.Invitation.Users.User
 

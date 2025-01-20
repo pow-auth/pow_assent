@@ -38,9 +38,11 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.SchemaTest do
     File.cd!(context.tmp_path, fn ->
       Schema.run([])
 
-      assert_raise Mix.Error, "schema file can't be created, there is already a schema file in lib/pow_assent/user_identities/user_identity.ex.", fn ->
-        Schema.run([])
-      end
+      assert_raise Mix.Error,
+                   "schema file can't be created, there is already a schema file in lib/pow_assent/user_identities/user_identity.ex.",
+                   fn ->
+                     Schema.run([])
+                   end
     end)
   end
 end

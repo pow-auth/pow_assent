@@ -59,12 +59,14 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandlerTest do
   end
 
   test "requires conn.private.phoenix_controller", %{conn: conn} do
-    assert_raise ConfigError, "Please use PowAssent.Plug.Reauthorization plug in your Phoenix router rather than endpoint when used with the PowAssent.Phoenix.ReauthorizationPlugHandler handler.", fn ->
-      opts = Reauthorization.init(handler: ReauthorizationPlugHandler)
+    assert_raise ConfigError,
+                 "Please use PowAssent.Plug.Reauthorization plug in your Phoenix router rather than endpoint when used with the PowAssent.Phoenix.ReauthorizationPlugHandler handler.",
+                 fn ->
+                   opts = Reauthorization.init(handler: ReauthorizationPlugHandler)
 
-      conn
-      |> Plug.put_config([])
-      |> Reauthorization.call(opts)
-    end
+                   conn
+                   |> Plug.put_config([])
+                   |> Reauthorization.call(opts)
+                 end
   end
 end

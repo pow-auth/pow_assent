@@ -29,13 +29,13 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.Templates do
   end
 
   @templates [
-    {"registration", ~w(add_user_id)},
+    {"registration", ~w(add_user_id)}
   ]
 
   defp create_template_files({config, _parsed, _invalid}) do
-    structure    = Phoenix.parse_structure(config)
-    web_module   = structure[:web_module]
-    web_prefix   = structure[:web_prefix]
+    structure = Phoenix.parse_structure(config)
+    web_module = structure[:web_module]
+    web_prefix = structure[:web_prefix]
 
     Enum.each(@templates, fn {name, actions} ->
       Phoenix.create_template_module(Elixir.PowAssent, name, web_module, web_prefix)

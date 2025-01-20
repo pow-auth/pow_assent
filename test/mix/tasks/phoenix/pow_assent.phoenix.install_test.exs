@@ -3,7 +3,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.InstallTest do
 
   alias Mix.Tasks.PowAssent.Phoenix.Install
 
-  @options     []
+  @options []
   @success_msg "PowAssent has been installed in your Phoenix app!"
 
   test "default", context do
@@ -67,9 +67,11 @@ defmodule Mix.Tasks.PowAssent.Phoenix.InstallTest do
     File.cd!(context.tmp_path, fn ->
       File.rm_rf!(context.paths.router_path)
 
-      assert_raise Mix.Error, "Couldn't install PowAssent! Did you run this inside your Phoenix app?", fn ->
-        Install.run(@options)
-      end
+      assert_raise Mix.Error,
+                   "Couldn't install PowAssent! Did you run this inside your Phoenix app?",
+                   fn ->
+                     Install.run(@options)
+                   end
 
       assert_received {:mix_shell, :error, ["Could not find the following file(s)" <> msg]}
       assert msg =~ context.paths.router_path
@@ -134,7 +136,9 @@ defmodule Mix.Tasks.PowAssent.Phoenix.InstallTest do
         end
       end
       """)
+
       File.mkdir!("dep")
+
       File.write!("dep/mix.exs", """
       defmodule PhoenixDep.MixProject do
         use Mix.Project
@@ -153,13 +157,16 @@ defmodule Mix.Tasks.PowAssent.Phoenix.InstallTest do
       Mix.Project.in_project(:missing_top_level_phoenix_dep, ".", fn _ ->
         # Insurance that we do test for top level phoenix inclusion
         assert Enum.any?(Mix.Pow.__dependencies__([]), fn
-          %{app: :phoenix} -> true
-          _ -> false
-        end), "Phoenix not loaded by dependency"
+                 %{app: :phoenix} -> true
+                 _ -> false
+               end),
+               "Phoenix not loaded by dependency"
 
-        assert_raise Mix.Error, "mix pow_assent.phoenix.install can only be run inside an application directory that has :phoenix as dependency", fn ->
-          Install.run(@options)
-        end
+        assert_raise Mix.Error,
+                     "mix pow_assent.phoenix.install can only be run inside an application directory that has :phoenix as dependency",
+                     fn ->
+                       Install.run(@options)
+                     end
       end)
     end)
   end

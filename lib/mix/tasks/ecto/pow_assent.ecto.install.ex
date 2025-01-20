@@ -51,6 +51,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Install do
 
     config
   end
+
   defp maybe_run_gen_migration(config, _args), do: config
 
   defp maybe_run_gen_schema(%{schema: true} = config, args) do
@@ -58,15 +59,20 @@ defmodule Mix.Tasks.PowAssent.Ecto.Install do
 
     config
   end
+
   defp maybe_run_gen_schema(config, _args), do: config
 
   defp parse_structure(config) do
-    context_app  = Map.get(config, :context_app) || Pow.otp_app()
+    context_app = Map.get(config, :context_app) || Pow.otp_app()
     context_base = Pow.app_base(context_app)
     user_module = Module.concat([context_base, "Users.User"])
     user_file = Path.join(["lib", "#{context_app}", "users", "user.ex"])
 
-    Map.put(config, :structure, %{context_app: context_app, user_module: user_module, user_file: user_file})
+    Map.put(config, :structure, %{
+      context_app: context_app,
+      user_module: user_module,
+      user_file: user_file
+    })
   end
 
   defp print_shell_instructions(%{structure: structure} = config) do
@@ -80,7 +86,7 @@ defmodule Mix.Tasks.PowAssent.Ecto.Install do
         config
 
       :error ->
-        Mix.raise "Couldn't install PowAssent! Did you run this inside your Ecto app?"
+        Mix.raise("Couldn't install PowAssent! Did you run this inside your Ecto app?")
     end
   end
 
@@ -96,17 +102,16 @@ defmodule Mix.Tasks.PowAssent.Ecto.Install do
           needle: "use Pow.Ecto.Schema"
         }
       ],
-      instructions:
-        """
-        Add the `PowAssent.Ecto.Schema` macro to #{Path.relative_to_cwd(file)} after `use Pow.Ecto.Schema`:
+      instructions: """
+      Add the `PowAssent.Ecto.Schema` macro to #{Path.relative_to_cwd(file)} after `use Pow.Ecto.Schema`:
 
-        defmodule #{inspect(structure.user_module)} do
-          use Ecto.Schema
-          use Pow.Ecto.Schema
-          use PowAssent.Ecto.Schema
+      defmodule #{inspect(structure.user_module)} do
+        use Ecto.Schema
+        use Pow.Ecto.Schema
+        use PowAssent.Ecto.Schema
 
-        # ...
-        """
+      # ...
+      """
     }
   end
 end

@@ -29,10 +29,15 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandler do
 
   defp request?(%{method: method, request_path: path}, method, expected_path),
     do: compare_paths(path, expected_path)
+
   defp request?(_conn, _method, _expected_path), do: false
 
-  defp compare_paths(path_1, path_2) when is_binary(path_1), do: compare_paths(URI.parse(path_1), path_2)
-  defp compare_paths(path_1, path_2) when is_binary(path_2), do: compare_paths(path_1, URI.parse(path_2))
+  defp compare_paths(path_1, path_2) when is_binary(path_1),
+    do: compare_paths(URI.parse(path_1), path_2)
+
+  defp compare_paths(path_1, path_2) when is_binary(path_2),
+    do: compare_paths(path_1, URI.parse(path_2))
+
   defp compare_paths(%{path: path}, %{path: path}), do: true
   defp compare_paths(_, _), do: false
 
@@ -50,7 +55,15 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandler do
     check_conn!(conn, config)
 
     params = Map.take(conn.params, ["request_path"])
-    path   = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider], params)
+
+    path =
+      AuthorizationController.routes(conn).path_for(
+        conn,
+        AuthorizationController,
+        :new,
+        [provider],
+        params
+      )
 
     Controller.redirect(conn, to: path)
   end
@@ -74,6 +87,8 @@ defmodule PowAssent.Phoenix.ReauthorizationPlugHandler do
 
   @spec raise_missing_phoenix_router(Config.t()) :: no_return()
   defp raise_missing_phoenix_router(config) do
-    Config.raise_error("Please use #{inspect config[:reauthorization_plug]} plug in your Phoenix router rather than endpoint when used with the #{inspect __MODULE__} handler.")
+    Config.raise_error(
+      "Please use #{inspect(config[:reauthorization_plug])} plug in your Phoenix router rather than endpoint when used with the #{inspect(__MODULE__)} handler."
+    )
   end
 end

@@ -3,8 +3,8 @@ defmodule PowAssent.Test.Ecto.Repo.Migrations.AddAccessRefreshTokenToUserIdentit
 
   def change do
     alter table(:user_identities) do
-      add :access_token, :string
-      add :refresh_token, :string
+      add(:access_token, :string)
+      add(:refresh_token, :string)
     end
   end
 end

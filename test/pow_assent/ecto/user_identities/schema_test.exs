@@ -14,7 +14,8 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
   alias PowAssent.Test.Ecto.{Repo, UserIdentities.UserIdentity, Users.User}
 
   test "raises error during compile when there's no `:user` configuration" do
-    assert unquote(module_raised_with) =~  "No :user configuration option found for user identity schema module."
+    assert unquote(module_raised_with) =~
+             "No :user configuration option found for user identity schema module."
   end
 
   test "pow_assent_user_identity_fields/1" do
@@ -47,7 +48,9 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
         |> UserIdentity.changeset(Map.put(@valid_params, :user_id, 2))
         |> Repo.insert()
 
-      assert changeset.errors[:user] == {"does not exist", [constraint: :assoc, constraint_name: "user_identities_user_id_fkey"]}
+      assert changeset.errors[:user] ==
+               {"does not exist",
+                [constraint: :assoc, constraint_name: "user_identities_user_id_fkey"]}
     end
 
     test "requires unique uid and provider" do
@@ -57,11 +60,13 @@ defmodule PowAssent.Ecto.UserIdentities.SchemaTest do
         |> Repo.insert()
 
       assert {:error, changeset} =
-        %UserIdentity{}
-        |> UserIdentity.changeset(@valid_params)
-        |> Repo.insert()
+               %UserIdentity{}
+               |> UserIdentity.changeset(@valid_params)
+               |> Repo.insert()
 
-      assert changeset.errors[:uid_provider] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
+      assert changeset.errors[:uid_provider] ==
+               {"has already been taken",
+                [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
     end
   end
 end

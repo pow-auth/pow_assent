@@ -7,7 +7,12 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
 
   @provider "test_provider"
   @token_params %{"access_token" => "access_token"}
-  @user_identity_params %{"provider" => @provider, "uid" => "new_user", "token" => @token_params, "userinfo" => %{"sub" => "new_user", "name" => "John Doe"}}
+  @user_identity_params %{
+    "provider" => @provider,
+    "uid" => "new_user",
+    "token" => @token_params,
+    "userinfo" => %{"sub" => "new_user", "name" => "John Doe"}
+  }
   @user_params %{"name" => "John Doe"}
 
   setup %{conn: conn} do
@@ -53,10 +58,21 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "shows with changeset stored in session", %{conn: conn} do
-      {:error, {:invalid_user_id_field, changeset}} = Context.create_user(@user_identity_params, Map.put(@user_params, "email", "taken@example.com"), nil, repo: PowAssent.Test.RepoMock, user: PowAssent.Test.Ecto.Users.User)
+      {:error, {:invalid_user_id_field, changeset}} =
+        Context.create_user(
+          @user_identity_params,
+          Map.put(@user_params, "email", "taken@example.com"),
+          nil,
+          repo: PowAssent.Test.RepoMock,
+          user: PowAssent.Test.Ecto.Users.User
+        )
+
       conn =
         conn
-        |> Conn.put_private(:pow_assent_session, %{changeset: changeset, callback_params: provider_params()})
+        |> Conn.put_private(:pow_assent_session, %{
+          changeset: changeset,
+          callback_params: provider_params()
+        })
         |> get(~p"/auth/#{@provider}/add-user-id")
 
       assert conn.resp_cookies["pow_assent_auth_session"]
@@ -117,7 +133,8 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
 
     test "with identity already bound to another user", %{conn: conn} do
       params = provider_params(user_identity_params: %{"uid" => "identity_taken"})
-      conn   =
+
+      conn =
         conn
         |> Conn.put_private(:pow_assent_session, %{callback_params: params})
         |> post(~p"/auth/#{@provider}/create", @valid_params)
@@ -125,18 +142,28 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
       assert redirected_to(conn) == ~p"/registration/new"
-      assert get_flash(conn, :error) == "The Test provider account is already bound to another user."
+
+      assert get_flash(conn, :error) ==
+               "The Test provider account is already bound to another user."
     end
   end
 
   alias PowAssent.Test.EmailConfirmation.Phoenix.Endpoint, as: EmailConfirmationEndpoint
   alias PowAssent.Test.EmailConfirmation.Users.User, as: EmailConfirmationUser
+
   describe "POST /auth/:provider/create with PowEmailConfirmation" do
     @valid_params %{user: %{email: "foo@example.com"}}
     @taken_params %{user: %{email: "taken@example.com"}}
 
     test "with email from user", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :post, ~p"/auth/#{@provider}/create", @valid_params)
+      conn =
+        Phoenix.ConnTest.dispatch(
+          conn,
+          EmailConfirmationEndpoint,
+          :post,
+          ~p"/auth/#{@provider}/create",
+          @valid_params
+        )
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
@@ -144,7 +171,9 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       refute Pow.Plug.current_user(conn)
 
       assert redirected_to(conn) == "/registration_created"
-      assert get_flash(conn, :info) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
+
+      assert get_flash(conn, :info) ==
+               "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
 
       assert user = Process.get({EmailConfirmationUser, :inserted})
       assert user.email == "foo@example.com"
@@ -156,7 +185,14 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
     end
 
     test "with taken email", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch(conn, EmailConfirmationEndpoint, :post, ~p"/auth/#{@provider}/create", @taken_params)
+      conn =
+        Phoenix.ConnTest.dispatch(
+          conn,
+          EmailConfirmationEndpoint,
+          :post,
+          ~p"/auth/#{@provider}/create",
+          @taken_params
+        )
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
@@ -164,16 +200,26 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
       refute Pow.Plug.current_user(conn)
 
       assert redirected_to(conn) == "/registration_created"
-      assert get_flash(conn, :info) == "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
+
+      assert get_flash(conn, :info) ==
+               "You'll need to confirm your e-mail before you can sign in. An e-mail confirmation link has been sent to you."
 
       refute_received {:mail_mock, _mail}
     end
   end
 
   alias PowAssent.Test.WithCustomChangeset.Phoenix.Endpoint, as: WithCustomChangesetEndpoint
+
   describe "POST /auth/:provider/create recording strategy params" do
     test "records", %{conn: conn} do
-      conn = Phoenix.ConnTest.dispatch(conn, WithCustomChangesetEndpoint, :post, ~p"/auth/#{@provider}/create", %{user: %{email: "foo@example.com"}})
+      conn =
+        Phoenix.ConnTest.dispatch(
+          conn,
+          WithCustomChangesetEndpoint,
+          :post,
+          ~p"/auth/#{@provider}/create",
+          %{user: %{email: "foo@example.com"}}
+        )
 
       refute conn.resp_cookies["pow_assent_auth_session"]
       refute conn.private[:pow_assent_session][:callback_params]
@@ -187,7 +233,9 @@ defmodule PowAssent.Phoenix.RegistrationControllerTest do
   end
 
   defp provider_params(opts \\ []) do
-    user_identity_params = Map.merge(@user_identity_params, Keyword.get(opts, :user_identity_params, %{}))
+    user_identity_params =
+      Map.merge(@user_identity_params, Keyword.get(opts, :user_identity_params, %{}))
+
     user_params = Map.merge(@user_params, Keyword.get(opts, :user_params, %{}))
 
     %{@provider => %{user_identity: user_identity_params, user: user_params}}

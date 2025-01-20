@@ -32,9 +32,11 @@ defmodule Mix.Tasks.PowAssent.InstallTest do
       """)
 
       Mix.Project.in_project(:umbrella, ".", fn _ ->
-        assert_raise Mix.Error, ~r/mix pow_assent.install has to be used inside an application directory/, fn ->
-          Install.run([])
-        end
+        assert_raise Mix.Error,
+                     ~r/mix pow_assent.install has to be used inside an application directory/,
+                     fn ->
+                       Install.run([])
+                     end
       end)
     end)
   end
@@ -45,17 +47,23 @@ defmodule Mix.Tasks.PowAssent.InstallTest do
         Install.run(~w(UserIdentities.UserIdentity))
       end
 
-      assert_raise Mix.Error, ~r/Expected the schema argument, "useridentities.useridentity", to be a valid module name/, fn ->
-        Install.run(~w(useridentities.useridentity useridentities))
-      end
+      assert_raise Mix.Error,
+                   ~r/Expected the schema argument, "useridentities.useridentity", to be a valid module name/,
+                   fn ->
+                     Install.run(~w(useridentities.useridentity useridentities))
+                   end
 
-      assert_raise Mix.Error, ~r/Expected the plural argument, "UserIdentities", to be all lowercase using snake_case convention/, fn ->
-        Install.run(~w(UserIdentities.UserIdentity UserIdentities))
-      end
+      assert_raise Mix.Error,
+                   ~r/Expected the plural argument, "UserIdentities", to be all lowercase using snake_case convention/,
+                   fn ->
+                     Install.run(~w(UserIdentities.UserIdentity UserIdentities))
+                   end
 
-      assert_raise Mix.Error, ~r/Expected the plural argument, "useridentities:", to be all lowercase using snake_case convention/, fn ->
-        Install.run(~w(UserIdentities.UserIdentity useridentities:))
-      end
+      assert_raise Mix.Error,
+                   ~r/Expected the plural argument, "useridentities:", to be all lowercase using snake_case convention/,
+                   fn ->
+                     Install.run(~w(UserIdentities.UserIdentity useridentities:))
+                   end
     end)
   end
 end

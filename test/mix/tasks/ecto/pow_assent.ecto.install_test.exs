@@ -38,9 +38,11 @@ defmodule Mix.Tasks.PowAssent.Ecto.InstallTest do
     File.cd!(context.tmp_path, fn ->
       File.rm_rf!(context.paths.user_path)
 
-      assert_raise Mix.Error, "Couldn't install PowAssent! Did you run this inside your Ecto app?", fn ->
-        Install.run(context.options)
-      end
+      assert_raise Mix.Error,
+                   "Couldn't install PowAssent! Did you run this inside your Ecto app?",
+                   fn ->
+                     Install.run(context.options)
+                   end
 
       assert_received {:mix_shell, :error, ["Could not find the following file(s)" <> msg]}
       assert msg =~ context.paths.user_path
@@ -57,7 +59,10 @@ defmodule Mix.Tasks.PowAssent.Ecto.InstallTest do
       assert msg =~ context.paths.user_path
 
       assert_received {:mix_shell, :info, ["To complete please do the following:" <> msg]}
-      assert msg =~ "Add the `PowAssent.Ecto.Schema` macro to lib/pow_assent/users/user.ex after `use Pow.Ecto.Schema`:"
+
+      assert msg =~
+               "Add the `PowAssent.Ecto.Schema` macro to lib/pow_assent/users/user.ex after `use Pow.Ecto.Schema`:"
+
       assert msg =~ "use PowAssent.Ecto.Schema"
     end)
   end
@@ -91,7 +96,9 @@ defmodule Mix.Tasks.PowAssent.Ecto.InstallTest do
         end
       end
       """)
+
       File.mkdir!("ecto_dep")
+
       File.write!("ecto_dep/mix.exs", """
       defmodule EctoDep.MixProject do
         use Mix.Project
@@ -108,13 +115,16 @@ defmodule Mix.Tasks.PowAssent.Ecto.InstallTest do
       Mix.Project.in_project(:missing_top_level_ecto_dep, ".", fn _ ->
         # Insurance that we do test for top level ecto inclusion
         assert Enum.any?(Mix.Pow.__dependencies__([]), fn
-          %{app: :ecto_sql} -> true
-          _ -> false
-        end), "Ecto not loaded by dependency"
+                 %{app: :ecto_sql} -> true
+                 _ -> false
+               end),
+               "Ecto not loaded by dependency"
 
-        assert_raise Mix.Error, "mix pow_assent.ecto.install can only be run inside an application directory that has :ecto or :ecto_sql as dependency", fn ->
-          Install.run([])
-        end
+        assert_raise Mix.Error,
+                     "mix pow_assent.ecto.install can only be run inside an application directory that has :ecto or :ecto_sql as dependency",
+                     fn ->
+                       Install.run([])
+                     end
       end)
     end)
   end

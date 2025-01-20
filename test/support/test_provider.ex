@@ -25,9 +25,18 @@ defmodule PowAssent.Test.TestProvider do
     put_oauth2_env()
 
     token_params = Keyword.get(opts, :token, %{"access_token" => "access_token"})
-    user_params  = Map.merge(%{sub: "new_user", name: "John Doe", email: "test@example.com"}, Keyword.get(opts, :user, %{}))
 
-    OAuth2TestCase.add_oauth2_access_token_endpoint([params: token_params], opts[:access_token_assert_fn])
+    user_params =
+      Map.merge(
+        %{sub: "new_user", name: "John Doe", email: "test@example.com"},
+        Keyword.get(opts, :user, %{})
+      )
+
+    OAuth2TestCase.add_oauth2_access_token_endpoint(
+      [params: token_params],
+      opts[:access_token_assert_fn]
+    )
+
     OAuth2TestCase.add_oauth2_user_endpoint(user_params)
   end
 
@@ -36,24 +45,32 @@ defmodule PowAssent.Test.TestProvider do
     url = Keyword.get(config, :base_url) || TestServer.url()
     %{host: host} = URI.parse(url)
 
-    httpc_opts = Keyword.get(config, :base_url) || [
-      ssl: [
-        verify: :verify_peer,
-        depth: 99,
-        cacerts: TestServer.x509_suite().cacerts,
-        verify_fun: {&:ssl_verify_hostname.verify_fun/3, check_hostname: to_charlist(host)},
-        customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
-      ]
-    ]
+    httpc_opts =
+      Keyword.get(config, :base_url) ||
+        [
+          ssl: [
+            verify: :verify_peer,
+            depth: 99,
+            cacerts: TestServer.x509_suite().cacerts,
+            verify_fun: {&:ssl_verify_hostname.verify_fun/3, check_hostname: to_charlist(host)},
+            customize_hostname_check: [
+              match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+            ]
+          ]
+        ]
 
     Application.put_env(:pow_assent, :pow_assent,
       providers: [
-        test_provider: Keyword.merge([
-          client_id: "client_id",
-          client_secret: "abc123",
-          base_url: url,
-          strategy: __MODULE__
-        ], config)
+        test_provider:
+          Keyword.merge(
+            [
+              client_id: "client_id",
+              client_secret: "abc123",
+              base_url: url,
+              strategy: __MODULE__
+            ],
+            config
+          )
       ],
       http_adapter: {Assent.HTTPAdapter.Httpc, httpc_opts}
     )

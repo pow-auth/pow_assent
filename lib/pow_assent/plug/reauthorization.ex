@@ -48,7 +48,7 @@ defmodule PowAssent.Plug.Reauthorization do
   @spec init(Config.t()) :: {Config.t(), {module(), Config.t()}}
   def init(config) do
     handler = get_handler(config)
-    config  = Keyword.delete(config, :handler)
+    config = Keyword.delete(config, :handler)
 
     {config, handler}
   end
@@ -60,7 +60,7 @@ defmodule PowAssent.Plug.Reauthorization do
       |> Kernel.||(raise_no_handler())
       |> case do
         {handler, config} -> {handler, config}
-        handler           -> {handler, []}
+        handler -> {handler, []}
       end
 
     {handler, Keyword.put(config, :reauthorization_plug, __MODULE__)}
@@ -88,7 +88,7 @@ defmodule PowAssent.Plug.Reauthorization do
         |> handler.reauthorize(provider, handler_config)
         |> Conn.halt()
 
-      clear_reauthorization?(conn,  {handler, handler_config}) ->
+      clear_reauthorization?(conn, {handler, handler_config}) ->
         clear_cookie(conn, config)
 
       true ->
@@ -97,7 +97,10 @@ defmodule PowAssent.Plug.Reauthorization do
   end
 
   defp store_reauthorization_provider(conn, provider, config) do
-    Conn.register_before_send(conn, &Conn.put_resp_cookie(&1, cookie_key(config), provider, cookie_opts(config)))
+    Conn.register_before_send(
+      conn,
+      &Conn.put_resp_cookie(&1, cookie_key(config), provider, cookie_opts(config))
+    )
   end
 
   defp cookie_key(config) do
@@ -116,7 +119,7 @@ defmodule PowAssent.Plug.Reauthorization do
   end
 
   defp get_reauthorization_provider(conn, {handler, handler_config}, config) do
-    with :ok             <- check_should_reauthorize(conn, {handler, handler_config}),
+    with :ok <- check_should_reauthorize(conn, {handler, handler_config}),
          {:ok, provider} <- fetch_provider_from_cookie(conn, config) do
       provider
     else
@@ -126,7 +129,7 @@ defmodule PowAssent.Plug.Reauthorization do
 
   defp check_should_reauthorize(conn, {handler, handler_config}) do
     case handler.reauthorize?(conn, handler_config) do
-      true  -> :ok
+      true -> :ok
       false -> :error
     end
   end
@@ -139,9 +142,9 @@ defmodule PowAssent.Plug.Reauthorization do
       provider ->
         config
         |> Plug.available_providers()
-        |> Enum.any?(&Atom.to_string(&1) == provider)
+        |> Enum.any?(&(Atom.to_string(&1) == provider))
         |> case do
-          true  -> {:ok, provider}
+          true -> {:ok, provider}
           false -> :error
         end
     end
@@ -156,6 +159,8 @@ defmodule PowAssent.Plug.Reauthorization do
 
   @spec raise_no_handler :: no_return
   defp raise_no_handler do
-    Config.raise_error("No :handler configuration option provided. It's required to set this when using #{inspect __MODULE__}.")
+    Config.raise_error(
+      "No :handler configuration option provided. It's required to set this when using #{inspect(__MODULE__)}."
+    )
   end
 end

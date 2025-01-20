@@ -24,7 +24,14 @@ defmodule PowAssent.Plug.ReauthorizationTest do
   end
 
   @cookie_key "reauthorization_provider"
-  @custom_cookie_opts [domain: "domain.com", max_age: 1, path: "/path", http_only: false, secure: true, extra: "SameSite=Lax"]
+  @custom_cookie_opts [
+    domain: "domain.com",
+    max_age: 1,
+    path: "/path",
+    http_only: false,
+    secure: true,
+    extra: "SameSite=Lax"
+  ]
   @default_config [
     plug: PowSession,
     user: User,
@@ -50,9 +57,11 @@ defmodule PowAssent.Plug.ReauthorizationTest do
   end
 
   test "init/1 requires handler", %{conn: conn} do
-    assert_raise ConfigError, "No :handler configuration option provided. It's required to set this when using PowAssent.Plug.Reauthorization.", fn ->
-      init_plug(conn, Keyword.delete(@plug_opts, :handler))
-    end
+    assert_raise ConfigError,
+                 "No :handler configuration option provided. It's required to set this when using PowAssent.Plug.Reauthorization.",
+                 fn ->
+                   init_plug(conn, Keyword.delete(@plug_opts, :handler))
+                 end
   end
 
   describe "call/2" do
@@ -101,7 +110,9 @@ defmodule PowAssent.Plug.ReauthorizationTest do
       assert cookie.max_age == -1
     end
 
-    test "when in reauthorization condition with cookie set with prepended `:otp_app`", %{conn: conn} do
+    test "when in reauthorization condition with cookie set with prepended `:otp_app`", %{
+      conn: conn
+    } do
       conn =
         conn
         |> PowPlug.put_config(@default_config ++ [otp_app: :test_app])
@@ -157,7 +168,10 @@ defmodule PowAssent.Plug.ReauthorizationTest do
     end
 
     test "with custom cookie options", %{conn: init_conn} do
-      config = Keyword.put(@default_config, :pow_assent, reauthorization_cookie_opts: @custom_cookie_opts)
+      config =
+        Keyword.put(@default_config, :pow_assent,
+          reauthorization_cookie_opts: @custom_cookie_opts
+        )
 
       conn =
         init_conn
@@ -166,19 +180,20 @@ defmodule PowAssent.Plug.ReauthorizationTest do
         |> run_callback()
 
       assert %{
-        domain: "domain.com",
-        extra: "SameSite=Lax",
-        http_only: false,
-        max_age: 1,
-        path: "/path",
-        secure: true
-      } = conn.resp_cookies[@cookie_key]
+               domain: "domain.com",
+               extra: "SameSite=Lax",
+               http_only: false,
+               max_age: 1,
+               path: "/path",
+               secure: true
+             } = conn.resp_cookies[@cookie_key]
     end
   end
 
   defp with_reauthorization_condition(conn), do: Conn.put_private(conn, :reauthorize?, true)
 
-  defp with_clear_reauthorization_condition(conn), do: Conn.put_private(conn, :clear_reauthorization?, true)
+  defp with_clear_reauthorization_condition(conn),
+    do: Conn.put_private(conn, :clear_reauthorization?, true)
 
   defp with_reauthorization_cookie(conn, provider \\ "test_provider", key \\ @cookie_key) do
     cookies = Map.new([{key, provider}])
@@ -187,7 +202,8 @@ defmodule PowAssent.Plug.ReauthorizationTest do
   end
 
   defp run_callback(conn) do
-    assert {:ok, conn} = Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "existing_user"})
+    assert {:ok, conn} =
+             Plug.authenticate(conn, %{"provider" => "test_provider", "uid" => "existing_user"})
 
     Conn.send_resp(conn, 200, "")
   end

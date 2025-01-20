@@ -7,7 +7,8 @@ defmodule PowAssent.PlugTest do
   alias PowAssent.{Plug, Store.SessionCache}
   alias PowAssent.Test.{Ecto.UserIdentities.UserIdentity, Ecto.Users.User, EtsCacheMock, RepoMock}
 
-  import PowAssent.Test.TestProvider, only: [set_oauth2_test_endpoints: 1, put_oauth2_env: 0, put_oauth2_env: 1]
+  import PowAssent.Test.TestProvider,
+    only: [set_oauth2_test_endpoints: 1, put_oauth2_env: 0, put_oauth2_env: 1]
 
   @default_config [
     plug: PowSession,
@@ -34,7 +35,14 @@ defmodule PowAssent.PlugTest do
     end
 
     test "uses nonce from config", %{conn: conn} do
-      put_oauth2_env(base_url: "http://localhost:8888", nonce: "nonce", strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
+      put_oauth2_env(
+        base_url: "http://localhost:8888",
+        nonce: "nonce",
+        strategy: Assent.Strategy.OIDC,
+        openid_configuration: %{
+          "authorization_endpoint" => "http://localhost:8888/oauth/authorize"
+        }
+      )
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
@@ -44,7 +52,14 @@ defmodule PowAssent.PlugTest do
     end
 
     test "uses generated nonce when nonce in config set to true", %{conn: conn} do
-      put_oauth2_env(base_url: "http://localhost:8888", nonce: true, strategy: Assent.Strategy.OIDC, openid_configuration: %{"authorization_endpoint" => "http://localhost:8888/oauth/authorize"})
+      put_oauth2_env(
+        base_url: "http://localhost:8888",
+        nonce: true,
+        strategy: Assent.Strategy.OIDC,
+        openid_configuration: %{
+          "authorization_endpoint" => "http://localhost:8888/oauth/authorize"
+        }
+      )
 
       assert {:ok, url, conn} = Plug.authorize_url(conn, "test_provider", "https://example.com/")
 
@@ -65,24 +80,65 @@ defmodule PowAssent.PlugTest do
     end
 
     test "returns user params", %{conn: conn} do
-      set_oauth2_test_endpoints(access_token_assert_fn: fn conn ->
-        {:ok, body, _conn} = Conn.read_body(conn, [])
-        params = URI.decode_query(body)
+      set_oauth2_test_endpoints(
+        access_token_assert_fn: fn conn ->
+          {:ok, body, _conn} = Conn.read_body(conn, [])
+          params = URI.decode_query(body)
 
-        assert params["redirect_uri"] == "https://example.com/"
-      end)
+          assert params["redirect_uri"] == "https://example.com/"
+        end
+      )
 
-      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
-      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"sub" => "new_user", "name" => "John Doe", "email" => "test@example.com"}}
+      assert {:ok, user_identity_params, user_params, _conn} =
+               Plug.callback(
+                 conn,
+                 "test_provider",
+                 %{"code" => "access_token"},
+                 "https://example.com/"
+               )
+
+      assert user_identity_params == %{
+               "provider" => "test_provider",
+               "uid" => "new_user",
+               "token" => %{"access_token" => "access_token"},
+               "userinfo" => %{
+                 "sub" => "new_user",
+                 "name" => "John Doe",
+                 "email" => "test@example.com"
+               }
+             }
+
       assert user_params == %{"name" => "John Doe", "email" => "test@example.com"}
     end
 
     test "returns user params with preferred username as username", %{conn: conn} do
       set_oauth2_test_endpoints(user: %{preferred_username: "john.doe"})
 
-      assert {:ok, user_identity_params, user_params, _conn} = Plug.callback(conn, "test_provider", %{"code" => "access_token"}, "https://example.com/")
-      assert user_identity_params == %{"provider" => "test_provider", "uid" => "new_user", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"sub" => "new_user", "name" => "John Doe", "email" => "test@example.com", "preferred_username" => "john.doe"}}
-      assert user_params == %{"username" => "john.doe", "name" => "John Doe", "email" => "test@example.com"}
+      assert {:ok, user_identity_params, user_params, _conn} =
+               Plug.callback(
+                 conn,
+                 "test_provider",
+                 %{"code" => "access_token"},
+                 "https://example.com/"
+               )
+
+      assert user_identity_params == %{
+               "provider" => "test_provider",
+               "uid" => "new_user",
+               "token" => %{"access_token" => "access_token"},
+               "userinfo" => %{
+                 "sub" => "new_user",
+                 "name" => "John Doe",
+                 "email" => "test@example.com",
+                 "preferred_username" => "john.doe"
+               }
+             }
+
+      assert user_params == %{
+               "username" => "john.doe",
+               "name" => "John Doe",
+               "email" => "test@example.com"
+             }
     end
   end
 
@@ -101,7 +157,11 @@ defmodule PowAssent.PlugTest do
     end
 
     test "calls create session callback", %{conn: init_conn} do
-      init_conn = Plug.put_create_session_callback(init_conn, &Conn.put_private(&1, :callback_called, {&2, &3}))
+      init_conn =
+        Plug.put_create_session_callback(
+          init_conn,
+          &Conn.put_private(&1, :callback_called, {&2, &3})
+        )
 
       assert {:error, conn} = Plug.authenticate(init_conn, @new_user_params)
       refute conn.private[:callback_called]
@@ -139,31 +199,40 @@ defmodule PowAssent.PlugTest do
     end
 
     test "with identity already taken", %{conn: conn} do
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.upsert_identity(conn, @identity_taken_params)
+      assert {:error, {:bound_to_different_user, _changeset}, conn} =
+               Plug.upsert_identity(conn, @identity_taken_params)
 
       assert Pow.Plug.current_user(conn) == @user
       refute fetch_pow_session_id(conn)
     end
 
     test "calls create session callback", %{conn: init_conn} do
-      init_conn = Plug.put_create_session_callback(init_conn, &Conn.put_private(&1, :callback_called, {&2, &3}))
+      init_conn =
+        Plug.put_create_session_callback(
+          init_conn,
+          &Conn.put_private(&1, :callback_called, {&2, &3})
+        )
 
       assert {:ok, _user_identity, conn} = Plug.upsert_identity(init_conn, @new_identity_params)
       assert {"test_provider", _config} = conn.private[:callback_called]
 
-      assert {:ok, _user_identity, conn} = Plug.upsert_identity(init_conn, @existing_identity_params)
+      assert {:ok, _user_identity, conn} =
+               Plug.upsert_identity(init_conn, @existing_identity_params)
+
       assert {"test_provider", _config} = conn.private[:callback_called]
 
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.upsert_identity(init_conn, @identity_taken_params)
+      assert {:error, {:bound_to_different_user, _changeset}, conn} =
+               Plug.upsert_identity(init_conn, @identity_taken_params)
+
       refute conn.private[:callback_called]
     end
   end
 
   describe "create_user/3" do
-    @user_identity_attrs       %{"provider" => "test_provider", "uid" => "new_user"}
+    @user_identity_attrs %{"provider" => "test_provider", "uid" => "new_user"}
     @user_identity_attrs_taken %{"provider" => "test_provider", "uid" => "identity_taken"}
-    @user_attrs                %{"name" => "John Doe", "email" => "test@example.com"}
-    @user_attrs_no_user_id     %{"name" => "John Doe"}
+    @user_attrs %{"name" => "John Doe", "email" => "test@example.com"}
+    @user_attrs_no_user_id %{"name" => "John Doe"}
 
     test "creates user", %{conn: conn} do
       assert {:ok, user, conn} = Plug.create_user(conn, @user_identity_attrs, @user_attrs)
@@ -173,31 +242,50 @@ defmodule PowAssent.PlugTest do
     end
 
     test "with missing user id", %{conn: conn} do
-      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(conn, @user_identity_attrs, @user_attrs_no_user_id)
+      assert {:error, {:invalid_user_id_field, _changeset}, conn} =
+               Plug.create_user(conn, @user_identity_attrs, @user_attrs_no_user_id)
+
       refute fetch_pow_session_id(conn)
     end
 
     test "with identity already taken", %{conn: conn} do
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(conn, @user_identity_attrs_taken, @user_attrs)
+      assert {:error, {:bound_to_different_user, _changeset}, conn} =
+               Plug.create_user(conn, @user_identity_attrs_taken, @user_attrs)
+
       refute fetch_pow_session_id(conn)
     end
 
     test "calls create session callback", %{conn: init_conn} do
-      init_conn = Plug.put_create_session_callback(init_conn, &Conn.put_private(&1, :callback_called, {&2, &3}))
+      init_conn =
+        Plug.put_create_session_callback(
+          init_conn,
+          &Conn.put_private(&1, :callback_called, {&2, &3})
+        )
 
       assert {:ok, _user, conn} = Plug.create_user(init_conn, @user_identity_attrs, @user_attrs)
       assert {"test_provider", _config} = conn.private[:callback_called]
 
-      assert {:error, {:invalid_user_id_field, _changeset}, conn} = Plug.create_user(init_conn, @user_identity_attrs, @user_attrs_no_user_id)
+      assert {:error, {:invalid_user_id_field, _changeset}, conn} =
+               Plug.create_user(init_conn, @user_identity_attrs, @user_attrs_no_user_id)
+
       refute conn.private[:callback_called]
 
-      assert {:error, {:bound_to_different_user, _changeset}, conn} = Plug.create_user(init_conn, @user_identity_attrs_taken, @user_attrs)
+      assert {:error, {:bound_to_different_user, _changeset}, conn} =
+               Plug.create_user(init_conn, @user_identity_attrs_taken, @user_attrs)
+
       refute conn.private[:callback_called]
     end
   end
 
   describe "delete_identity/3" do
-    @user %User{id: 1, password_hash: "", user_identities: [%UserIdentity{id: 1, provider: "test_provider"}, %UserIdentity{id: 2, provider: "other_provider"}]}
+    @user %User{
+      id: 1,
+      password_hash: "",
+      user_identities: [
+        %UserIdentity{id: 1, provider: "test_provider"},
+        %UserIdentity{id: 2, provider: "other_provider"}
+      ]
+    }
 
     test "deletes", %{conn: conn} do
       conn = Pow.Plug.assign_current_user(conn, @user, @default_config)
@@ -206,9 +294,11 @@ defmodule PowAssent.PlugTest do
     end
 
     test "with error", %{conn: conn} do
-      conn = Pow.Plug.assign_current_user(conn, Map.put(@user, :password_hash, nil), @default_config)
+      conn =
+        Pow.Plug.assign_current_user(conn, Map.put(@user, :password_hash, nil), @default_config)
 
-      assert {:error, {:no_password, _changeset}, _conn} = Plug.delete_identity(conn, "test_provider")
+      assert {:error, {:no_password, _changeset}, _conn} =
+               Plug.delete_identity(conn, "test_provider")
     end
   end
 
@@ -241,7 +331,14 @@ defmodule PowAssent.PlugTest do
   end
 
   @cookie_key "auth_session"
-  @custom_cookie_opts [domain: "domain.com", max_age: 1, path: "/path", http_only: false, secure: true, extra: "SameSite=Lax"]
+  @custom_cookie_opts [
+    domain: "domain.com",
+    max_age: 1,
+    path: "/path",
+    http_only: false,
+    secure: true,
+    extra: "SameSite=Lax"
+  ]
 
   describe "init_session/1" do
     test "initializes new session", %{conn: conn} do
@@ -291,7 +388,12 @@ defmodule PowAssent.PlugTest do
         |> Plug.init_session()
         |> Conn.send_resp(200, "")
 
-      assert conn.resp_cookies["pow_assent_" <> @cookie_key] == %{max_age: 0, path: "/", universal_time: {{1970, 1, 1}, {0, 0, 0}}}
+      assert conn.resp_cookies["pow_assent_" <> @cookie_key] == %{
+               max_age: 0,
+               path: "/",
+               universal_time: {{1970, 1, 1}, {0, 0, 0}}
+             }
+
       assert conn.private[:pow_assent_session] == %{a: 1}
       assert get_from_cache(conn, id) == :not_found
     end
@@ -317,13 +419,20 @@ defmodule PowAssent.PlugTest do
         |> Plug.init_session()
         |> Conn.send_resp(200, "")
 
-      assert conn.resp_cookies["test_app_" <> @cookie_key] == %{max_age: 0, path: "/", universal_time: {{1970, 1, 1}, {0, 0, 0}}}
+      assert conn.resp_cookies["test_app_" <> @cookie_key] == %{
+               max_age: 0,
+               path: "/",
+               universal_time: {{1970, 1, 1}, {0, 0, 0}}
+             }
+
       assert conn.private[:pow_assent_session] == %{a: 1}
     end
 
     test "with custom cookie options", %{conn: init_conn} do
-      config = Keyword.put(@default_config, :pow_assent, auth_session_cookie_opts: @custom_cookie_opts)
-      conn   =
+      config =
+        Keyword.put(@default_config, :pow_assent, auth_session_cookie_opts: @custom_cookie_opts)
+
+      conn =
         init_conn
         |> Conn.put_private(:pow_config, config)
         |> Plug.init_session()
@@ -332,14 +441,14 @@ defmodule PowAssent.PlugTest do
         |> Conn.send_resp(200, "")
 
       assert %{
-        value: id,
-        domain: "domain.com",
-        extra: "SameSite=Lax",
-        http_only: false,
-        max_age: 1,
-        path: "/path",
-        secure: true
-      } = conn.resp_cookies["pow_assent_" <> @cookie_key]
+               value: id,
+               domain: "domain.com",
+               extra: "SameSite=Lax",
+               http_only: false,
+               max_age: 1,
+               path: "/path",
+               secure: true
+             } = conn.resp_cookies["pow_assent_" <> @cookie_key]
 
       conn =
         init_conn
@@ -349,14 +458,14 @@ defmodule PowAssent.PlugTest do
         |> Conn.send_resp(200, "")
 
       assert conn.resp_cookies["pow_assent_" <> @cookie_key] == %{
-        max_age: 0,
-        universal_time: {{1970, 1, 1}, {0, 0, 0}},
-        domain: "domain.com",
-        extra: "SameSite=Lax",
-        http_only: false,
-        path: "/path",
-        secure: true
-      }
+               max_age: 0,
+               universal_time: {{1970, 1, 1}, {0, 0, 0}},
+               domain: "domain.com",
+               extra: "SameSite=Lax",
+               http_only: false,
+               path: "/path",
+               secure: true
+             }
     end
 
     test "pulls `:cache_store_backend` from Pow environment config", %{conn: conn} do
@@ -401,7 +510,13 @@ defmodule PowAssent.PlugTest do
 
     config = Pow.Plug.fetch_config(conn)
 
-    assert config[:pow_assent][:providers][:test_provider][:authorization_params] == [scope: "user:read user:write", b: 2, a: 2, c: 3]
+    assert config[:pow_assent][:providers][:test_provider][:authorization_params] == [
+             scope: "user:read user:write",
+             b: 2,
+             a: 2,
+             c: 3
+           ]
+
     assert {:ok, url, _conn} = Plug.authorize_url(conn, :test_provider, "http://localhost:4000")
     assert url =~ "http://localhost:8888/oauth/authorize?"
 

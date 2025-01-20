@@ -71,9 +71,12 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
       def get_user_by_provider_uid(provider, uid),
         do: pow_assent_get_user_by_provider_uid(provider, uid)
+
       def upsert(user, user_identity_params), do: pow_assent_upsert(user, user_identity_params)
+
       def create_user(user_identity_params, user_params, user_id_params),
         do: pow_assent_create_user(user_identity_params, user_params, user_id_params)
+
       def delete(user, provider), do: pow_assent_delete(user, provider)
       def all(user), do: pow_assent_all(user)
 
@@ -86,7 +89,12 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
       end
 
       def pow_assent_create_user(user_identity_params, user_params, user_id_params) do
-        unquote(__MODULE__).create_user(user_identity_params, user_params, user_id_params, @pow_config)
+        unquote(__MODULE__).create_user(
+          user_identity_params,
+          user_params,
+          user_id_params,
+          @pow_config
+        )
       end
 
       def pow_assent_delete(user, provider) do
@@ -103,7 +111,9 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
       # TODO: Remove by 0.4.0
       @deprecated "Please use `pow_assent_upsert/2` instead"
-      defdelegate pow_assent_create(user, user_identity_params), to: __MODULE__, as: :pow_assent_upsert
+      defdelegate pow_assent_create(user, user_identity_params),
+        to: __MODULE__,
+        as: :pow_assent_upsert
 
       defoverridable unquote(__MODULE__)
     end
@@ -117,6 +127,7 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   @spec get_user_by_provider_uid(binary(), binary() | integer(), Config.t()) :: user() | nil
   def get_user_by_provider_uid(provider, uid, config) when is_integer(uid),
     do: get_user_by_provider_uid(provider, Integer.to_string(uid), config)
+
   def get_user_by_provider_uid(provider, uid, config) do
     opts = repo_opts(config, [:prefix])
 
@@ -131,7 +142,10 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   # TODO: Remove by 0.4.0
   @doc false
   @deprecated "Use `upsert/3` instead"
-  @spec create(user(), user_identity_params(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, changeset()}} | {:error, changeset()}
+  @spec create(user(), user_identity_params(), Config.t()) ::
+          {:ok, user_identity()}
+          | {:error, {:bound_to_different_user, changeset()}}
+          | {:error, changeset()}
   def create(user, user_identity_params, config), do: upsert(user, user_identity_params, config)
 
   @doc """
@@ -142,15 +156,18 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   Repo module will be fetched from config.
   """
-  @spec upsert(user(), user_identity_params(), Config.t()) :: {:ok, user_identity()} | {:error, {:bound_to_different_user, changeset()}} | {:error, changeset()}
+  @spec upsert(user(), user_identity_params(), Config.t()) ::
+          {:ok, user_identity()}
+          | {:error, {:bound_to_different_user, changeset()}}
+          | {:error, changeset()}
   def upsert(user, user_identity_params, config) do
-    params                                   = convert_params(user_identity_params)
+    params = convert_params(user_identity_params)
     {uid_provider_params, additional_params} = Map.split(params, ["uid", "provider"])
 
     user
     |> get_for_user(uid_provider_params, config)
     |> case do
-      nil      -> insert_identity(user, params, config)
+      nil -> insert_identity(user, params, config)
       identity -> update_identity(identity, additional_params, config)
     end
     |> user_identity_bound_different_user_error()
@@ -158,10 +175,11 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   defp user_identity_bound_different_user_error({:error, %{errors: errors} = changeset}) do
     case unique_constraint_error?(errors, :uid_provider) do
-      true  -> {:error, {:bound_to_different_user, changeset}}
+      true -> {:error, {:bound_to_different_user, changeset}}
       false -> {:error, changeset}
     end
   end
+
   defp user_identity_bound_different_user_error(any), do: any
 
   defp convert_params(params) when is_map(params) do
@@ -171,7 +189,10 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   end
 
   defp convert_param({:uid, value}), do: convert_param({"uid", value})
-  defp convert_param({"uid", value}) when is_integer(value), do: convert_param({"uid", Integer.to_string(value)})
+
+  defp convert_param({"uid", value}) when is_integer(value),
+    do: convert_param({"uid", Integer.to_string(value)})
+
   defp convert_param({key, value}) when is_atom(key), do: {Atom.to_string(key), value}
   defp convert_param({key, value}) when is_binary(key), do: {key, value}
 
@@ -192,7 +213,11 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   defp get_for_user(user, %{"uid" => uid, "provider" => provider}, config) do
     user_identity = Ecto.build_assoc(user, :user_identities).__struct__
 
-    repo!(config).get_by(user_identity, [user_id: user.id, provider: provider, uid: uid], repo_opts(config, [:prefix]))
+    repo!(config).get_by(
+      user_identity,
+      [user_id: user.id, provider: provider, uid: uid],
+      repo_opts(config, [:prefix])
+    )
   end
 
   @doc """
@@ -200,9 +225,12 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
 
   User schema module and repo module will be fetched from config.
   """
-  @spec create_user(user_identity_params(), user_params(), user_id_params() | nil, Config.t()) :: {:ok, user()} | {:error, {:bound_to_different_user | :invalid_user_id_field, changeset()}} | {:error, changeset()}
+  @spec create_user(user_identity_params(), user_params(), user_id_params() | nil, Config.t()) ::
+          {:ok, user()}
+          | {:error, {:bound_to_different_user | :invalid_user_id_field, changeset()}}
+          | {:error, changeset()}
   def create_user(user_identity_params, user_params, user_id_params, config) do
-    params   = convert_params(user_identity_params)
+    params = convert_params(user_identity_params)
     user_mod = user!(config)
 
     user_mod
@@ -213,30 +241,34 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     |> invalid_user_id_error(config)
   end
 
-  defp user_user_identity_bound_different_user_error({:error, %{changes: %{user_identities: [%{errors: errors}]}} = changeset}) do
+  defp user_user_identity_bound_different_user_error(
+         {:error, %{changes: %{user_identities: [%{errors: errors}]}} = changeset}
+       ) do
     case unique_constraint_error?(errors, :uid_provider) do
-      true  -> {:error, {:bound_to_different_user, changeset}}
+      true -> {:error, {:bound_to_different_user, changeset}}
       false -> {:error, changeset}
     end
   end
+
   defp user_user_identity_bound_different_user_error(any), do: any
 
   defp unique_constraint_error?(errors, field) do
     Enum.find_value(errors, false, fn
       {^field, {_msg, [constraint: :unique, constraint_name: _name]}} -> true
-      _any                                                            -> false
+      _any -> false
     end)
   end
 
   defp invalid_user_id_error({:error, %{errors: errors} = changeset}, config) do
-    user_mod      = user!(config)
+    user_mod = user!(config)
     user_id_field = user_mod.pow_user_id_field()
 
     Enum.find_value(errors, {:error, changeset}, fn
       {^user_id_field, _error} -> {:error, {:invalid_user_id_field, changeset}}
-      _any                     -> false
+      _any -> false
     end)
   end
+
   defp invalid_user_id_error(any, _config), do: any
 
   @doc """
@@ -247,23 +279,27 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
   @spec delete(user(), binary(), Config.t()) ::
           {:ok, {number(), nil}} | {:error, {:no_password, changeset()}}
   def delete(user, provider, config) do
-    user = repo!(config).preload(user, :user_identities, repo_opts(config, [:prefix]) ++ [force: true])
+    user =
+      repo!(config).preload(user, :user_identities, repo_opts(config, [:prefix]) ++ [force: true])
 
     user.user_identities
     |> Enum.split_with(&(&1.provider == provider))
     |> maybe_delete(user, config)
   end
 
-  defp maybe_delete({user_identities, rest}, %{password_hash: password_hash} = user, config) when length(rest) > 0 or not is_nil(password_hash) do
-    opts    = repo_opts(config, [:prefix])
+  defp maybe_delete({user_identities, rest}, %{password_hash: password_hash} = user, config)
+       when length(rest) > 0 or not is_nil(password_hash) do
+    opts = repo_opts(config, [:prefix])
+
     results =
       user
       |> Ecto.assoc(:user_identities)
-      |> where([i], i.id in ^Enum.map(user_identities, &(&1.id)))
+      |> where([i], i.id in ^Enum.map(user_identities, & &1.id))
       |> repo!(config).delete_all(opts)
 
     {:ok, results}
   end
+
   defp maybe_delete(_any, user, _config) do
     changeset =
       user
@@ -292,15 +328,19 @@ defmodule PowAssent.Ecto.UserIdentities.Context do
     |> user!()
     |> user_identity_schema_mod()
   end
+
   defp user_identity_schema_mod(user_mod) when is_atom(user_mod) do
-    association = user_mod.__schema__(:association, :user_identities) || raise_no_user_identity_error()
+    association =
+      user_mod.__schema__(:association, :user_identities) || raise_no_user_identity_error()
 
     association.queryable
   end
 
   @spec raise_no_user_identity_error :: no_return
   defp raise_no_user_identity_error do
-    Config.raise_error("The `:user` configuration option doesn't have a `:user_identities` association.")
+    Config.raise_error(
+      "The `:user` configuration option doesn't have a `:user_identities` association."
+    )
   end
 
   defp repo_opts(config, opts) do

@@ -4,6 +4,7 @@ defmodule PowAssent.Test.Phoenix.Routes do
 
   def after_sign_in_path(%{assigns: %{request_path: request_path}}) when is_binary(request_path),
     do: request_path
+
   def after_sign_in_path(_conn), do: "/session_created"
 
   def after_registration_path(_conn), do: "/registration_created"

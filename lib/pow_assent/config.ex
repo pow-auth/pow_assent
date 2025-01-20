@@ -19,7 +19,7 @@ defmodule PowAssent.Config do
   def get(config, key, default \\ nil) do
     case Keyword.get(config, key, :not_found) do
       :not_found -> get_env_config(config, key, default)
-      value      -> value
+      value -> value
     end
   end
 
@@ -35,7 +35,7 @@ defmodule PowAssent.Config do
     config
     |> Keyword.get(:otp_app)
     |> case do
-      nil     -> Application.get_all_env(env_key)
+      nil -> Application.get_all_env(env_key)
       otp_app -> Application.get_env(otp_app, env_key, [])
     end
     |> Keyword.get(key, default)
@@ -83,6 +83,7 @@ defmodule PowAssent.Config do
       deep_merge(left, right)
     end)
   end
+
   defp deep_merge(_left, right), do: right
 
   @doc """

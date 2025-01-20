@@ -29,7 +29,8 @@ defmodule PowAssent.Plug do
   If `:nonce` is set to `true` in the PowAssent provider configuration, a
   randomly generated nonce will be added to the provider configuration.
   """
-  @spec authorize_url(Conn.t(), binary(), binary()) :: {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
+  @spec authorize_url(Conn.t(), binary(), binary()) ::
+          {:ok, binary(), Conn.t()} | {:error, any(), Conn.t()}
   def authorize_url(conn, provider, redirect_uri) do
     {strategy, provider_config} = get_provider_config(conn, provider, redirect_uri)
 
@@ -55,6 +56,7 @@ defmodule PowAssent.Plug do
   defp maybe_put_session_params({:ok, %{url: url, session_params: params}}, conn) do
     {:ok, url, Conn.put_private(conn, :pow_assent_session_params, params)}
   end
+
   defp maybe_put_session_params({:ok, %{url: url}}, conn), do: {:ok, url, conn}
   defp maybe_put_session_params({:error, error}, conn), do: {:error, error, conn}
 
@@ -91,7 +93,8 @@ defmodule PowAssent.Plug do
   to `{:error, :create_user}` with `nil` value for
   `:pow_assent_callback_error`.
   """
-  @spec callback_upsert(Conn.t(), binary(), map(), binary()) :: {:ok, Conn.t()} | {:error, Conn.t()}
+  @spec callback_upsert(Conn.t(), binary(), map(), binary()) ::
+          {:ok, Conn.t()} | {:error, Conn.t()}
   def callback_upsert(conn, provider, params, redirect_uri) do
     conn
     |> callback(provider, params, redirect_uri)
@@ -111,15 +114,26 @@ defmodule PowAssent.Plug do
   defp handle_callback({:ok, user_identity_params, user_params, conn}) do
     conn
     |> Conn.put_private(:pow_assent_callback_state, {:ok, :strategy})
-    |> Conn.put_private(:pow_assent_callback_params, %{user_identity: user_identity_params, user: user_params})
+    |> Conn.put_private(:pow_assent_callback_params, %{
+      user_identity: user_identity_params,
+      user: user_params
+    })
   end
-  defp handle_callback({:error, error, conn})  do
+
+  defp handle_callback({:error, error, conn}) do
     conn
     |> Conn.put_private(:pow_assent_callback_state, {:error, :strategy})
     |> Conn.put_private(:pow_assent_callback_error, error)
   end
 
-  defp maybe_authenticate(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
+  defp maybe_authenticate(
+         %{
+           private: %{
+             pow_assent_callback_state: {:ok, :strategy},
+             pow_assent_callback_params: params
+           }
+         } = conn
+       ) do
     user_identity_params = Map.fetch!(params, :user_identity)
 
     case Plug.current_user(conn) do
@@ -127,7 +141,7 @@ defmodule PowAssent.Plug do
         conn
         |> authenticate(user_identity_params)
         |> case do
-          {:ok, conn}    -> conn
+          {:ok, conn} -> conn
           {:error, conn} -> conn
         end
 
@@ -135,9 +149,17 @@ defmodule PowAssent.Plug do
         conn
     end
   end
+
   defp maybe_authenticate(conn), do: conn
 
-  defp maybe_upsert_user_identity(%{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
+  defp maybe_upsert_user_identity(
+         %{
+           private: %{
+             pow_assent_callback_state: {:ok, :strategy},
+             pow_assent_callback_params: params
+           }
+         } = conn
+       ) do
     user_identity_params = Map.fetch!(params, :user_identity)
 
     case Plug.current_user(conn) do
@@ -158,6 +180,7 @@ defmodule PowAssent.Plug do
         end
     end
   end
+
   defp maybe_upsert_user_identity(conn), do: conn
 
   defp maybe_create_user(conn) do
@@ -171,8 +194,17 @@ defmodule PowAssent.Plug do
     |> Conn.put_private(:pow_assent_callback_state, {:error, :create_user})
     |> Conn.put_private(:pow_assent_callback_error, nil)
   end
-  defp maybe_create_user(nil, %{private: %{pow_assent_callback_state: {:ok, :strategy}, pow_assent_callback_params: params}} = conn) do
-    user_params          = Map.fetch!(params, :user)
+
+  defp maybe_create_user(
+         nil,
+         %{
+           private: %{
+             pow_assent_callback_state: {:ok, :strategy},
+             pow_assent_callback_params: params
+           }
+         } = conn
+       ) do
+    user_params = Map.fetch!(params, :user)
     user_identity_params = Map.fetch!(params, :user_identity)
 
     conn
@@ -187,6 +219,7 @@ defmodule PowAssent.Plug do
         |> Conn.put_private(:pow_assent_callback_error, changeset)
     end
   end
+
   defp maybe_create_user(_user, conn), do: conn
 
   @doc """
@@ -197,7 +230,8 @@ defmodule PowAssent.Plug do
   `:session_params` will be added to the provider config if
   `:pow_assent_session_params` is present as a private key in the connection.
   """
-  @spec callback(Conn.t(), binary(), map(), binary()) :: {:ok, map(), map(), Conn.t()} | {:error, any(), Conn.t()}
+  @spec callback(Conn.t(), binary(), map(), binary()) ::
+          {:ok, map(), map(), Conn.t()} | {:error, any(), Conn.t()}
   def callback(conn, provider, params, redirect_uri) do
     {strategy, provider_config} = get_provider_config(conn, provider, redirect_uri)
 
@@ -207,7 +241,9 @@ defmodule PowAssent.Plug do
     |> parse_callback_response(provider, conn)
   end
 
-  defp maybe_set_session_params_config(config, %{private: %{pow_assent_session_params: params}}), do: Config.put(config, :session_params, params)
+  defp maybe_set_session_params_config(config, %{private: %{pow_assent_session_params: params}}),
+    do: Config.put(config, :session_params, params)
+
   defp maybe_set_session_params_config(config, _conn), do: config
 
   defp parse_callback_response({:ok, %{user: user} = response}, provider, conn) do
@@ -221,6 +257,7 @@ defmodule PowAssent.Plug do
     |> split_user_identity_params()
     |> handle_user_identity_params(other_params, provider, conn)
   end
+
   defp parse_callback_response({:error, error}, _provider, conn), do: {:error, error, conn}
 
   defp normalize_username(%{"preferred_username" => username} = params) do
@@ -228,6 +265,7 @@ defmodule PowAssent.Plug do
     |> Map.delete("preferred_username")
     |> Map.put("username", username)
   end
+
   defp normalize_username(params), do: params
 
   defp split_user_identity_params(%{"sub" => uid} = params) do
@@ -236,9 +274,14 @@ defmodule PowAssent.Plug do
     {%{"uid" => uid}, user_params}
   end
 
-  defp handle_user_identity_params({user_identity_params, user_params}, other_params, provider, conn) do
+  defp handle_user_identity_params(
+         {user_identity_params, user_params},
+         other_params,
+         provider,
+         conn
+       ) do
     user_identity_params = Map.put(user_identity_params, "provider", provider)
-    other_params         = for {key, value} <- other_params, into: %{}, do: {Atom.to_string(key), value}
+    other_params = for {key, value} <- other_params, into: %{}, do: {Atom.to_string(key), value}
 
     user_identity_params =
       user_identity_params
@@ -261,12 +304,14 @@ defmodule PowAssent.Plug do
     provider
     |> Operations.get_user_by_provider_uid(uid, config)
     |> case do
-      nil  -> {:error, conn}
+      nil -> {:error, conn}
       user -> {:ok, create_session(conn, user, provider, config)}
     end
   end
 
-  defp create_session(conn, user, %{"provider" => provider}, config), do: create_session(conn, user, provider, config)
+  defp create_session(conn, user, %{"provider" => provider}, config),
+    do: create_session(conn, user, provider, config)
+
   defp create_session(conn, user, provider, config) when is_binary(provider) do
     conn = Plug.create(conn, user)
 
@@ -297,7 +342,8 @@ defmodule PowAssent.Plug do
   # TODO: Remove by 0.4.0
   @doc false
   @deprecated "Use `upsert_identity/2` instead"
-  @spec create_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
+  @spec create_identity(Conn.t(), map()) ::
+          {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
   def create_identity(conn, user_identity_params), do: upsert_identity(conn, user_identity_params)
 
   @doc """
@@ -306,16 +352,20 @@ defmodule PowAssent.Plug do
   If successful, a new session will be created. After session has been created
   the callbacks stored with `put_create_session_callback/2` will run.
   """
-  @spec upsert_identity(Conn.t(), map()) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
+  @spec upsert_identity(Conn.t(), map()) ::
+          {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user, map()} | map(), Conn.t()}
   def upsert_identity(conn, user_identity_params) do
     config = fetch_config(conn)
-    user   = Plug.current_user(conn)
+    user = Plug.current_user(conn)
 
     user
     |> Operations.upsert(user_identity_params, config)
     |> case do
-      {:ok, user_identity} -> {:ok, user_identity, create_session(conn, user, user_identity_params, config)}
-      {:error, error}      -> {:error, error, conn}
+      {:ok, user_identity} ->
+        {:ok, user_identity, create_session(conn, user, user_identity_params, config)}
+
+      {:error, error} ->
+        {:error, error, conn}
     end
   end
 
@@ -325,14 +375,16 @@ defmodule PowAssent.Plug do
   If successful, a new session will be created. After session has been created
   the callbacks stored with `put_create_session_callback/2` will run.
   """
-  @spec create_user(Conn.t(), map(), map(), map() | nil) :: {:ok, map(), Conn.t()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()} | map(), Conn.t()}
+  @spec create_user(Conn.t(), map(), map(), map() | nil) ::
+          {:ok, map(), Conn.t()}
+          | {:error, {:bound_to_different_user | :invalid_user_id_field, map()} | map(), Conn.t()}
   def create_user(conn, user_identity_params, user_params, user_id_params \\ nil) do
     config = fetch_config(conn)
 
     user_identity_params
     |> Operations.create_user(user_params, user_id_params, config)
     |> case do
-      {:ok, user}     -> {:ok, user, create_session(conn, user, user_identity_params, config)}
+      {:ok, user} -> {:ok, user, create_session(conn, user, user_identity_params, config)}
       {:error, error} -> {:error, error, conn}
     end
   end
@@ -350,7 +402,8 @@ defmodule PowAssent.Plug do
   @doc """
   Deletes the associated user identity for the current user and provider.
   """
-  @spec delete_identity(Conn.t(), binary()) :: {:ok, map(), Conn.t()} | {:error, {:no_password, map()}, Conn.t()}
+  @spec delete_identity(Conn.t(), binary()) ::
+          {:ok, map(), Conn.t()} | {:error, {:no_password, map()}, Conn.t()}
   def delete_identity(conn, provider) do
     config = fetch_config(conn)
 
@@ -358,7 +411,7 @@ defmodule PowAssent.Plug do
     |> Plug.current_user()
     |> Operations.delete(provider, config)
     |> case do
-      {:ok, results}  -> {:ok, results, conn}
+      {:ok, results} -> {:ok, results, conn}
       {:error, error} -> {:error, error, conn}
     end
   end
@@ -388,6 +441,7 @@ defmodule PowAssent.Plug do
     |> fetch_config()
     |> available_providers()
   end
+
   def available_providers(config) do
     config
     |> Config.get_providers()
@@ -413,10 +467,12 @@ defmodule PowAssent.Plug do
     |> fetch_config()
     |> get_provider_config(provider, redirect_uri)
   end
+
   defp get_provider_config(config, provider, redirect_uri) do
-    provider        = provider_to_atom!(provider)
-    config          = Config.get_provider_config(config, provider)
-    strategy        = config[:strategy]
+    provider = provider_to_atom!(provider)
+    config = Config.get_provider_config(config, provider)
+    strategy = config[:strategy]
+
     provider_config =
       config
       |> Keyword.delete(:strategy)
@@ -430,6 +486,7 @@ defmodule PowAssent.Plug do
   rescue
     ArgumentError -> Config.raise_no_provider_config_error(provider)
   end
+
   defp provider_to_atom!(provider) when is_atom(provider), do: provider
 
   @cookie_key "auth_session"
@@ -468,22 +525,22 @@ defmodule PowAssent.Plug do
   """
   @spec init_session(Conn.t()) :: Conn.t()
   def init_session(conn) do
-    config      = fetch_config(conn)
-    pow_config  = Plug.fetch_config(conn)
+    config = fetch_config(conn)
+    pow_config = Plug.fetch_config(conn)
     {key, conn} = client_store_fetch(conn, config, pow_config)
-    value       = get_session_value(key, config, pow_config) || default_value(conn)
+    value = get_session_value(key, config, pow_config) || default_value(conn)
 
     conn
     |> maybe_client_store_delete(config)
     |> Conn.put_private(@private_session_key, value)
-    |> Conn.register_before_send(& put_session_value(&1, config, pow_config))
+    |> Conn.register_before_send(&put_session_value(&1, config, pow_config))
   end
 
   defp client_store_fetch(conn, config, pow_config) do
     conn = Conn.fetch_cookies(conn)
 
     with token when is_binary(token) <- conn.cookies[cookie_key(config)],
-         {:ok, token}                <- Plug.verify_token(conn, signing_salt(), token, pow_config) do
+         {:ok, token} <- Plug.verify_token(conn, signing_salt(), token, pow_config) do
       {token, conn}
     else
       _any -> {nil, conn}
@@ -501,6 +558,7 @@ defmodule PowAssent.Plug do
   end
 
   defp get_session_value(nil, _config, _pow_config), do: nil
+
   defp get_session_value(key, config, pow_config) do
     {store, store_config} = store(config, pow_config)
 
@@ -517,7 +575,7 @@ defmodule PowAssent.Plug do
   defp store(config, pow_config) do
     case Config.get(config, :session_store, default_store(pow_config)) do
       {store, store_config} -> {store, store_config}
-      store                 -> {store, []}
+      store -> {store, []}
     end
   end
 
@@ -534,7 +592,7 @@ defmodule PowAssent.Plug do
     conn = Conn.fetch_cookies(conn)
 
     case Map.has_key?(conn.cookies, cookie_key(config)) do
-      true  -> client_store_delete(conn, config)
+      true -> client_store_delete(conn, config)
       false -> conn
     end
   end
@@ -551,14 +609,21 @@ defmodule PowAssent.Plug do
     |> Keyword.put_new(:path, "/")
   end
 
-  defp put_session_value(%{private: %{@private_session_info_key => :write, @private_session_key => session}} = conn, config, pow_config) when session != %{} do
+  defp put_session_value(
+         %{private: %{@private_session_info_key => :write, @private_session_key => session}} =
+           conn,
+         config,
+         pow_config
+       )
+       when session != %{} do
     {store, store_config} = store(config, pow_config)
-    key                   = UUID.generate()
+    key = UUID.generate()
 
     store.put(store_config, key, session)
 
     client_store_put(conn, key, config, pow_config)
   end
+
   defp put_session_value(conn, _config, _pow_config), do: conn
 
   defp client_store_put(conn, token, config, pow_config) do
@@ -602,7 +667,7 @@ defmodule PowAssent.Plug do
   @spec merge_provider_config(Conn.t(), binary() | atom(), Keyword.t()) :: Conn.t()
   def merge_provider_config(conn, provider, new_config) do
     pow_config = Pow.Plug.fetch_config(conn)
-    provider   = provider_to_atom!(provider)
+    provider = provider_to_atom!(provider)
 
     pow_assent_config =
       conn

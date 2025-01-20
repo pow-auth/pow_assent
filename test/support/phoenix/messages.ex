@@ -1,6 +1,7 @@
 defmodule PowAssent.Test.Phoenix.Messages do
   @moduledoc false
   use Pow.Phoenix.Messages
+
   use Pow.Extension.Phoenix.Messages,
     extensions: [
       PowAssent,

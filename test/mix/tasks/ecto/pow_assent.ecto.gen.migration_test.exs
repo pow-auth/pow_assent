@@ -34,9 +34,11 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.MigrationTest do
     File.cd!(context.tmp_path, fn ->
       Migration.run(context.options)
 
-      assert_raise Mix.Error, "migration can't be created, there is already a migration file with name CreateUserIdentities.", fn ->
-        Migration.run(context.options)
-      end
+      assert_raise Mix.Error,
+                   "migration can't be created, there is already a migration file with name CreateUserIdentities.",
+                   fn ->
+                     Migration.run(context.options)
+                   end
     end)
   end
 

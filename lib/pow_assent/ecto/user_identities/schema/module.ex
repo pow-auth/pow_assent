@@ -36,8 +36,8 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Module do
   """
   @spec new(atom(), binary(), binary(), Config.t()) :: map()
   def new(context_base, schema_name, schema_plural, config \\ []) do
-    module      = Module.concat([context_base, schema_name])
-    binary_id   = config[:binary_id]
+    module = Module.concat([context_base, schema_name])
+    binary_id = config[:binary_id]
     user_module = Module.concat([context_base, "Users.User"])
 
     %{

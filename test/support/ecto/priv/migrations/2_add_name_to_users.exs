@@ -3,7 +3,7 @@ defmodule PowAssent.Test.Ecto.Repo.Migrations.AddNameToUsers do
 
   def change do
     alter table(:users) do
-      add :name, :string
+      add(:name, :string)
     end
   end
 end

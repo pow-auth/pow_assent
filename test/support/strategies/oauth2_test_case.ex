@@ -6,7 +6,12 @@ defmodule PowAssent.Test.OAuth2TestCase do
     TestServer.start(scheme: :https)
 
     params = %{"code" => "test", "state" => "test"}
-    config = [client_secret: "secret", base_url: TestServer.url(), session_params: %{state: "test"}]
+
+    config = [
+      client_secret: "secret",
+      base_url: TestServer.url(),
+      session_params: %{state: "test"}
+    ]
 
     {:ok, callback_params: params, config: config}
   end
@@ -25,14 +30,17 @@ defmodule PowAssent.Test.OAuth2TestCase do
   def add_oauth2_access_token_endpoint(opts \\ [], assert_fn \\ nil) do
     access_token = Keyword.get(opts, :access_token, "access_token")
     token_params = Keyword.get(opts, :params, %{access_token: access_token})
-    uri          = Keyword.get(opts, :uri, "/oauth/token")
-    status_code  = Keyword.get(opts, :status_code, 200)
+    uri = Keyword.get(opts, :uri, "/oauth/token")
+    status_code = Keyword.get(opts, :status_code, 200)
 
-    TestServer.add(uri, via: :post, to: fn conn ->
-      if assert_fn, do: assert_fn.(conn)
+    TestServer.add(uri,
+      via: :post,
+      to: fn conn ->
+        if assert_fn, do: assert_fn.(conn)
 
-      send_json_resp(conn, token_params, status_code)
-    end)
+        send_json_resp(conn, token_params, status_code)
+      end
+    )
   end
 
   @spec add_oauth2_user_endpoint(map(), Keyword.t(), function() | nil) :: :ok
@@ -45,15 +53,17 @@ defmodule PowAssent.Test.OAuth2TestCase do
   @spec add_oauth2_api_endpoint(binary(), map(), Keyword.t(), function() | nil) :: :ok
   def add_oauth2_api_endpoint(uri, response, opts \\ [], assert_fn \\ nil) do
     access_token = Keyword.get(opts, :access_token, "access_token")
-    status_code  = Keyword.get(opts, :status_code, 200)
+    status_code = Keyword.get(opts, :status_code, 200)
 
-    TestServer.add(uri, to: fn conn ->
-      if assert_fn, do: assert_fn.(conn)
+    TestServer.add(uri,
+      to: fn conn ->
+        if assert_fn, do: assert_fn.(conn)
 
-      assert_bearer_token_in_header(conn, access_token)
+        assert_bearer_token_in_header(conn, access_token)
 
-      send_json_resp(conn, response, status_code)
-    end)
+        send_json_resp(conn, response, status_code)
+      end
+    )
   end
 
   defp assert_bearer_token_in_header(conn, token) do

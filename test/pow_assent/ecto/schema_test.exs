@@ -42,7 +42,14 @@ defmodule PowAssent.Ecto.SchemaTest do
       assert user_identity.errors[:provider] == {"can't be blank", [validation: :required]}
       assert changeset.errors[:name] == {"can't be blank", [validation: :required]}
 
-      changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "test@example.com", name: "John Doe"}, nil)
+      changeset =
+        User.user_identity_changeset(
+          %User{},
+          @user_identity,
+          %{email: "test@example.com", name: "John Doe"},
+          nil
+        )
+
       assert changeset.valid?
       assert changeset.changes[:name] == "John Doe"
     end
@@ -55,16 +62,26 @@ defmodule PowAssent.Ecto.SchemaTest do
         |> Repo.insert()
 
       assert {:error, changeset} =
-        %User{email: "john.doe@example.com", name: "John Doe"}
-        |> User.user_identity_changeset(@user_identity, %{}, nil)
-        |> Repo.insert()
+               %User{email: "john.doe@example.com", name: "John Doe"}
+               |> User.user_identity_changeset(@user_identity, %{}, nil)
+               |> Repo.insert()
 
       assert [user_identity] = changeset.changes.user_identities
-      assert user_identity.errors[:uid_provider] == {"has already been taken", [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
+
+      assert user_identity.errors[:uid_provider] ==
+               {"has already been taken",
+                [constraint: :unique, constraint_name: "user_identities_uid_provider_index"]}
     end
 
     test "uses case insensitive value for user id" do
-      changeset = User.user_identity_changeset(%User{}, @user_identity, %{email: "Test@EXAMPLE.com", name: "John Doe"}, nil)
+      changeset =
+        User.user_identity_changeset(
+          %User{},
+          @user_identity,
+          %{email: "Test@EXAMPLE.com", name: "John Doe"},
+          nil
+        )
+
       assert changeset.valid?
       assert Ecto.Changeset.get_field(changeset, :email) == "test@example.com"
     end
@@ -74,16 +91,21 @@ defmodule PowAssent.Ecto.SchemaTest do
     @moduledoc false
     use Ecto.Schema
     use Pow.Ecto.Schema, user_id_field: :username
+
     use Pow.Extension.Ecto.Schema,
       extensions: [PowEmailConfirmation]
+
     use PowAssent.Ecto.Schema
 
     @ecto_derive_inspect_for_redacted_fields false
 
     schema "users" do
-      has_many :user_identities, PowAssent.Test.Ecto.UserIdentities.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
+      has_many(:user_identities, PowAssent.Test.Ecto.UserIdentities.UserIdentity,
+        foreign_key: :user_id,
+        on_delete: :delete_all
+      )
 
-      field :email, :string
+      field(:email, :string)
 
       pow_user_fields()
 
@@ -106,23 +128,51 @@ defmodule PowAssent.Ecto.SchemaTest do
       refute changeset.changes[:email_confirmed_at]
       refute changeset.changes[:email_confirmation_token]
 
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, provider_params, %{email: "foo@example.com"})
+      changeset =
+        UserConfirmEmail.user_identity_changeset(
+          %UserConfirmEmail{},
+          @user_identity,
+          provider_params,
+          %{email: "foo@example.com"}
+        )
+
       assert changeset.changes[:email]
       refute changeset.changes[:email_confirmed_at]
       assert changeset.changes[:email_confirmation_token]
 
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, provider_params, %{email: "test@example.com"})
+      changeset =
+        UserConfirmEmail.user_identity_changeset(
+          %UserConfirmEmail{},
+          @user_identity,
+          provider_params,
+          %{email: "test@example.com"}
+        )
+
       assert changeset.changes[:email]
       assert changeset.changes[:email_confirmed_at]
       refute changeset.changes[:email_confirmation_token]
 
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity, provider_params, nil)
+      changeset =
+        UserConfirmEmail.user_identity_changeset(
+          %UserConfirmEmail{},
+          @user_identity,
+          provider_params,
+          nil
+        )
+
       assert changeset.changes[:email]
       assert changeset.changes[:name] == "John Doe"
       assert changeset.changes[:email_confirmed_at]
       refute changeset.changes[:email_confirmation_token]
 
-      changeset = UserConfirmEmail.user_identity_changeset(%UserConfirmEmail{}, @user_identity,  Map.delete(provider_params, :email_verified), nil)
+      changeset =
+        UserConfirmEmail.user_identity_changeset(
+          %UserConfirmEmail{},
+          @user_identity,
+          Map.delete(provider_params, :email_verified),
+          nil
+        )
+
       assert changeset.changes[:email]
       assert changeset.changes[:name] == "John Doe"
       refute changeset.changes[:email_confirmed_at]
@@ -132,12 +182,26 @@ defmodule PowAssent.Ecto.SchemaTest do
     test "sets :email_confirmed_at when provided as attrs and :email is not user id field" do
       provider_params = %{email: "test@example.com", email_verified: true}
 
-      changeset = UsernameUserWithEmail.user_identity_changeset(%UsernameUserWithEmail{}, @user_identity, Map.delete(provider_params, :email_verified), %{username: "john.doe"})
+      changeset =
+        UsernameUserWithEmail.user_identity_changeset(
+          %UsernameUserWithEmail{},
+          @user_identity,
+          Map.delete(provider_params, :email_verified),
+          %{username: "john.doe"}
+        )
+
       assert changeset.changes[:email]
       refute changeset.changes[:email_confirmed_at]
       assert changeset.changes[:email_confirmation_token]
 
-      changeset = UsernameUserWithEmail.user_identity_changeset(%UsernameUserWithEmail{}, @user_identity, provider_params, %{username: "john.doe"})
+      changeset =
+        UsernameUserWithEmail.user_identity_changeset(
+          %UsernameUserWithEmail{},
+          @user_identity,
+          provider_params,
+          %{username: "john.doe"}
+        )
+
       assert changeset.changes[:username]
       assert changeset.changes[:email]
       assert changeset.changes[:email_confirmed_at]
@@ -147,13 +211,31 @@ defmodule PowAssent.Ecto.SchemaTest do
 
   describe "user_identity_changeset/4 with PowInvitation" do
     test "sets :invitation_accepted_at when is invited user" do
-      changeset = InvitationUser.user_identity_changeset(%InvitationUser{}, @user_identity, %{}, %{email: "test@example.com"})
+      changeset =
+        InvitationUser.user_identity_changeset(%InvitationUser{}, @user_identity, %{}, %{
+          email: "test@example.com"
+        })
+
       refute changeset.changes[:invitation_accepted_at]
 
-      changeset = InvitationUser.user_identity_changeset(%InvitationUser{invitation_token: "token", invitation_accepted_at: DateTime.utc_now()}, @user_identity, %{}, %{email: "test@example.com"})
+      changeset =
+        InvitationUser.user_identity_changeset(
+          %InvitationUser{invitation_token: "token", invitation_accepted_at: DateTime.utc_now()},
+          @user_identity,
+          %{},
+          %{email: "test@example.com"}
+        )
+
       refute changeset.changes[:invitation_accepted_at]
 
-      changeset = InvitationUser.user_identity_changeset(%InvitationUser{invitation_token: "token"}, @user_identity, %{}, %{email: "test@example.com"})
+      changeset =
+        InvitationUser.user_identity_changeset(
+          %InvitationUser{invitation_token: "token"},
+          @user_identity,
+          %{},
+          %{email: "test@example.com"}
+        )
+
       assert changeset.changes[:invitation_accepted_at]
     end
   end
@@ -167,9 +249,11 @@ defmodule PowAssent.Ecto.SchemaTest do
     @ecto_derive_inspect_for_redacted_fields false
 
     schema "users" do
-      has_many :user_identities,
+      has_many(
+        :user_identities,
         MyApp.UserIdentities.UserIdentity,
         on_delete: :nothing
+      )
 
       pow_user_fields()
 
@@ -188,6 +272,8 @@ defmodule PowAssent.Ecto.SchemaTest do
     user = %PowAssent.NoContextUser{}
 
     assert Map.has_key?(user, :user_identities)
-    assert %{queryable: PowAssent.UserIdentities.UserIdentity} = PowAssent.NoContextUser.__schema__(:association, :user_identities)
+
+    assert %{queryable: PowAssent.UserIdentities.UserIdentity} =
+             PowAssent.NoContextUser.__schema__(:association, :user_identities)
   end
 end

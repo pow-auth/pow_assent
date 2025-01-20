@@ -5,7 +5,7 @@ defmodule PowAssent.Test.Ecto.Users.User do
   use PowAssent.Ecto.Schema
 
   schema "users" do
-    field :name, :string
+    field(:name, :string)
 
     pow_user_fields()
 

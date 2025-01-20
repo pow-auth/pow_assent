@@ -50,10 +50,22 @@ defmodule Mix.Tasks.PowAssent.Ecto.Gen.Migration do
     |> Enum.each(&create_migration_file/1)
   end
 
-  defp create_migration_file(%{repo: repo, binary_id: binary_id, users_table: users_table, schema_plural: schema_plural}) do
-    context_base  = Pow.app_base(Pow.otp_app())
-    schema        = UserIdentitiesMigration.new(context_base, schema_plural, repo: repo, binary_id: binary_id, users_table: users_table)
-    content       = UserIdentitiesMigration.gen(schema)
+  defp create_migration_file(%{
+         repo: repo,
+         binary_id: binary_id,
+         users_table: users_table,
+         schema_plural: schema_plural
+       }) do
+    context_base = Pow.app_base(Pow.otp_app())
+
+    schema =
+      UserIdentitiesMigration.new(context_base, schema_plural,
+        repo: repo,
+        binary_id: binary_id,
+        users_table: users_table
+      )
+
+    content = UserIdentitiesMigration.gen(schema)
 
     Migration.create_migration_file(repo, schema.migration_name, content)
   end

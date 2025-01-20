@@ -12,7 +12,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.TemplatesTest do
       Templates.run([])
 
       templates_path = Path.join(["lib", "pow_assent_web", "controllers", "pow_assent"])
-      expected_dirs  = Map.keys(@expected_template_files)
+      expected_dirs = Map.keys(@expected_template_files)
       expected_files = Enum.map(expected_dirs, &"#{&1}.ex")
 
       assert expected_dirs -- ls(templates_path) == []
@@ -25,7 +25,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Gen.TemplatesTest do
       end
 
       for base_name <- expected_dirs do
-        content     = templates_path |> Path.join(base_name <> ".ex") |> File.read!()
+        content = templates_path |> Path.join(base_name <> ".ex") |> File.read!()
         module_name = base_name |> Macro.camelize() |> String.replace_suffix("Html", "HTML")
 
         assert content =~ "defmodule PowAssentWeb.PowAssent.#{module_name} do"

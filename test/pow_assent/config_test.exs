@@ -13,19 +13,19 @@ defmodule PowAssent.ConfigTest do
   end
 
   test "get_providers/1" do
-    Application.put_env(:pow_assent, :providers, [provider1: [], provider2: []])
+    Application.put_env(:pow_assent, :providers, provider1: [], provider2: [])
     assert Config.get_providers([]) == [provider1: [], provider2: []]
   end
 
   test "merge_provider_config/2" do
-    Application.put_env(:pow_assent, :providers, [
+    Application.put_env(:pow_assent, :providers,
       provider1: [
         a: 1,
         b: 2,
         authorization_params: [c: 3, d: 4],
         strategy: PowAssent.Test.TestProvider
       ]
-    ])
+    )
 
     new_config = [
       a: 2,
@@ -49,14 +49,19 @@ defmodule PowAssent.ConfigTest do
   end
 
   test "get_provider_config/2" do
-    Application.put_env(:pow_assent, :providers, [provider1: [a: 1], provider2: [b: 2]])
+    Application.put_env(:pow_assent, :providers, provider1: [a: 1], provider2: [b: 2])
     assert Config.get_provider_config([], :provider2) == [b: 2]
 
-    assert_raise PowAssent.Config.ConfigError, "No provider configuration available for non_existent.", fn ->
-      Config.get_provider_config([], :non_existent)
-    end
+    assert_raise PowAssent.Config.ConfigError,
+                 "No provider configuration available for non_existent.",
+                 fn ->
+                   Config.get_provider_config([], :non_existent)
+                 end
 
-    assert Config.get_provider_config([http_adapter: HTTPAdapter, json_adapter: JSONAdapter, jwt_adapter: JWTAdapter], :provider1) ==
-      [http_adapter: HTTPAdapter, json_adapter: JSONAdapter, jwt_adapter: JWTAdapter, a: 1]
+    assert Config.get_provider_config(
+             [http_adapter: HTTPAdapter, json_adapter: JSONAdapter, jwt_adapter: JWTAdapter],
+             :provider1
+           ) ==
+             [http_adapter: HTTPAdapter, json_adapter: JSONAdapter, jwt_adapter: JWTAdapter, a: 1]
   end
 end

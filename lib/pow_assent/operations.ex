@@ -19,14 +19,15 @@ defmodule PowAssent.Operations do
   def get_user_by_provider_uid(provider, uid, config) do
     case context_module(config) do
       Context -> Context.get_user_by_provider_uid(provider, uid, config)
-      module  -> module.get_user_by_provider_uid(provider, uid)
+      module -> module.get_user_by_provider_uid(provider, uid)
     end
   end
 
   # TODO: Remove by 0.4.0
   @doc false
   @deprecated "Use `upsert/3` instead"
-  @spec create(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
+  @spec create(map(), map(), Config.t()) ::
+          {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
   def create(user, user_identity_params, config), do: upsert(user, user_identity_params, config)
 
   @doc """
@@ -35,11 +36,12 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.upsert/3` or
   `upsert/2` on a custom context module.
   """
-  @spec upsert(map(), map(), Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
+  @spec upsert(map(), map(), Config.t()) ::
+          {:ok, map()} | {:error, {:bound_to_different_user, map()}} | {:error, map()} | no_return
   def upsert(user, user_identity_params, config) do
     case context_module(config) do
       Context -> Context.upsert(user, user_identity_params, config)
-      module  -> module.upsert(user, user_identity_params)
+      module -> module.upsert(user, user_identity_params)
     end
   end
 
@@ -49,11 +51,15 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.create_user/4` or
   `create_user/3` on a custom context module.
   """
-  @spec create_user(map(), map(), map() | nil, Config.t()) :: {:ok, map()} | {:error, {:bound_to_different_user | :invalid_user_id_field, map()}} | {:error, map()} | no_return
+  @spec create_user(map(), map(), map() | nil, Config.t()) ::
+          {:ok, map()}
+          | {:error, {:bound_to_different_user | :invalid_user_id_field, map()}}
+          | {:error, map()}
+          | no_return
   def create_user(user_identity_params, user_params, user_id_params, config) do
     case context_module(config) do
       Context -> Context.create_user(user_identity_params, user_params, user_id_params, config)
-      module  -> module.create_user(user_identity_params, user_params, user_id_params)
+      module -> module.create_user(user_identity_params, user_params, user_id_params)
     end
   end
 
@@ -78,11 +84,12 @@ defmodule PowAssent.Operations do
   This calls `Pow.Ecto.UserIdentities.Context.delete/3` or
   `delete/2` on a custom context module.
   """
-  @spec delete(map(), binary(), Config.t()) :: {:ok, {number(), nil}} | {:error, {:no_password, map()}} | no_return
+  @spec delete(map(), binary(), Config.t()) ::
+          {:ok, {number(), nil}} | {:error, {:no_password, map()}} | no_return
   def delete(user, provider, config) do
     case context_module(config) do
       Context -> Context.delete(user, provider, config)
-      module  -> module.delete(user, provider)
+      module -> module.delete(user, provider)
     end
   end
 
@@ -96,7 +103,7 @@ defmodule PowAssent.Operations do
   def all(user, config) do
     case context_module(config) do
       Context -> Context.all(user, config)
-      module  -> module.all(user)
+      module -> module.all(user)
     end
   end
 

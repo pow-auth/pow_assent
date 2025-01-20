@@ -20,7 +20,10 @@ defmodule PowAssent.Test.Ecto.Users.UserWithCustomChangesetUserIdentities do
   @ecto_derive_inspect_for_redacted_fields false
 
   schema "users" do
-    has_many :user_identities, PowAssent.Test.WithCustomChangeset.UserIdentities.UserIdentity, foreign_key: :user_id, on_delete: :delete_all
+    has_many(:user_identities, PowAssent.Test.WithCustomChangeset.UserIdentities.UserIdentity,
+      foreign_key: :user_id,
+      on_delete: :delete_all
+    )
 
     pow_user_fields()
     timestamps()
@@ -33,10 +36,21 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
 
   alias Ecto.Changeset
   alias PowAssent.Ecto.UserIdentities.Context
-  alias PowAssent.Test.Ecto.{Repo, Users.User, Users.UserWithCustomChangesetUserIdentities, Users.UserWithoutUserIdentities}
+
+  alias PowAssent.Test.Ecto.{
+    Repo,
+    Users.User,
+    Users.UserWithCustomChangesetUserIdentities,
+    Users.UserWithoutUserIdentities
+  }
 
   @config [repo: Repo, user: User]
-  @user_identity_params %{"provider" => "test_provider", "uid" => "1", "token" => %{"access_token" => "access_token"}, "userinfo" => %{"name" => "John Doe"}}
+  @user_identity_params %{
+    "provider" => "test_provider",
+    "uid" => "1",
+    "token" => %{"access_token" => "access_token"},
+    "userinfo" => %{"name" => "John Doe"}
+  }
   @user_identity %{provider: @user_identity_params["provider"], uid: @user_identity_params["uid"]}
 
   describe "get_user_by_provider_uid/2" do
@@ -62,9 +76,14 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "requires user has :user_identities assoc" do
-      assert_raise PowAssent.Config.ConfigError, "The `:user` configuration option doesn't have a `:user_identities` association.", fn ->
-        Context.get_user_by_provider_uid("test_provider", "2", repo: Repo, user: UserWithoutUserIdentities)
-      end
+      assert_raise PowAssent.Config.ConfigError,
+                   "The `:user` configuration option doesn't have a `:user_identities` association.",
+                   fn ->
+                     Context.get_user_by_provider_uid("test_provider", "2",
+                       repo: Repo,
+                       user: UserWithoutUserIdentities
+                     )
+                   end
     end
   end
 
@@ -81,7 +100,9 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "inserts with valid params", %{user: user} do
-      assert {:ok, user_identity} = Context.upsert(user, @user_identity_params, @config_with_access_token)
+      assert {:ok, user_identity} =
+               Context.upsert(user, @user_identity_params, @config_with_access_token)
+
       assert user_identity.provider == "test_provider"
       assert user_identity.uid == "1"
     end
@@ -94,12 +115,21 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "updates with valid params", %{user: user} do
-      assert {:ok, prev_user_identity} = Context.upsert(user, @user_identity_params, @config_with_access_token)
+      assert {:ok, prev_user_identity} =
+               Context.upsert(user, @user_identity_params, @config_with_access_token)
+
       assert prev_user_identity.access_token
       refute prev_user_identity.refresh_token
       assert prev_user_identity.name
 
-      params = Map.merge(@user_identity_params, %{"token" => %{"access_token" => "changed_access_token", "refresh_token" => "refresh_token"}, "userinfo" => %{"name" => "John Doe Jr"}})
+      params =
+        Map.merge(@user_identity_params, %{
+          "token" => %{
+            "access_token" => "changed_access_token",
+            "refresh_token" => "refresh_token"
+          },
+          "userinfo" => %{"name" => "John Doe Jr"}
+        })
 
       assert {:ok, user_identity} = Context.upsert(user, params, @config_with_access_token)
       assert prev_user_identity.id == user_identity.id
@@ -125,7 +155,8 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
         |> Changeset.cast_assoc(:user_identities)
         |> Repo.insert!()
 
-      assert {:error, {:bound_to_different_user, _changeset}} = Context.upsert(user, @user_identity_params, @config_with_access_token)
+      assert {:error, {:bound_to_different_user, _changeset}} =
+               Context.upsert(user, @user_identity_params, @config_with_access_token)
     end
   end
 
@@ -144,7 +175,14 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     end
 
     test "with valid params with access token" do
-      assert {:ok, user} = Context.create_user(@user_identity_params, @user_params, nil, @config_with_access_token)
+      assert {:ok, user} =
+               Context.create_user(
+                 @user_identity_params,
+                 @user_params,
+                 nil,
+                 @config_with_access_token
+               )
+
       user = Repo.preload(user, :user_identities, force: true)
 
       assert [user_identity] = user.user_identities
@@ -170,11 +208,18 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
         |> Changeset.change(email: "test-2@example.com", user_identities: [@user_identity])
         |> Repo.insert!()
 
-      assert {:error, {:bound_to_different_user, _changeset}} = Context.create_user(@user_identity_params, @user_params, nil, @config)
+      assert {:error, {:bound_to_different_user, _changeset}} =
+               Context.create_user(@user_identity_params, @user_params, nil, @config)
     end
 
     test "when user id field is missing" do
-      assert {:error, {:invalid_user_id_field, _changeset}} = Context.create_user(@user_identity_params, Map.delete(@user_params, :email), nil, @config)
+      assert {:error, {:invalid_user_id_field, _changeset}} =
+               Context.create_user(
+                 @user_identity_params,
+                 Map.delete(@user_params, :email),
+                 nil,
+                 @config
+               )
     end
   end
 
@@ -182,7 +227,10 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     setup do
       user =
         %User{}
-        |> Changeset.change(email: "test@example.com", user_identities: [@user_identity, %{provider: "test_provider", uid: "2"}])
+        |> Changeset.change(
+          email: "test@example.com",
+          user_identities: [@user_identity, %{provider: "test_provider", uid: "2"}]
+        )
         |> Repo.insert!()
 
       {:ok, user: user}
@@ -191,7 +239,10 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
     test "requires password hash or other identity", %{user: user} do
       assert {:error, {:no_password, _changeset}} = Context.delete(user, "test_provider", @config)
 
-      Repo.insert!(Ecto.build_assoc(user, :user_identities, %{provider: "another_provider", uid: "1"}))
+      Repo.insert!(
+        Ecto.build_assoc(user, :user_identities, %{provider: "another_provider", uid: "1"})
+      )
+
       assert {:ok, {2, nil}} = Context.delete(user, "test_provider", @config)
 
       user = %{user | password_hash: "password"}
@@ -202,15 +253,26 @@ defmodule PowAssent.Ecto.UserIdentities.ContextTest do
   test "all/2 retrieves" do
     user =
       %User{}
-      |> Changeset.change(email: "test@example.com", user_identities: [%{provider: "test_provider", uid: "1"}, %{provider: "other_provider", uid: "1"}])
+      |> Changeset.change(
+        email: "test@example.com",
+        user_identities: [
+          %{provider: "test_provider", uid: "1"},
+          %{provider: "other_provider", uid: "1"}
+        ]
+      )
       |> Repo.insert!()
 
     second_user =
       %User{}
-      |> Changeset.change(email: "test-2@example.com", user_identities: [%{provider: "test_provider", uid: "2"}])
+      |> Changeset.change(
+        email: "test-2@example.com",
+        user_identities: [%{provider: "test_provider", uid: "2"}]
+      )
       |> Repo.insert!()
 
     assert [%{provider: "test_provider", uid: "2"}] = Context.all(second_user, @config)
-    assert [%{provider: "test_provider", uid: "1"}, %{provider: "other_provider", uid: "1"}] = Context.all(user, @config)
+
+    assert [%{provider: "test_provider", uid: "1"}, %{provider: "other_provider", uid: "1"}] =
+             Context.all(user, @config)
   end
 end

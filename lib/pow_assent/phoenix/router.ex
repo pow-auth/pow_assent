@@ -43,7 +43,14 @@ defmodule PowAssent.Phoenix.Router do
   """
   defmacro __using__(_opts \\ []) do
     quote do
-      import unquote(__MODULE__), only: [pow_assent_routes: 0, pow_assent_authorization_routes: 0, pow_assent_authorization_post_callback_routes: 0, pow_assent_registration_routes: 0, pow_assent_scope: 1]
+      import unquote(__MODULE__),
+        only: [
+          pow_assent_routes: 0,
+          pow_assent_authorization_routes: 0,
+          pow_assent_authorization_post_callback_routes: 0,
+          pow_assent_registration_routes: 0,
+          pow_assent_scope: 1
+        ]
     end
   end
 
@@ -71,8 +78,12 @@ defmodule PowAssent.Phoenix.Router do
   defmacro pow_assent_authorization_routes do
     quote location: :keep do
       pow_assent_scope do
-        Router.pow_resources "/:provider", AuthorizationController, singleton: true, only: [:new, :delete]
-        Router.pow_route :get, "/:provider/callback", AuthorizationController, :callback
+        Router.pow_resources("/:provider", AuthorizationController,
+          singleton: true,
+          only: [:new, :delete]
+        )
+
+        Router.pow_route(:get, "/:provider/callback", AuthorizationController, :callback)
       end
     end
   end
@@ -82,7 +93,7 @@ defmodule PowAssent.Phoenix.Router do
     quote location: :keep do
       pow_assent_scope do
         scope "/", as: "post" do
-          Router.pow_route :post, "/:provider/callback", AuthorizationController, :callback
+          Router.pow_route(:post, "/:provider/callback", AuthorizationController, :callback)
         end
       end
     end
@@ -92,8 +103,8 @@ defmodule PowAssent.Phoenix.Router do
   defmacro pow_assent_registration_routes do
     quote location: :keep do
       pow_assent_scope do
-        Router.pow_route :get, "/:provider/add-user-id", RegistrationController, :add_user_id
-        Router.pow_route :post, "/:provider/create", RegistrationController, :create
+        Router.pow_route(:get, "/:provider/add-user-id", RegistrationController, :add_user_id)
+        Router.pow_route(:post, "/:provider/create", RegistrationController, :create)
       end
     end
   end

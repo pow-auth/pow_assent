@@ -20,9 +20,9 @@ defmodule PowAssent.Test.Mix.TestCase do
   setup context do
     current_shell = Mix.shell()
 
-    on_exit fn ->
+    on_exit(fn ->
       Mix.shell(current_shell)
-    end
+    end)
 
     Mix.shell(Mix.Shell.Process)
 
@@ -53,7 +53,12 @@ defmodule PowAssent.Test.Mix.TestCase do
         user_path: Path.join([context_path, "users", "user.ex"])
       }
 
-    Map.merge(context, %{repo: Repo, context_module: context_module, web_module: web_module, paths: paths})
+    Map.merge(context, %{
+      repo: Repo,
+      context_module: context_module,
+      web_module: web_module,
+      paths: paths
+    })
   end
 
   defp init_pow_phoenix_app_dir(context) do
@@ -79,7 +84,8 @@ defmodule PowAssent.Test.Mix.TestCase do
         # Import environment specific config. This must remain at the bottom
         # of this file so it overrides the configuration defined above.
         import_config "\#{config_env()}.exs"
-        """)
+        """
+      )
 
       File.mkdir_p!(context.paths.web_path)
 
@@ -109,7 +115,8 @@ defmodule PowAssent.Test.Mix.TestCase do
           plug Plug.Session, @session_options
           plug #{context.web_module}.Router
         end
-        """)
+        """
+      )
 
       File.write!(
         context.paths.router_path,
@@ -132,7 +139,8 @@ defmodule PowAssent.Test.Mix.TestCase do
             get "/", PageController, :index
           end
         end
-        """)
+        """
+      )
 
       PowInstallTask.run(["-r", context.repo])
 

@@ -50,7 +50,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 
   test "provider_links/1 with slot assigns", %{conn: conn} do
@@ -75,7 +75,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 
   test "provider_links/1 with slot inner block", %{conn: conn} do
@@ -100,7 +100,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 
   test "provider_links/1 with request_path", %{conn: conn} do
@@ -123,11 +123,14 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 
   test "provider_links/1 with invited_user", %{conn: conn} do
-    conn = Conn.assign(conn, :invited_user, %PowAssent.Test.Invitation.Users.User{invitation_token: "token"})
+    conn =
+      Conn.assign(conn, :invited_user, %PowAssent.Test.Invitation.Users.User{
+        invitation_token: "token"
+      })
 
     template = fn assigns ->
       ~H"""
@@ -146,7 +149,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 
   test "authorization_link/1 with assigns", %{conn: conn} do
@@ -163,11 +166,11 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 
   test "authorization_link/1 with inner block", %{conn: conn} do
-   template = fn assigns ->
+    template = fn assigns ->
       ~H"""
       <CoreComponents.authorization_link conn={@conn} provider="my_provider">
         Authorize
@@ -184,7 +187,7 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 
   test "deauthorization_link/1 with assigns", %{conn: conn} do
@@ -201,11 +204,11 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 
   test "deauthorization_link/1 with inner block", %{conn: conn} do
-   template = fn assigns ->
+    template = fn assigns ->
       ~H"""
       <CoreComponents.deauthorization_link conn={@conn} provider="my_provider">
         Deauthorize
@@ -222,6 +225,6 @@ defmodule PowAssent.Phoenix.HTML.CoreComponentsTest do
     end
 
     assert render_component(&template.(&1), %{conn: conn}) ==
-      render_component(&expected.(&1))
+             render_component(&expected.(&1))
   end
 end

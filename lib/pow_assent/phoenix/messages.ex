@@ -53,13 +53,19 @@ defmodule PowAssent.Phoenix.Messages do
   Message for when provider account already exists for another user.
   """
   def account_already_bound_to_other_user(conn),
-    do: interpolate("The %{provider} account is already bound to another user.", provider: Naming.humanize(conn.params["provider"]))
+    do:
+      interpolate("The %{provider} account is already bound to another user.",
+        provider: Naming.humanize(conn.params["provider"])
+      )
 
   @doc """
   Message for when provider identity has been deleted for user.
   """
   def authentication_has_been_removed(conn),
-    do: interpolate("Authentication with %{provider} has been removed", provider: Naming.humanize(conn.params["provider"]))
+    do:
+      interpolate("Authentication with %{provider} has been removed",
+        provider: Naming.humanize(conn.params["provider"])
+      )
 
   @doc """
   Message for when user password is required to delete provider identity.
@@ -77,13 +83,17 @@ defmodule PowAssent.Phoenix.Messages do
   """
   #  TODO: Change function name to `log_in_with_provider` or `sign_in_with_provider`.
   def login_with_provider(conn),
-    do: interpolate("Sign in with %{provider}", provider: Naming.humanize(conn.params["provider"]))
+    do:
+      interpolate("Sign in with %{provider}", provider: Naming.humanize(conn.params["provider"]))
 
   @doc """
   Message for provider identity deletion button.
   """
   def remove_provider_authentication(conn),
-    do: interpolate("Remove %{provider} authentication", provider: Naming.humanize(conn.params["provider"]))
+    do:
+      interpolate("Remove %{provider} authentication",
+        provider: Naming.humanize(conn.params["provider"])
+      )
 
   # Simple mock method for interpolations
   defp interpolate(msg, opts) do
@@ -91,7 +101,7 @@ defmodule PowAssent.Phoenix.Messages do
       token = "%{#{key}}"
 
       case String.contains?(msg, token) do
-        true  -> String.replace(msg, token, to_string(value), global: false)
+        true -> String.replace(msg, token, to_string(value), global: false)
         false -> msg
       end
     end)

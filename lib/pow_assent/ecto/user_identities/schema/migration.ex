@@ -10,9 +10,9 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Migration do
   """
   @spec new(atom(), binary(), Config.t()) :: map()
   def new(context_base, schema_plural, config \\ []) do
-    attrs   = attrs(config)
+    attrs = attrs(config)
     indexes = Fields.indexes(config)
-    config  = Keyword.merge(config, attrs: attrs, indexes: indexes)
+    config = Keyword.merge(config, attrs: attrs, indexes: indexes)
 
     Migration.new(context_base, schema_plural, config)
   end
@@ -35,6 +35,7 @@ defmodule PowAssent.Ecto.UserIdentities.Schema.Migration do
 
     {String.to_atom("#{name}_id"), {:references, users_table}, field_options, migration_options}
   end
+
   defp attr_from_assoc(_assoc, _opts), do: nil
 
   @doc false

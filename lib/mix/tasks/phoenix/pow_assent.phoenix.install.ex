@@ -55,7 +55,7 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Install do
         config
 
       :error ->
-        Mix.raise "Couldn't install PowAssent! Did you run this inside your Phoenix app?"
+        Mix.raise("Couldn't install PowAssent! Did you run this inside your Phoenix app?")
     end
   end
 
@@ -111,33 +111,32 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Install do
           needle: "pow_routes()"
         }
       ],
-      instructions:
-        """
-        Update `#{Path.relative_to_cwd(file)}` with the PowAssent routes:
+      instructions: """
+      Update `#{Path.relative_to_cwd(file)}` with the PowAssent routes:
 
-        defmodule #{inspect(structure.web_module)}.Router do
-          use #{inspect(structure.web_module)}, :router
-          use Pow.Phoenix.Router
-        #{router_use_content}
+      defmodule #{inspect(structure.web_module)}.Router do
+        use #{inspect(structure.web_module)}, :router
+        use Pow.Phoenix.Router
+      #{router_use_content}
 
-          # ...
+        # ...
 
-        #{router_pipeline_content}
+      #{router_pipeline_content}
 
-          # ...
+        # ...
 
-        #{router_scope_content}
+      #{router_scope_content}
 
-          scope "/" do
-            pipe_through :browser
+        scope "/" do
+          pipe_through :browser
 
-            pow_routes()
-        #{router_routes_macro}
-          end
-
-          # ...
+          pow_routes()
+      #{router_routes_macro}
         end
-        """
+
+        # ...
+      end
+      """
     }
   end
 
@@ -146,5 +145,6 @@ defmodule Mix.Tasks.PowAssent.Phoenix.Install do
 
     config
   end
+
   defp maybe_run_gen_templates(config, _args), do: config
 end
