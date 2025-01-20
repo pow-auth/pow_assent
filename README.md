@@ -268,7 +268,7 @@ Cookie options are passed on to `Plug.Conn.html.put_resp_cookie/4` and can be se
 config :my_app, :pow_assent,
     auth_session_cookie_opts: [
       secure: true,
-      extra: "SameSite=Strict"
+      extra: "SameSite=Lax"
     ]
 
     # If you are using the reathorization plug:
